@@ -1,0 +1,23 @@
+export const DASS21_QUESTIONS = [
+  { id: 1, text: "I found it hard to wind down" },
+  { id: 2, text: "I was aware of dryness of my mouth" },
+  { id: 3, text: "I couldn’t seem to experience any positive feeling at all" },
+  { id: 4, text: "I experienced breathing difficulty (e.g., rapid breathing, breathlessness)" },
+  { id: 5, text: "I found it difficult to work up the initiative to do things" },
+  { id: 6, text: "I tended to over-react to situations" },
+  { id: 7, text: "I experienced trembling (e.g., hands shaking)" },
+  { id: 8, text: "I felt that I was using a lot of nervous energy" },
+  { id: 9, text: "I was worried about situations in which I might panic" },
+  { id: 10, text: "I felt that I had nothing to look forward to" },
+  { id: 11, text: "I found myself getting agitated" },
+  { id: 12, text: "I found it difficult to relax" },
+  { id: 13, text: "I felt down-hearted and blue" },
+  { id: 14, text: "I was intolerant of anything that kept me from getting on with what I was doing" },
+  { id: 15, text: "I felt I was close to panic" },
+  { id: 16, text: "I felt that I wasn’t worth much as a person" },
+  { id: 17, text: "I felt that life was meaningless" },
+  { id: 18, text: "I felt that I was rather touchy" },
+  { id: 19, text: "I perspired noticeably (e.g., sweaty hands) without physical exertion" },
+  { id: 20, text: "I felt scared without any good reason" },
+  { id: 21, text: "I felt that I had nothing to live for" }
+];
