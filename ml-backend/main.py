@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import joblib
 import numpy as np
 from utils.cluster_labels import LABELS
+from routes.voice_routes import router as voice_routes
 
 app = FastAPI()
 
@@ -39,3 +40,13 @@ def predict_cluster(scores: UserScores):
         "label": label,
         "confidence": confidence
     }
+
+# Include voice routes
+
+
+
+
+
+
+
+app.include_router(voice_routes)
