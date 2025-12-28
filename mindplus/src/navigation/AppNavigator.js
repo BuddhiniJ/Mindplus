@@ -11,6 +11,8 @@ import HomeDashboardScreen from "../screens/home/HomeDashboardScreen";
 import UserProfileScreen from "../screens/profile/UserProfileScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import HeatmapScreen from "../screens/home/HeatmapScreen.js";
+import MenuScreen from '../screens/home/menu.js';
+import VoiceRecorderScreen from '../components/VoiceRecorder.js';
 
 const Stack = createStackNavigator();
 
@@ -29,6 +31,8 @@ export default function AppNavigator() {
             <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
             <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
             <Stack.Screen name="HeatmapScreen" component={HeatmapScreen} />
+            <Stack.Screen name="MenuScreen" component={MenuScreen} />
+            <Stack.Screen name="VoiceRecorderScreen" component={VoiceRecorderScreen} />
 
         </Stack.Navigator>
     );
