@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView } fr
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
+import BottomActionButton from "../../navigation/BottomActionButton";
 
 export default function HomeDashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -200,7 +201,24 @@ export default function HomeDashboardScreen({ navigation }) {
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacer} />
+
+  
+
+
       </ScrollView>
+
+            {/* Bottom Navigation */}
+
+        <BottomActionButton
+  label="Home"
+  onPress={() =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MenuScreen" }],
+    })
+  }
+/>
+  {/* Bottom Navigation */}
     </View>
   );
 }
