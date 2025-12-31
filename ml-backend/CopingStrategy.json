@@ -1,0 +1,61 @@
+{
+  "anxiety": {
+    "low": "Take one slow breath and describe what made you feel uneasy.",
+    "medium": "Try a 1-minute box breathing exercise (inhale 4s, hold 4s, exhale 4s, hold 4s).",
+    "high": "Do a 5-minute grounding exercise: 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you feel."
+  },
+
+  "stress": {
+    "low": "Identify one thing that caused pressure today.",
+    "medium": "Break your next task into a 2-minute micro-step and complete just the first step.",
+    "high": "Take a 5-minute walk or stretch your shoulders and neck to reduce tension."
+  },
+
+  "sadness": {
+    "low": "Write one sentence about what affected your mood today.",
+    "medium": "Do a 1-minute self-compassion check: say something comforting to yourself.",
+    "high": "Choose one mood-lifting action: listen to calming soundscape, take fresh air for 3 minutes, or message someone you trust."
+  },
+
+  "anger": {
+    "low": "Pause and label the emotion: what triggered your irritation?",
+    "medium": "Take 10 deep breaths with slow exhales to release physical tension.",
+    "high": "Do a 30-second release: shake your arms or press your feet firmly into the ground to calm your body."
+  },
+
+  "fear": {
+    "low": "Acknowledge what you're afraid of in one sentence.",
+    "medium": "Reframe the situation by asking: What is the most realistic outcome?",
+    "high": "Try a reassurance routine: 'I am safe, I am present, I can handle this.' Repeat 3 times."
+  },
+
+  "disgust": {
+    "low": "Note what felt unpleasant today.",
+    "medium": "Step away from the situation for 1 minute to mentally reset.",
+    "high": "Do a quick sensory reset: wash your hands or splash cool water on your face."
+  },
+
+  "joy": {
+    "low": "Identify one small positive thing that happened today.",
+    "medium": "Save today’s positive moment in your mood log.",
+    "high": "Use this energy to plan one small task that your future self will appreciate."
+  },
+
+  "neutral": {
+    "low": "Tell us one thing you wish was different today.",
+    "medium": "Do a quick check-in: rate your energy from 1 to 10.",
+    "high": "Choose a direction: relaxation or productivity, and we’ll guide your next step."
+  },
+
+  "surprise": {
+    "low": "Describe what surprised you during the day.",
+    "medium": "Take 30 seconds to reflect if the surprise affected your mood.",
+    "high": "Do a short grounding breath to stabilize after sudden change."
+  },
+
+  "love": {
+    "low": "Think about one supportive person from today.",
+    "medium": "Send a quick appreciation or thank-you message to someone meaningful.",
+    "high": "Use this positive mood: list two things you feel grateful for right now."
+  }
+}
