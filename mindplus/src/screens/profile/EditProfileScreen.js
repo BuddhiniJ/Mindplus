@@ -74,6 +74,10 @@ export default function EditProfileScreen({ navigation }) {
   const [avatar, setAvatar] = useState("avatar1");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyContact, setEmergencyContact] = useState("");
+  const [emergencyRelation, setEmergencyRelation] = useState("");
+
 
   // Alert state
   const [alertConfig, setAlertConfig] = useState({
@@ -114,6 +118,10 @@ export default function EditProfileScreen({ navigation }) {
         const data = snap.data();
         setNickname(data.nickname || "");
         setAvatar(data.avatar || "avatar1");
+        setEmergencyName(data.emergencyName || "");
+        setEmergencyContact(data.emergencyContact || "");
+        setEmergencyRelation(data.emergencyRelation || "");
+
       }
       setLoading(false);
     } catch (error) {
@@ -133,15 +141,43 @@ export default function EditProfileScreen({ navigation }) {
       return;
     }
 
+    if (!emergencyName.trim()) {
+      showAlert("Emergency Contact Required", "Please enter an emergency contact name.", "warning");
+      return;
+    }
+
+    if (!emergencyContact.trim()) {
+      showAlert("Emergency Contact Number Required", "Please enter an emergency contact number.", "warning");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(emergencyContact)) {
+      showAlert("Invalid Contact Number", "Emergency contact number must be 10 digits.", "error");
+      return;
+    }
+
+    if (!emergencyRelation.trim()) {
+      showAlert("Relationship Required", "Please specify your relationship to the emergency contact.", "warning");
+      return;
+    }
+
+
     setSaving(true);
     try {
       const user = auth.currentUser;
 
-      await setDoc(doc(db, "users", user.uid, "profile", "basic"), {
-        nickname,
-        avatar,
-        updatedAt: new Date().toISOString(),
-      });
+      await setDoc(
+        doc(db, "users", user.uid, "profile", "basic"),
+        {
+          nickname,
+          avatar,
+          emergencyName,
+          emergencyContact,
+          emergencyRelation,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
       showAlert(
         "Success",
@@ -184,7 +220,7 @@ export default function EditProfileScreen({ navigation }) {
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -225,11 +261,46 @@ export default function EditProfileScreen({ navigation }) {
           <Text style={styles.hint}>Choose a friendly name others will see</Text>
         </View>
 
+        {/* Emergency Contact Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Emergency Contact</Text>
+          <Text style={styles.sectionSubtitle}>
+            This will only be used for safety purposes
+          </Text>
+
+          <TextInput
+            value={emergencyName}
+            onChangeText={setEmergencyName}
+            placeholder="Emergency contact name"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+          />
+
+          <TextInput
+            value={emergencyContact}
+            onChangeText={setEmergencyContact}
+            placeholder="Emergency contact number"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="numeric"
+            maxLength={10}
+            style={[styles.input, { marginTop: 12 }]}
+          />
+
+          <TextInput
+            value={emergencyRelation}
+            onChangeText={setEmergencyRelation}
+            placeholder="Relationship (e.g. Mother, Friend)"
+            placeholderTextColor="#9CA3AF"
+            style={[styles.input, { marginTop: 12 }]}
+          />
+        </View>
+
+
         {/* Avatar Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Choose Your Avatar</Text>
           <Text style={styles.sectionSubtitle}>Select an avatar that represents you</Text>
-          
+
           <View style={styles.avatarGrid}>
             {Object.keys(avatars).map((key) => (
               <TouchableOpacity

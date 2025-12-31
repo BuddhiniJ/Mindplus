@@ -123,7 +123,7 @@ export default function HomeDashboardScreen({ navigation }) {
         </View>
 
         {/* Stress Profile Card */}
-        <View style={styles.mainCard}>
+        {/* <View style={styles.mainCard}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Your Stress Profile</Text>
             {fingerprint && (
@@ -137,7 +137,6 @@ export default function HomeDashboardScreen({ navigation }) {
 
           {fingerprint && clusterInfo ? (
             <View style={styles.profileContent}>
-              {/* Cluster Info */}
               <View style={[styles.clusterCard, { borderLeftColor: clusterInfo.color }]}>
                 <Text style={styles.clusterEmoji}>{clusterInfo.emoji}</Text>
                 <View style={styles.clusterTextContainer}>
@@ -146,7 +145,6 @@ export default function HomeDashboardScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Last Updated */}
               <View style={styles.updateInfo}>
                 <Text style={styles.updateIcon}>🕐</Text>
                 <Text style={styles.updateText}>
@@ -163,7 +161,7 @@ export default function HomeDashboardScreen({ navigation }) {
               </Text>
             </View>
           )}
-        </View>
+        </View> */}
 
         {/* Quick Actions */}
         <View style={styles.actionsSection}>
