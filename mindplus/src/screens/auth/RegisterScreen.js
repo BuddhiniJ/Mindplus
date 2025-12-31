@@ -81,6 +81,10 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [nickname, setNickname] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("avatar1");
+  const [fullName, setFullName] = useState("");
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyContact, setEmergencyContact] = useState("");
+  const [emergencyRelation, setEmergencyRelation] = useState("");
 
 
   // Alert state
@@ -142,6 +146,31 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
+    if (!fullName.trim()) {
+      showAlert("Full Name Required", "Please enter your full name.", "warning");
+      return;
+    }
+
+    if (!emergencyName.trim()) {
+      showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning");
+      return;
+    }
+
+    if (!emergencyContact.trim()) {
+      showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(emergencyContact)) {
+      showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error");
+      return;
+    }
+
+    if (!emergencyRelation.trim()) {
+      showAlert("Relationship Required", "Please enter the relationship.", "warning");
+      return;
+    }
+
     setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -150,8 +179,12 @@ export default function RegisterScreen({ navigation }) {
       await setDoc(
         doc(db, "users", user.uid, "profile", "basic"),
         {
+          fullName,
           nickname,
           avatar: selectedAvatar,
+          emergencyName,
+          emergencyContact,
+          emergencyRelation,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         }
@@ -216,6 +249,19 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.form}>
 
             <View style={styles.inputContainer}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your full name"
+                placeholderTextColor="#9CA3AF"
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
               <Text style={styles.label}>Nickname</Text>
               <TextInput
                 style={styles.input}
@@ -273,6 +319,48 @@ export default function RegisterScreen({ navigation }) {
                 editable={!loading}
               />
             </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Emergency Contact Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Name of emergency contact"
+                placeholderTextColor="#9CA3AF"
+                value={emergencyName}
+                onChangeText={setEmergencyName}
+                autoCapitalize="words"
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Emergency Contact Number</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter emergency contact number"
+                placeholderTextColor="#9CA3AF"
+                value={emergencyContact}
+                onChangeText={setEmergencyContact}
+                keyboardType="numeric"
+                maxLength={10}
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Relationship to You</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="E.g., Mother, Father, Sister, Friend"
+                placeholderTextColor="#9CA3AF"
+                value={emergencyRelation}
+                onChangeText={setEmergencyRelation}
+                autoCapitalize="words"
+                editable={!loading}
+              />
+            </View>
+
+
 
             <View style={{ marginBottom: 20 }}>
               <Text style={styles.label}>Choose an Avatar</Text>
@@ -377,7 +465,7 @@ const styles = {
     width: "100%",
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   label: {
     fontSize: 14,
@@ -390,8 +478,8 @@ const styles = {
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    padding: 10,
+    fontSize: 14,
     color: "#111827",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
