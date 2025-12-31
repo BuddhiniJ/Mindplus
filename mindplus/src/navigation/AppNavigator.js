@@ -11,6 +11,7 @@ import HomeDashboardScreen from "../screens/home/HomeDashboardScreen";
 import UserProfileScreen from "../screens/profile/UserProfileScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import HeatmapScreen from "../screens/home/HeatmapScreen.js";
+import DailyQuestions from "../screens/home/DailyQuestions.js";
 
 const Stack = createStackNavigator();
 
@@ -29,6 +30,7 @@ export default function AppNavigator() {
             <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
             <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
             <Stack.Screen name="HeatmapScreen" component={HeatmapScreen} />
+            <Stack.Screen name="DailyQuestions" component={DailyQuestions} />
 
         </Stack.Navigator>
     );
