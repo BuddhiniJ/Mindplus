@@ -103,11 +103,20 @@ export default function ProfileScreen({ navigation }) {
       {/* Header Background */}
       <View style={styles.headerBackground} />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+
         {/* Profile Header Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarSection}>
@@ -128,7 +137,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Stress Fingerprint Card */}
-        <View style={styles.sectionCard}>
+        {/* <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Stress Fingerprint</Text>
 
           {fingerprint && clusterInfo ? (
@@ -180,7 +189,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
             </View>
           )}
-        </View>
+        </View> */}
 
         {/* Action Buttons */}
         <View style={styles.actionsSection}>
@@ -497,5 +506,13 @@ const styles = {
   },
   bottomSpacer: {
     height: 40,
+  },
+  backButton: {
+    width: 60,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: "#3B82F6",
+    fontWeight: "600",
   },
 };
