@@ -23,7 +23,7 @@ class UserScores(BaseModel):
 def root():
     return {"message": "Stress ML Backend running"}
 
-@app.get("/health")
+@app.get("/emotionhealth")
 async def health_check():
     return await health()
 

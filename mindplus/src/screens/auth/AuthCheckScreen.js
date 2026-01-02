@@ -26,7 +26,7 @@ export default function AuthCheckScreen({ navigation }) {
 
       if (fingerprintDoc.exists()) {
         console.log("Fingerprint found. Redirect → Dashboard");
-        navigation.replace("DailyQuestions");
+        navigation.replace("DailyCheckInScreen");
       } else {
         console.log("No fingerprint. Redirect → Onboarding (DASS-21)");
         navigation.replace("Dass21Screen1");
