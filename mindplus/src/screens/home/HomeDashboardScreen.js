@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
@@ -62,40 +69,42 @@ export default function HomeDashboardScreen({ navigation }) {
         emoji: "⏰",
         title: "Stress Dominant",
         description: "You respond strongly to time pressures",
-        color: "#F59E0B"
+        color: "#F59E0B",
       },
       anxiety_reactive: {
         emoji: "👥",
         title: "Anxiety Reactive",
         description: "You're sensitive to social interactions",
-        color: "#8B5CF6"
+        color: "#8B5CF6",
       },
       depression_prone: {
         emoji: "🎯",
         title: "Depression Prone",
         description: "You set high standards for yourself",
-        color: "#3B82F6"
+        color: "#3B82F6",
       },
       balanced_low_stress: {
         emoji: "🎯",
         title: "Balanced Low Stress",
         description: "You set high standards for yourself",
-        color: "#3B82F6"
+        color: "#3B82F6",
       },
       processing: {
         emoji: "🔄",
         title: "Processing",
         description: "Your profile is being analyzed",
-        color: "#6B7280"
-      }
+        color: "#6B7280",
+      },
     };
 
-    return clusterMap[label] || {
-      emoji: "📊",
-      title: label || "Unknown",
-      description: "Your unique stress profile",
-      color: "#6B7280"
-    };
+    return (
+      clusterMap[label] || {
+        emoji: "📊",
+        title: label || "Unknown",
+        description: "Your unique stress profile",
+        color: "#6B7280",
+      }
+    );
   };
 
   if (loading) {
@@ -118,7 +127,7 @@ export default function HomeDashboardScreen({ navigation }) {
       {/* Header Background */}
       <View style={styles.headerBackground} />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -127,17 +136,16 @@ export default function HomeDashboardScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
-              <Image
-                source={avatars[avatarKey]}
-                style={styles.avatar}
-              />
+              <Image source={avatars[avatarKey]} style={styles.avatar} />
               <View style={styles.avatarBadge}>
                 <Text style={styles.avatarBadgeText}>✓</Text>
               </View>
             </View>
             <View style={styles.greetingContainer}>
               <Text style={styles.greeting}>Hi, {nickname}! 👋</Text>
-              <Text style={styles.subGreeting}>Welcome back to your dashboard</Text>
+              <Text style={styles.subGreeting}>
+                Welcome back to your dashboard
+              </Text>
             </View>
           </View>
         </View>
@@ -186,18 +194,25 @@ export default function HomeDashboardScreen({ navigation }) {
         {/* Quick Actions */}
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate("HeatmapScreen")}
             activeOpacity={0.8}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: "#EEF2FF" }]}>
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#EEF2FF" },
+              ]}
+            >
               <Text style={styles.actionIcon}>🗺️</Text>
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>View Heatmap</Text>
-              <Text style={styles.actionDescription}>Explore your stress patterns</Text>
+              <Text style={styles.actionDescription}>
+                Explore your stress patterns
+              </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
@@ -207,53 +222,62 @@ export default function HomeDashboardScreen({ navigation }) {
             onPress={() => navigation.navigate("UserProfileScreen")}
             activeOpacity={0.8}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: "#D1FAE5" }]}>
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#D1FAE5" },
+              ]}
+            >
               <Text style={styles.actionIcon}>👤</Text>
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>View Profile</Text>
-              <Text style={styles.actionDescription}>Manage your account settings</Text>
+              <Text style={styles.actionDescription}>
+                Manage your account settings
+              </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={handleViewTodayEmotion}
+            onPress={() => navigation.navigate("ChatbotScreen")}
             activeOpacity={0.8}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: "#FCE7F3" }]}>
-              <Text style={styles.actionIcon}>💭</Text>
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#FEF3C7" },
+              ]}
+            >
+              <Text style={styles.actionIcon}>💬</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>View Today's Emotion</Text>
-              <Text style={styles.actionDescription}>See your overall emotional analysis</Text>
+              <Text style={styles.actionTitle}>Call Chatbot</Text>
+              <Text style={styles.actionDescription}>
+                Chat with your AI companion
+              </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
         </View>
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacer} />
-
-  
-
-
       </ScrollView>
 
-            {/* Bottom Navigation */}
+      {/* Bottom Navigation */}
 
-        <BottomActionButton
-  label="Home"
-  onPress={() =>
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "MenuScreen" }],
-    })
-  }
-/>
-  {/* Bottom Navigation */}
+      <BottomActionButton
+        label="Home"
+        onPress={() =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "MenuScreen" }],
+          })
+        }
+      />
+      {/* Bottom Navigation */}
     </View>
   );
 }
