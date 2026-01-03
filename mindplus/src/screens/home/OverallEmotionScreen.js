@@ -19,6 +19,15 @@ const EMOTION_COLORS = {
   excited: { color: "#EC4899", emoji: "🤩", label: "Excited" },
   calm: { color: "#10B981", emoji: "😌", label: "Calm" },
   confused: { color: "#F59E0B", emoji: "😕", label: "Confused" },
+  joy: { color: "#FBBF24", emoji: "😄", label: "Joy" },
+  stress: { color: "#F97316", emoji: "😫", label: "Stressed" },
+  fear: { color: "#7C3AED", emoji: "😨", label: "Fearful" },
+  disgust: { color: "#84CC16", emoji: "🤢", label: "Disgusted" },
+  surprise: { color: "#EC4899", emoji: "😲", label: "Surprised" },
+  love: { color: "#F43F5E", emoji: "🥰", label: "Loved" },
+  anxiety: { color: "#8B5CF6", emoji: "😰", label: "Anxious" },
+  sadness: { color: "#60A5FA", emoji: "😢", label: "Sad" },
+  anger: { color: "#EF4444", emoji: "😠", label: "Angry" },
   unknown: { color: "#6B7280", emoji: "❓", label: "Unknown" },
 };
 
@@ -32,7 +41,7 @@ const calculateOverallEmotion = (answers) => {
   let totalConfidence = 0;
 
   answers.forEach((answer) => {
-    const emotion = answer.emotion?.toLowerCase() || "unknown";
+    let emotion = answer.emotion?.toLowerCase() || "unknown";
     const confidence = answer.confidence || 0;
 
     if (!emotionScores[emotion]) {
@@ -121,13 +130,19 @@ export default function OverallEmotionScreen({ route, navigation }) {
     );
   }
 
-  const emotionInfo = EMOTION_COLORS[overallEmotion.emotion] || EMOTION_COLORS.unknown;
+  const emotionInfo =
+    EMOTION_COLORS[overallEmotion.emotion] || EMOTION_COLORS.unknown;
   const confidencePercentage = Math.round(overallEmotion.confidence * 100);
 
   return (
     <View style={styles.container}>
       {/* Header Background */}
-      <View style={[styles.headerBackground, { backgroundColor: overallEmotion.colorCode + "20" }]} />
+      <View
+        style={[
+          styles.headerBackground,
+          { backgroundColor: overallEmotion.colorCode + "20" },
+        ]}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -204,9 +219,11 @@ export default function OverallEmotionScreen({ route, navigation }) {
           <View style={styles.emotionBreakdownCards}>
             {Object.entries(overallEmotion.emotionScores || {}).map(
               ([emotion, scores]) => {
-                const emotionColor = EMOTION_COLORS[emotion] || EMOTION_COLORS.unknown;
+                const emotionColor =
+                  EMOTION_COLORS[emotion] || EMOTION_COLORS.unknown;
                 const percentage = ((scores.count / 4) * 100).toFixed(0);
-                const avgConfidence = (scores.totalConfidence / scores.count) * 100;
+                const avgConfidence =
+                  (scores.totalConfidence / scores.count) * 100;
 
                 return (
                   <View
@@ -217,7 +234,9 @@ export default function OverallEmotionScreen({ route, navigation }) {
                     ]}
                   >
                     <View style={styles.breakdownHeader}>
-                      <Text style={styles.breakdownEmoji}>{emotionColor.emoji}</Text>
+                      <Text style={styles.breakdownEmoji}>
+                        {emotionColor.emoji}
+                      </Text>
                       <View style={styles.breakdownInfo}>
                         <Text style={styles.breakdownLabel}>
                           {emotionColor.label}
@@ -271,6 +290,30 @@ export default function OverallEmotionScreen({ route, navigation }) {
             .
           </Text>
         </View>
+
+        {/* Coping Strategy Button */}
+        <TouchableOpacity
+          style={[
+            styles.copingStrategyButton,
+            { backgroundColor: overallEmotion.colorCode },
+          ]}
+          onPress={() =>
+            navigation.navigate("CopingStrategyScreen", {
+              emotion: overallEmotion.emotion,
+              confidence: overallEmotion.confidence,
+            })
+          }
+          activeOpacity={0.8}
+        >
+          <Text style={styles.copingStrategyIcon}>💡</Text>
+          <View style={styles.copingStrategyTextContainer}>
+            <Text style={styles.copingStrategyTitle}>Get Coping Strategy</Text>
+            <Text style={styles.copingStrategySubtitle}>
+              Personalized guidance for your emotional state
+            </Text>
+          </View>
+          <Text style={styles.copingStrategyArrow}>→</Text>
+        </TouchableOpacity>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
@@ -507,6 +550,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     lineHeight: 22,
+  },
+  copingStrategyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  copingStrategyIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  copingStrategyTextContainer: {
+    flex: 1,
+  },
+  copingStrategyTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  copingStrategySubtitle: {
+    fontSize: 13,
+    color: "#FFFFFF",
+    opacity: 0.9,
+  },
+  copingStrategyArrow: {
+    fontSize: 24,
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   actionButtons: {
     flexDirection: "row",

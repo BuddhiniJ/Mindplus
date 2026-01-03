@@ -38,7 +38,7 @@ MODEL_NAME = os.getenv("EMOTION_MODEL_NAME", "j-hartmann/emotion-english-distilr
 
 classifier = pipeline("text-classification", model=MODEL_NAME)
 
-COPING_STRATEGY_PATH = Path(__file__).with_name("CopingStrategy.json")
+COPING_STRATEGY_PATH = Path(__file__).parent.parent / "CopingStrategy.json"
 
 
 def load_coping_strategies(path: Path) -> Dict[str, Dict[str, str]]:
