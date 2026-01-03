@@ -43,6 +43,30 @@ export default function HomeDashboardScreen({ navigation }) {
     }
   };
 
+  const handleViewTodayEmotion = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const checkInRef = doc(db, "users", user.uid, "dailyCheckIns", todayKey);
+      const checkInSnap = await getDoc(checkInRef);
+
+      if (checkInSnap.exists() && checkInSnap.data().answers) {
+        navigation.navigate("OverallEmotionScreen", {
+          answers: checkInSnap.data().answers,
+        });
+      } else {
+        alert(
+          "No check-in data found for today. Please complete the daily check-in first."
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching check-in data:", error);
+      alert("Unable to load emotion data. Please try again.");
+    }
+  };
+
   const getClusterInfo = (label) => {
     const clusterMap = {
       stress_dominant: {
@@ -221,6 +245,28 @@ export default function HomeDashboardScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.actionButton}
+            onPress={handleViewTodayEmotion}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#FCE7F3" },
+              ]}
+            >
+              <Text style={styles.actionIcon}>💭</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>View Today's Emotion</Text>
+              <Text style={styles.actionDescription}>
+                See your overall emotional analysis
+              </Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
             onPress={() => navigation.navigate("ChatbotScreen")}
             activeOpacity={0.8}
           >
@@ -236,6 +282,88 @@ export default function HomeDashboardScreen({ navigation }) {
               <Text style={styles.actionTitle}>Call Chatbot</Text>
               <Text style={styles.actionDescription}>
                 Chat with your AI companion
+              </Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={async () => {
+              try {
+                const user = auth.currentUser;
+                if (!user) return;
+
+                const todayKey = new Date().toISOString().slice(0, 10);
+                const checkInRef = doc(
+                  db,
+                  "users",
+                  user.uid,
+                  "dailyCheckIns",
+                  todayKey
+                );
+                const checkInSnap = await getDoc(checkInRef);
+
+                if (checkInSnap.exists() && checkInSnap.data().answers) {
+                  const answers = checkInSnap.data().answers;
+
+                  // Calculate overall emotion
+                  const emotionScores = {};
+                  let totalConfidence = 0;
+
+                  answers.forEach((answer) => {
+                    const emotion = answer.emotion?.toLowerCase() || "unknown";
+                    const confidence = answer.confidence || 0;
+
+                    if (!emotionScores[emotion]) {
+                      emotionScores[emotion] = { count: 0, totalConfidence: 0 };
+                    }
+                    emotionScores[emotion].count += 1;
+                    emotionScores[emotion].totalConfidence += confidence;
+                    totalConfidence += confidence;
+                  });
+
+                  let dominantEmotion = "unknown";
+                  let maxCount = 0;
+
+                  Object.entries(emotionScores).forEach(([emotion, scores]) => {
+                    if (scores.count > maxCount) {
+                      maxCount = scores.count;
+                      dominantEmotion = emotion;
+                    }
+                  });
+
+                  const overallConfidence =
+                    totalConfidence > 0 ? totalConfidence / answers.length : 0;
+
+                  navigation.navigate("CopingStrategyScreen", {
+                    emotion: dominantEmotion,
+                    confidence: overallConfidence,
+                  });
+                } else {
+                  alert(
+                    "No check-in data found for today. Please complete the daily check-in first."
+                  );
+                }
+              } catch (error) {
+                console.error("Error fetching coping strategy:", error);
+                alert("Unable to load coping strategy. Please try again.");
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#DDD6FE" },
+              ]}
+            >
+              <Text style={styles.actionIcon}>💡</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Coping Strategy</Text>
+              <Text style={styles.actionDescription}>
+                Get personalized emotional guidance
               </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
