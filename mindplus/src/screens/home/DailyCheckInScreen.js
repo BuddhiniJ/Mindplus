@@ -51,8 +51,8 @@ export default function DailyCheckInScreen() {
   const [submitting, setSubmitting] = useState(false);
   const todayKey = useMemo(() => formatDateKey(new Date()), []);
   const friendlyName = useMemo(
-    () => (userData?.name ? userData.name.split(" ")[0] : "friend"),
-    [userData?.name]
+    () => (userData?.nickname ? userData.nickname.split(" ")[0] : "friend"),
+    [userData?.nickname]
   );
 
   useEffect(() => {
@@ -126,6 +126,12 @@ export default function DailyCheckInScreen() {
       mounted = false;
     };
   }, [user?.uid, todayKey]);
+
+  useEffect(() => {
+    if (!loadingExisting && existingRecord) {
+      navigation.replace("HomeDashboardScreen");
+    }
+  }, [loadingExisting, existingRecord, navigation]);
 
   const handleChange = useCallback((id, value) => {
     setResponses((prev) => ({ ...prev, [id]: value }));

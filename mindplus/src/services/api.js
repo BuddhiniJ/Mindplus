@@ -77,7 +77,7 @@ function deriveSummaryStats(answers) {
 export async function detectEmotion(text) {
   const baseUrl = ensureEmotionServiceUrl();
   const payload = { text };
-  const response = await fetch(`${baseUrl}/predict`, {
+  const response = await fetch(`${baseUrl}/emotion/predict`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -97,7 +97,7 @@ export async function detectEmotion(text) {
 export async function fetchCopingStrategy(emotion, confidence) {
   const baseUrl = ensureEmotionServiceUrl();
   const payload = { emotion, confidence };
-  const response = await fetch(`${baseUrl}/coping-strategy`, {
+  const response = await fetch(`${baseUrl}/emotion/coping-strategy`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

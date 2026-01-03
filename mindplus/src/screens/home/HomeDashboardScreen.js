@@ -36,6 +36,26 @@ export default function HomeDashboardScreen({ navigation }) {
     }
   };
 
+  const handleViewTodayEmotion = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const checkInRef = doc(db, "users", user.uid, "dailyCheckIns", todayKey);
+      const checkInSnap = await getDoc(checkInRef);
+      
+      if (checkInSnap.exists() && checkInSnap.data().answers) {
+        navigation.navigate("OverallEmotionScreen", { answers: checkInSnap.data().answers });
+      } else {
+        alert("No check-in data found for today. Please complete the daily check-in first.");
+      }
+    } catch (error) {
+      console.error("Error fetching check-in data:", error);
+      alert("Unable to load emotion data. Please try again.");
+    }
+  };
+
   const getClusterInfo = (label) => {
     const clusterMap = {
       stress_dominant: {
@@ -193,6 +213,21 @@ export default function HomeDashboardScreen({ navigation }) {
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>View Profile</Text>
               <Text style={styles.actionDescription}>Manage your account settings</Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleViewTodayEmotion}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: "#FCE7F3" }]}>
+              <Text style={styles.actionIcon}>💭</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>View Today's Emotion</Text>
+              <Text style={styles.actionDescription}>See your overall emotional analysis</Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
