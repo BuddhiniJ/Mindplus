@@ -9,6 +9,20 @@ from services.emotion_service import (
     predict, coping_strategy, health, MODEL_NAME
 )
 
+# =====  Chatbot Imports =====
+from services.chatbot_service import (
+    TextInput,
+    AnalysisResult,
+    ChatStartResponse,
+    ChatMessageInput,
+    ChatMessageResponse,
+    health_service as chatbot_health_service,
+    analyze_text_service,
+    chat_start_service,
+    chat_message_service,
+
+)
+
 app = FastAPI()
 
 # Load model at startup
@@ -26,6 +40,10 @@ def root():
 @app.get("/emotionhealth")
 async def health_check():
     return await health()
+
+@app.get("/chatbot/health")
+def chatbot_health_check():
+    return chatbot_health_service()
 
 @app.post("/emotion/predict", response_model=PredictResponse)
 async def emotion_predict(payload: PredictRequest):
@@ -56,6 +74,23 @@ def predict_cluster(scores: UserScores):
         "label": label,
         "confidence": confidence
     }
+
+# ================= CHATBOT ROUTES ====================
+
+@app.post("/chatbot/analyze", response_model=AnalysisResult)
+def analyze_text(input: TextInput):
+    return analyze_text_service(input)
+
+
+@app.post("/chatbot/chat/start", response_model=ChatStartResponse)
+def chat_start():
+    return chat_start_service()
+
+
+@app.post("/chatbot/chat/message", response_model=ChatMessageResponse)
+def chat_message(input: ChatMessageInput):
+    return chat_message_service(input)
+
 
 # Include voice routes
 app.include_router(voice_routes)
