@@ -6,7 +6,6 @@ import {
   Text,
   ActivityIndicator,
 } from "react-native";
-import styles from "./chatbotStyles";
 
 export default function ChatInputBar({
   input,
@@ -17,24 +16,49 @@ export default function ChatInputBar({
   const canSend = input.trim().length > 0 && !sending;
 
   return (
-    <View style={styles.inputBar}>
+    <View
+      style={{
+        flexDirection: "row",
+        padding: 12,
+        borderTopWidth: 1,
+        borderColor: "#E2E8F0",
+        backgroundColor: "#FFFFFF",
+      }}
+    >
       <TextInput
-        style={styles.input}
+        style={{
+          flex: 1,
+          minHeight: 44,
+          maxHeight: 120,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 20,
+          backgroundColor: "#F1F5F9",
+          color: "#0F172A",
+        }}
         value={input}
         onChangeText={onChangeInput}
         placeholder="Type how you're feeling…"
-        multiline
         placeholderTextColor="#94A3B8"
+        multiline
+        blurOnSubmit={false}
       />
+
       <TouchableOpacity
-        style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
         onPress={onSend}
         disabled={!canSend}
+        style={{
+          marginLeft: 8,
+          backgroundColor: canSend ? "#6366F1" : "#CBD5E1",
+          paddingHorizontal: 16,
+          borderRadius: 20,
+          justifyContent: "center",
+        }}
       >
         {sending ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.sendText}>Send</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Send</Text>
         )}
       </TouchableOpacity>
     </View>

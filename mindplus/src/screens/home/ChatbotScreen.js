@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "../../firebase/firebaseConfig";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
 import ChatHeader from "../../components/chatbot/ChatHeader";
@@ -177,35 +178,39 @@ export default function ChatbotScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <ChatHeader onBack={() => navigation.goBack()} />
+      <SafeAreaView style={styles.container}>
+        <ChatHeader onBack={() => navigation.goBack()} />
 
-      <ChatStatusCard
-        statusTheme={statusTheme}
-        overallLabel={overallLabel}
-        metaLabel={metaLabel}
-      />
-
-      <KeyboardAvoidingView
-        style={styles.chatArea}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
-      >
-        <MessageList
-          messages={messages}
-          onSelectTechnique={setSelectedTechnique}
+        <ChatStatusCard
+          statusTheme={statusTheme}
+          overallLabel={overallLabel}
+          metaLabel={metaLabel}
         />
 
-        <PromptChips onSelectPrompt={setInput} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        >
+          <View style={styles.chatArea}>
+            <MessageList
+              messages={messages}
+              onSelectTechnique={setSelectedTechnique}
+            />
+          </View>
 
-        <TechniqueDetailCard technique={selectedTechnique} />
+          <PromptChips onSelectPrompt={setInput} />
 
-        <ChatInputBar
-          input={input}
-          onChangeInput={setInput}
-          onSend={handleSend}
-          sending={sending}
-        />
-      </KeyboardAvoidingView>
+          <TechniqueDetailCard technique={selectedTechnique} />
+
+          <ChatInputBar
+            input={input}
+            onChangeInput={setInput}
+            onSend={handleSend}
+            sending={sending}
+          />
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
