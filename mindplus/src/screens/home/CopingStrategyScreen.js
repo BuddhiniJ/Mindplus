@@ -251,6 +251,32 @@ export default function CopingStrategyScreen({ route, navigation }) {
           </Text>
         </Animated.View>
 
+        <Animated.View
+          style={[
+            styles.calmingCard,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          <Text style={styles.calmingTitle}>Need a calming break?</Text>
+          <Text style={styles.calmingText}>
+            Start a 1-minute affirmation session tailored to your state.
+          </Text>
+          <TouchableOpacity
+            style={styles.calmingButton}
+            onPress={() =>
+              navigation.navigate("VisualAffirmationScreen", {
+                emotion: copingData.emotion,
+                severity: copingData.severity,
+                confidence: copingData.confidence,
+                strategy: copingData.strategy,
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.calmingButtonText}>Open Calm Session</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
         {/* Additional Resources */}
         <Animated.View
           style={[
@@ -524,6 +550,48 @@ const styles = StyleSheet.create({
   },
   resourcesList: {
     gap: 12,
+  },
+  calmingCard: {
+    backgroundColor: "#E0ECFF",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  calmingTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
+  calmingText: {
+    fontSize: 14,
+    color: "#374151",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  calmingButton: {
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  calmingButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   resourceItem: {
     flexDirection: "row",

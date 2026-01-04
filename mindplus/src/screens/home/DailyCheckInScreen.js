@@ -49,6 +49,7 @@ export default function DailyCheckInScreen() {
   const [existingRecord, setExistingRecord] = useState(null);
   const [loadingExisting, setLoadingExisting] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [skipRedirectAfterSave, setSkipRedirectAfterSave] = useState(false);
   const todayKey = useMemo(() => formatDateKey(new Date()), []);
   const friendlyName = useMemo(
     () => (userData?.nickname ? userData.nickname.split(" ")[0] : "friend"),
@@ -128,10 +129,10 @@ export default function DailyCheckInScreen() {
   }, [user?.uid, todayKey]);
 
   useEffect(() => {
-    if (!loadingExisting && existingRecord) {
+    if (!loadingExisting && existingRecord && !skipRedirectAfterSave) {
       navigation.replace("HomeDashboardScreen");
     }
-  }, [loadingExisting, existingRecord, navigation]);
+  }, [loadingExisting, existingRecord, navigation, skipRedirectAfterSave]);
 
   const handleChange = useCallback((id, value) => {
     setResponses((prev) => ({ ...prev, [id]: value }));
@@ -192,6 +193,7 @@ export default function DailyCheckInScreen() {
         timestamp: new Date().toISOString(),
         date: todayKey,
       });
+      setSkipRedirectAfterSave(true);
       setResponses({});
     } catch (error) {
       console.error("Unable to save daily check-in", error);
