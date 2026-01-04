@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import styles from "./chatbotStyles";
 
-export default function ChatStatusCard({ statusTheme, overallLabel, metaLabel }) {
+export default function ChatStatusCard({ statusTheme, overallLabel }) {
   return (
     <View
       style={[
@@ -11,7 +11,6 @@ export default function ChatStatusCard({ statusTheme, overallLabel, metaLabel })
       ]}
     >
       <Text style={styles.statusLabel}>{overallLabel}</Text>
-      <Text style={styles.statusMeta}>{metaLabel}</Text>
     </View>
   );
 }

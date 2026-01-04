@@ -7,7 +7,8 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth } from "../../firebase/firebaseConfig";
+import { auth, db } from "../../firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
 import ChatHeader from "../../components/chatbot/ChatHeader";
 import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
@@ -18,18 +19,36 @@ import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 
 const STATUS_THEME = {
-  critical: { bg: "#FEE2E2", border: "#EF4444" },
-  high_stress: { bg: "#FEF3C7", border: "#F59E0B" },
-  moderate_stress: { bg: "#E0F2FE", border: "#38BDF8" },
-  low_stress: { bg: "#DCFCE7", border: "#22C55E" },
-  normal: { bg: "#EEF2FF", border: "#6366F1" },
-  idle: { bg: "#EEF2FF", border: "#CBD5F5" },
+  critical: {
+    bg: "#F87171", // softer red for readability
+    border: "#B91C1C", // deep red border for emphasis
+  },
+  high_stress: {
+    bg: "#FB923C", // warm orange
+    border: "#C2410C", // dark orange border
+  },
+  moderate_stress: {
+    bg: "#60A5FA", // bright blue
+    border: "#2563EB", // darker blue for border
+  },
+  low_stress: {
+    bg: "#34D399", // fresh green
+    border: "#059669", // darker green
+  },
+  normal: {
+    bg: "#3B82F6", // classic primary blue
+    border: "#1E40AF", // deep blue border
+  },
+  idle: {
+    bg: "#A1A1AA", // neutral gray
+    border: "#52525B", // darker gray border
+  },
 };
 
 function formatOverallStatus(status) {
   switch (status) {
     case "critical":
-      return "Critical · Please reach out for real-time help";
+      return "Critical Please reach out for real-time help";
     case "high_stress":
       return "High stress detected";
     case "moderate_stress":
@@ -43,33 +62,6 @@ function formatOverallStatus(status) {
   }
 }
 
-function formatEmotion(emotion) {
-  if (!emotion) return "Emotion: pending";
-  return `Emotion: ${emotion}`;
-}
-
-function formatStressLevel(level) {
-  if (!level) return "Stress: pending";
-  return `Stress: ${level}`;
-}
-
-function formatRiskLevel(risk) {
-  if (!risk) return "Risk: assessing";
-  if (risk === "safe") return "Risk: safe";
-  if (risk === "moderate_risk") return "Risk: needs care";
-  if (risk === "high_risk") return "Risk: urgent";
-  return `Risk: ${risk}`;
-}
-
-function formatAcademicStress(label) {
-  if (!label) return "Study stress: pending";
-  if (label === "burnout") return "Study stress: burnout";
-  if (label === "academic_stress_high") return "Study stress: high";
-  if (label === "academic_stress_medium") return "Study stress: medium";
-  if (label === "academic_stress_low") return "Study stress: low";
-  return `Study stress: ${label}`;
-}
-
 export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,10 +69,31 @@ export default function ChatbotScreen({ navigation }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
+  const [userLabel, setUserLabel] = useState("You");
+  const [emergencyContact, setEmergencyContact] = useState(null);
+  const [emergencyName, setEmergencyName] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       try {
+        const user = auth.currentUser;
+        if (user) {
+          const profileRef = doc(db, "users", user.uid, "profile", "basic");
+          const profileSnap = await getDoc(profileRef);
+
+          const nickname = profileSnap.exists()
+            ? profileSnap.data()?.nickname
+            : null;
+
+          if (profileSnap.exists()) {
+            const data = profileSnap.data();
+            setEmergencyContact(data?.emergencyContact || null);
+            setEmergencyName(data?.emergencyName || null);
+          }
+
+          setUserLabel(nickname || user.displayName || "You");
+        }
+
         const id = await startChatSession();
         setSessionId(id);
       } catch (err) {
@@ -97,14 +110,11 @@ export default function ChatbotScreen({ navigation }) {
     const text = input.trim();
     setInput("");
 
-    const user = auth.currentUser;
-    const nickname = user?.email || "You";
-
     const userMessage = {
       id: Date.now().toString(),
       from: "user",
       text,
-      label: nickname,
+      label: userLabel,
     };
     setMessages((prev) => [...prev, userMessage]);
 
@@ -168,24 +178,12 @@ export default function ChatbotScreen({ navigation }) {
   const statusTheme = STATUS_THEME[statusThemeKey] || STATUS_THEME.idle;
 
   const overallLabel = formatOverallStatus(lastStatusMeta?.overallStatus);
-  const metaLabel = `${formatEmotion(
-    lastStatusMeta?.emotion
-  )} · ${formatStressLevel(
-    lastStatusMeta?.stressLevel
-  )} · ${formatAcademicStress(
-    lastStatusMeta?.academicStressCategory
-  )} · ${formatRiskLevel(lastStatusMeta?.riskLevel)}`;
-
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <ChatHeader onBack={() => navigation.goBack()} />
 
-        <ChatStatusCard
-          statusTheme={statusTheme}
-          overallLabel={overallLabel}
-          metaLabel={metaLabel}
-        />
+        <ChatStatusCard statusTheme={statusTheme} overallLabel={overallLabel} />
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -201,7 +199,11 @@ export default function ChatbotScreen({ navigation }) {
 
           <PromptChips onSelectPrompt={setInput} />
 
-          <TechniqueDetailCard technique={selectedTechnique} />
+          <TechniqueDetailCard
+            technique={selectedTechnique}
+            emergencyContact={emergencyContact}
+            emergencyName={emergencyName}
+          />
 
           <ChatInputBar
             input={input}

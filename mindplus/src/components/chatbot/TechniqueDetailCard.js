@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable, Linking } from "react-native";
 import styles from "./chatbotStyles";
 
 const TECHNIQUE_DETAILS = {
@@ -27,16 +27,73 @@ const TECHNIQUE_DETAILS = {
     "Bring attention to your breath. Notice the air moving in and out, and gently return your focus when your mind wanders.",
 };
 
-export default function TechniqueDetailCard({ technique }) {
+export default function TechniqueDetailCard({
+  technique,
+  emergencyContact,
+  emergencyName,
+}) {
   if (!technique) return null;
+
+  const normalized = String(technique).trim().toLowerCase();
+  const isEmergencyService = /call\s*emergency/.test(normalized);
+  const isContactTrusted = /contact\s*(some\s*)?one\s*you\s*trust/.test(
+    normalized
+  );
+
+  const handleCall = async (phoneNumber) => {
+    if (!phoneNumber) return;
+    const url = `tel:${phoneNumber}`;
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      }
+    } catch (e) {
+      // No-op: if device can't place calls, silently ignore.
+    }
+  };
 
   return (
     <View style={styles.techDetailCard}>
       <Text style={styles.techDetailTitle}>{technique}</Text>
-      <Text style={styles.techDetailBody}>
-        {TECHNIQUE_DETAILS[technique] ||
-          "This is a grounding or coping technique. You can try it gently and notice how your body responds."}
-      </Text>
+
+      {isEmergencyService && (
+        <>
+          <Text style={styles.techDetailBody}>Emergency number: 1926</Text>
+          <Pressable
+            style={styles.callNowButton}
+            onPress={() => handleCall("1926")}
+          >
+            <Text style={styles.callNowButtonText}>Call now</Text>
+          </Pressable>
+        </>
+      )}
+
+      {isContactTrusted && (
+        <>
+          <Text style={styles.techDetailBody}>
+            Your emergency contact: {emergencyName ? `${emergencyName} ` : ""}
+            {emergencyContact || "Not set"}
+          </Text>
+          <Pressable
+            style={[
+              styles.callNowButton,
+              !emergencyContact && styles.callNowButtonDisabled,
+            ]}
+            onPress={() => handleCall(emergencyContact)}
+            disabled={!emergencyContact}
+          >
+            <Text style={styles.callNowButtonText}>Call now</Text>
+          </Pressable>
+        </>
+      )}
+
+      {!isEmergencyService && !isContactTrusted && (
+        <Text style={styles.techDetailBody}>
+          {TECHNIQUE_DETAILS[technique] ||
+            "This is a grounding or coping technique. You can try it gently and notice how your body responds."}
+        </Text>
+      )}
     </View>
   );
 }

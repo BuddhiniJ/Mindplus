@@ -20,14 +20,23 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 18,
     paddingHorizontal: 20,
-    backgroundColor: "#6366F1",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    backgroundColor: "#3B82F6",
+    borderBottomLeftRadius: 34,
+    borderBottomRightRadius: 34,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 0,
   },
   backButton: {
     alignSelf: "flex-start",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
     borderRadius: 10,
     backgroundColor: "#ffffffff",
     marginBottom: 8,
@@ -37,7 +46,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#000000ff",
     fontWeight: "600",
     letterSpacing: 0.4,
@@ -52,6 +61,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "rgba(255,255,255,0.9)",
     marginTop: 4,
+  },
+  botIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 40,
+    marginRight: 12,
   },
   chatArea: {
     flex: 1,
@@ -183,22 +198,26 @@ const styles = StyleSheet.create({
   },
   statusCard: {
     marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 6,
-    paddingHorizontal: 14,
+    marginTop: 6,
+    marginBottom: 10,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 12, // slightly bigger, modern rounded corners
+    borderWidth: 0, // remove border for cleaner look
+    backgroundColor: "#000000ff", // white card background
+    shadowColor: "#000", // subtle shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4, // Android shadow
   },
+
   statusLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 2,
-    color: "#0F172A",
-  },
-  statusMeta: {
-    fontSize: 12,
-    color: "#475569",
+    fontSize: 14, // slightly bigger
+    fontWeight: "700", // bolder for emphasis
+    marginBottom: 4,
+    color: "#ffffffff", // darker text, modern gray-blue
+    textAlign: "center",
   },
   promptRow: {
     flexDirection: "row",
@@ -237,6 +256,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: "#4B5563",
+  },
+  callNowButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#6366F1",
+    alignItems: "center",
+  },
+  callNowButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  callNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
   messageRow: {
     flexDirection: "row",
