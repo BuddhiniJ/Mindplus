@@ -62,33 +62,6 @@ function formatOverallStatus(status) {
   }
 }
 
-function formatEmotion(emotion) {
-  if (!emotion) return "Emotion: pending";
-  return `Emotion: ${emotion}`;
-}
-
-function formatStressLevel(level) {
-  if (!level) return "Stress: pending";
-  return `Stress: ${level}`;
-}
-
-function formatRiskLevel(risk) {
-  if (!risk) return "Risk: assessing";
-  if (risk === "safe") return "Risk: safe";
-  if (risk === "moderate_risk") return "Risk: needs care";
-  if (risk === "high_risk") return "Risk: urgent";
-  return `Risk: ${risk}`;
-}
-
-function formatAcademicStress(label) {
-  if (!label) return "Study stress: pending";
-  if (label === "burnout") return "Study stress: burnout";
-  if (label === "academic_stress_high") return "Study stress: high";
-  if (label === "academic_stress_medium") return "Study stress: medium";
-  if (label === "academic_stress_low") return "Study stress: low";
-  return `Study stress: ${label}`;
-}
-
 export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +70,8 @@ export default function ChatbotScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
   const [userLabel, setUserLabel] = useState("You");
+  const [emergencyContact, setEmergencyContact] = useState(null);
+  const [emergencyName, setEmergencyName] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -109,6 +84,12 @@ export default function ChatbotScreen({ navigation }) {
           const nickname = profileSnap.exists()
             ? profileSnap.data()?.nickname
             : null;
+
+          if (profileSnap.exists()) {
+            const data = profileSnap.data();
+            setEmergencyContact(data?.emergencyContact || null);
+            setEmergencyName(data?.emergencyName || null);
+          }
 
           setUserLabel(nickname || user.displayName || "You");
         }
@@ -218,7 +199,11 @@ export default function ChatbotScreen({ navigation }) {
 
           <PromptChips onSelectPrompt={setInput} />
 
-          <TechniqueDetailCard technique={selectedTechnique} />
+          <TechniqueDetailCard
+            technique={selectedTechnique}
+            emergencyContact={emergencyContact}
+            emergencyName={emergencyName}
+          />
 
           <ChatInputBar
             input={input}

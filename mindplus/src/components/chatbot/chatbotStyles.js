@@ -257,6 +257,21 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: "#4B5563",
   },
+  callNowButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#6366F1",
+    alignItems: "center",
+  },
+  callNowButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  callNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
   messageRow: {
     flexDirection: "row",
     marginBottom: 4,
