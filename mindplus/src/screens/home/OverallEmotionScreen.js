@@ -1,3 +1,5 @@
+// Overall Emotion screen - displays the dominant emotion from daily check-in responses
+// Shows emotion breakdown, confidence level, and detailed insights
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
+// Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
   happy: { color: "#FBBF24", emoji: "😊", label: "Happy" },
   sad: { color: "#60A5FA", emoji: "😢", label: "Sad" },
@@ -85,6 +88,7 @@ export default function OverallEmotionScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
+  // Calculate overall emotion from daily check-in answers and trigger animation
   useEffect(() => {
     if (route?.params?.answers) {
       const result = calculateOverallEmotion(route.params.answers);

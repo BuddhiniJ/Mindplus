@@ -1,3 +1,4 @@
+// Grounding card component - displays 5-4-3-2-1 sensory awareness exercise
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import CalmTimer from "./CalmTimer";
@@ -16,11 +17,13 @@ export default function GroundingCard({
   sessionSeconds = 60,
   title = "Grounding (5–4–3–2–1)",
 }) {
+  // Calculate current grounding step (1-5) based on elapsed time, 12 seconds per step
   const grounding = useMemo(() => {
     const elapsed = sessionSeconds - secondsRemaining;
     const clampedElapsed = Math.max(0, Math.min(sessionSeconds, elapsed));
     const stepDuration = 12;
     const step = Math.min(5, Math.floor(clampedElapsed / stepDuration) + 1);
+    // Five sensory awareness steps for grounding technique
     const steps = [
       "Name 5 things you can see",
       "Name 4 things you can touch",
@@ -31,6 +34,7 @@ export default function GroundingCard({
     return { step, steps };
   }, [secondsRemaining, sessionSeconds]);
 
+  // Display grounding steps list, progress indicator, and countdown timer
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>

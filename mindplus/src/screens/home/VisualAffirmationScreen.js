@@ -1,3 +1,5 @@
+// Visual Affirmation screen - guided calming session with breathing exercises
+// Displays affirmations, box breathing, or grounding techniques based on emotion severity
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -24,8 +26,10 @@ function normalizeEmotionKey(emotion) {
   return key;
 }
 
+// Map confidence score to intensity band (low, medium, high)
 function getConfidenceBand(confidence) {
-  const value = typeof confidence === "number" ? confidence : Number(confidence);
+  const value =
+    typeof confidence === "number" ? confidence : Number(confidence);
   if (!Number.isFinite(value)) return "medium";
   if (value < 0.4) return "low";
   if (value < 0.7) return "medium";
@@ -51,23 +55,30 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     [emotion, severity]
   );
 
+  // Check if emotion is anxiety-related and its severity band
   const normalizedEmotion = useMemo(
     () => normalizeEmotionKey(emotion),
     [emotion]
   );
   const isAnxiety = normalizedEmotion === "anxiety";
-  const anxietyBand = useMemo(() => getConfidenceBand(confidence), [confidence]);
+  const anxietyBand = useMemo(
+    () => getConfidenceBand(confidence),
+    [confidence]
+  );
 
   const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
   const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
+  // Progress animation for timer bar
   const timerProgressAnim = useMemo(() => new Animated.Value(1), []);
 
+  // Coping strategy from API or props
   const [copingStrategy, setCopingStrategy] = useState(
     typeof strategyFromRoute === "string" ? strategyFromRoute : null
   );
   const [copingLoading, setCopingLoading] = useState(false);
   const [copingError, setCopingError] = useState(null);
 
+  // Fetch or resolve coping strategy based on emotion and confidence
   useEffect(() => {
     let active = true;
 
@@ -115,14 +126,13 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     };
   }, [confidence, emotion, strategyFromRoute, visualSupportKey]);
 
+  // Redirect back if anxiety level is too low for this screen
   useEffect(() => {
     if (!isAnxiety || anxietyBand !== "low") return;
-    // Requirement: for anxiety + low confidence, do not show this screen.
     navigation.goBack();
   }, [anxietyBand, isAnxiety, navigation]);
 
   useEffect(() => {
-    // Timer pulse for anxiety exercises.
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(timerPulseAnim, {
@@ -141,6 +151,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     return () => pulse.stop();
   }, [timerPulseAnim]);
 
+  // Countdown timer for anxiety breathing exercises
   useEffect(() => {
     if (!isAnxiety) return;
     let mounted = true;
@@ -154,9 +165,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     };
   }, [isAnxiety, started]);
 
+  // Update timer progress bar as countdown progresses
   useEffect(() => {
     if (!isAnxiety) return;
-    const fraction = SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
+    const fraction =
+      SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
     Animated.timing(timerProgressAnim, {
       toValue: fraction,
       duration: 220,
@@ -164,6 +177,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     }).start();
   }, [isAnxiety, secondsRemaining, timerProgressAnim]);
 
+  // Start or restart the calm session
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
     setStarted(true);
@@ -183,7 +197,9 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   }, [emotion]);
 
   const footerTip = useMemo(() => {
-    const e = String(emotion || "").trim().toLowerCase();
+    const e = String(emotion || "")
+      .trim()
+      .toLowerCase();
     if (e === "fear" || e === "anxiety" || e === "anxious" || e === "stress") {
       return "Tip: press your feet into the floor and exhale slowly to signal safety.";
     }
@@ -210,14 +226,15 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     return "grounding";
   }, [anxietyBand, isAnxiety]);
 
+  // Do not show this screen if anxiety is very low
   if (isAnxiety && anxietyBand === "low") {
-    // Navigation back happens in effect; render nothing.
     return null;
   }
 
   return (
     <View style={styles.screen}>
       <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
+        {/* Header with navigation and title */}
         <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -296,6 +313,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           </Animated.View>
         )}
 
+        {/* Start/Restart button for the session */}
         <View style={styles.ctaRow}>
           <TouchableOpacity
             style={[styles.startButton, started && styles.startButtonActive]}
@@ -308,6 +326,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Emotion-specific breathing tip */}
         <View style={styles.footerNote}>
           <Text style={styles.footerText}>{footerTip}</Text>
         </View>

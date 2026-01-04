@@ -1,3 +1,5 @@
+// Coping Strategy screen - displays personalized strategies based on detected emotion
+// Shows severity level, confidence, and actionable coping recommendations
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { fetchCopingStrategy } from "../../services/api";
 
+// Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
   happy: { color: "#FBBF24", emoji: "😊", label: "Happy" },
   sad: { color: "#60A5FA", emoji: "😢", label: "Sad" },
@@ -31,6 +34,7 @@ const EMOTION_COLORS = {
   unknown: { color: "#6B7280", emoji: "❓", label: "Unknown" },
 };
 
+// Severity levels with descriptions and visual indicators
 const SEVERITY_INFO = {
   low: {
     label: "Low Intensity",
@@ -63,6 +67,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     loadCopingStrategy();
   }, []);
 
+  // Fetch coping strategy from API based on emotion and confidence
   const loadCopingStrategy = async () => {
     try {
       const { emotion, confidence } = route?.params || {};
@@ -79,7 +84,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
       setCopingData(result);
       setLoading(false);
 
-      // Trigger animations
+      // Play entrance animations
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -100,6 +105,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     }
   };
 
+  // Show loading spinner while fetching data
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -111,6 +117,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     );
   }
 
+  // Show error message if API call fails
   if (error) {
     return (
       <View style={styles.container}>
@@ -145,8 +152,12 @@ export default function CopingStrategyScreen({ route, navigation }) {
     .trim()
     .toLowerCase();
 
+  // Check if emotion is anxiety-related
   const isAnxiety = normalizedEmotion === "anxiety";
-  const isStress = normalizedEmotion === "stress" || normalizedEmotion === "stressed";
+  // Check if emotion is stress-related
+  const isStress =
+    normalizedEmotion === "stress" || normalizedEmotion === "stressed";
+  // Determine anxiety severity band
   const anxietyConfidence = Number(copingData.confidence);
   const anxietyBand = !Number.isFinite(anxietyConfidence)
     ? "medium"
@@ -166,7 +177,8 @@ export default function CopingStrategyScreen({ route, navigation }) {
     : "high";
 
   const allowCalmSession =
-    !(isAnxiety && anxietyBand === "low") && !(isStress && stressBand === "low");
+    !(isAnxiety && anxietyBand === "low") &&
+    !(isStress && stressBand === "low");
 
   return (
     <View style={styles.container}>

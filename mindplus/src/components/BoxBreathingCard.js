@@ -1,3 +1,4 @@
+// Box breathing card component - displays 4-4-4-4 breathing exercise with countdown timer
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import CalmTimer from "./CalmTimer";
@@ -9,6 +10,7 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
+// Main component for displaying box breathing exercise (inhale 4s, hold 4s, exhale 4s, hold 4s)
 export default function BoxBreathingCard({
   secondsRemaining,
   progressAnim,
@@ -16,6 +18,7 @@ export default function BoxBreathingCard({
   sessionSeconds = 60,
   title = "Box Breathing (4–4–4–4)",
 }) {
+  // Calculate current breathing phase (inhale, hold, exhale, hold) based on elapsed time
   const phase = useMemo(() => {
     const elapsed = sessionSeconds - secondsRemaining;
     const clampedElapsed = Math.max(0, Math.min(sessionSeconds, elapsed));
@@ -24,6 +27,7 @@ export default function BoxBreathingCard({
     const secondsIntoPhase = phaseTime % 4;
     const remainingInPhase = 4 - secondsIntoPhase;
 
+    // Four phases of box breathing: inhale, hold, exhale, hold (4 seconds each)
     const phases = [
       { label: "Inhale", note: "Breathe in slowly" },
       { label: "Hold", note: "Keep the breath" },

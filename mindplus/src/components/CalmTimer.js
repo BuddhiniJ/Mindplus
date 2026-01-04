@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
-// Circular countdown built with two animated half-circles (no SVG dependency).
+// Circular countdown timer with animated progress ring and pulse effect
+// Displays remaining time and guided breathing note
 export default function CalmTimer({
   size = 220,
   thickness = 8,
@@ -39,10 +40,13 @@ export default function CalmTimer({
     outputRange: [1, 1.08],
   });
 
+  // Render circular progress ring, pulse effect, and timer text
   return (
     <View style={styles.wrapper}> 
+      {/* Animated circular progress ring container */}
       <View style={[styles.ringStack, { width: size, height: size }]}> 
         <Svg width={size} height={size} style={styles.svg}>
+          {/* Background ring (faded) */}
           <Circle
             cx={center}
             cy={center}
@@ -51,6 +55,7 @@ export default function CalmTimer({
             strokeWidth={thickness}
             fill="transparent"
           />
+          {/* Animated progress ring that depletes as time passes */}
           <AnimatedCircle
             cx={center}
             cy={center}
@@ -67,6 +72,7 @@ export default function CalmTimer({
           />
         </Svg>
 
+        {/* Pulsing center dot effect for visual feedback */}
         <Animated.View
           pointerEvents="none"
           style={[
@@ -82,6 +88,7 @@ export default function CalmTimer({
         />
       </View>
 
+      {/* Timer display with remaining time and guidance note */}
       <View style={styles.textBlock}>
         <Text style={[styles.timerMain, { color: textColor }]}>{remainingLabel}</Text>
         <Text style={styles.timerNote}>{note}</Text>

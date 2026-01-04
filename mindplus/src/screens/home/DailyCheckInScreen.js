@@ -1,3 +1,5 @@
+// Daily Check-In screen component - allows users to answer daily emotional wellness questions
+// Stores responses with emotion detection and provides dashboard insights
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,6 +17,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 
 import { detectEmotion } from "../../services/api";
 
+// Default questions for the daily check-in - personalized with user's name
 const QUESTION_BLUEPRINTS = [
   {
     id: "Mood-Check",
@@ -39,6 +42,7 @@ const QUESTION_BLUEPRINTS = [
   },
 ];
 
+// Convert date object to YYYY-MM-DD format for database keys
 const formatDateKey = (date) => date.toISOString().slice(0, 10);
 
 export default function DailyCheckInScreen() {
@@ -51,6 +55,7 @@ export default function DailyCheckInScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [skipRedirectAfterSave, setSkipRedirectAfterSave] = useState(false);
   const todayKey = useMemo(() => formatDateKey(new Date()), []);
+  // User's first name for personalization
   const friendlyName = useMemo(
     () => (userData?.nickname ? userData.nickname.split(" ")[0] : "friend"),
     [userData?.nickname]
@@ -76,6 +81,7 @@ export default function DailyCheckInScreen() {
     loadUserData();
   }, []);
 
+  // Prepare personalized questions with user's name
   const questions = useMemo(
     () =>
       QUESTION_BLUEPRINTS.map((item) => ({
@@ -86,6 +92,7 @@ export default function DailyCheckInScreen() {
     [friendlyName]
   );
 
+  // Load existing check-in record if already completed today
   useEffect(() => {
     if (!user?.uid) {
       setExistingRecord(null);
@@ -128,6 +135,7 @@ export default function DailyCheckInScreen() {
     };
   }, [user?.uid, todayKey]);
 
+  // Auto-redirect to dashboard if check-in already completed today
   useEffect(() => {
     if (!loadingExisting && existingRecord && !skipRedirectAfterSave) {
       navigation.replace("HomeDashboardScreen");
@@ -146,6 +154,7 @@ export default function DailyCheckInScreen() {
       );
       return;
     }
+    // Validate all questions have been answered
     const unanswered = questions.filter((q) => !responses[q.id]?.trim());
     if (unanswered.length) {
       Alert.alert(
@@ -182,6 +191,7 @@ export default function DailyCheckInScreen() {
           }
         })
       );
+      // Save enriched responses to Firestore
       const checkInRef = doc(db, "users", user.uid, "dailyCheckIns", todayKey);
       await setDoc(checkInRef, {
         answers: enrichedAnswers,
@@ -221,7 +231,7 @@ export default function DailyCheckInScreen() {
 
   return (
     <View style={styles.fullContainer}>
-      {/* Header Background */}
+      {/* Header background decoration */}
       <View style={styles.headerBackground} />
 
       <ScrollView
@@ -284,6 +294,7 @@ export default function DailyCheckInScreen() {
             <View style={styles.bottomSpacer} />
           </>
         ) : (
+          // Show completion message if already done today
           <View style={styles.completedBanner}>
             <Text style={styles.completedEmoji}>✅</Text>
             <Text style={styles.completedTitle}>Already Completed</Text>
