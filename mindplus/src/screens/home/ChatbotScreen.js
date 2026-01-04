@@ -7,7 +7,8 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth } from "../../firebase/firebaseConfig";
+import { auth, db } from "../../firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
 import ChatHeader from "../../components/chatbot/ChatHeader";
 import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
@@ -77,10 +78,23 @@ export default function ChatbotScreen({ navigation }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
+  const [userLabel, setUserLabel] = useState("You");
 
   useEffect(() => {
     const init = async () => {
       try {
+        const user = auth.currentUser;
+        if (user) {
+          const profileRef = doc(db, "users", user.uid, "profile", "basic");
+          const profileSnap = await getDoc(profileRef);
+
+          const nickname = profileSnap.exists()
+            ? profileSnap.data()?.nickname
+            : null;
+
+          setUserLabel(nickname || user.displayName || "You");
+        }
+
         const id = await startChatSession();
         setSessionId(id);
       } catch (err) {
@@ -97,14 +111,11 @@ export default function ChatbotScreen({ navigation }) {
     const text = input.trim();
     setInput("");
 
-    const user = auth.currentUser;
-    const nickname = user?.email || "You";
-
     const userMessage = {
       id: Date.now().toString(),
       from: "user",
       text,
-      label: nickname,
+      label: userLabel,
     };
     setMessages((prev) => [...prev, userMessage]);
 
