@@ -14,6 +14,8 @@ import HeatmapScreen from "../screens/home/HeatmapScreen.js";
 import DailyCheckInScreen from "../screens/home/DailyCheckInScreen.js";
 import OverallEmotionScreen from "../screens/home/OverallEmotionScreen.js";
 import CopingStrategyScreen from "../screens/home/CopingStrategyScreen.js";
+import VisualAffirmationScreen from "../screens/home/VisualAffirmationScreen";
+import SoundscapeScreen from "../screens/home/SoundscapeScreen";
 import MenuScreen from "../screens/home/menu.js";
 import VoiceRecorderScreen from "../components/VoiceRecorder.js";
 import ChatbotScreen from "../screens/home/ChatbotScreen";
@@ -50,6 +52,11 @@ export default function AppNavigator() {
         name="CopingStrategyScreen"
         component={CopingStrategyScreen}
       />
+      <Stack.Screen
+        name="VisualAffirmationScreen"
+        component={VisualAffirmationScreen}
+      />
+      <Stack.Screen name="SoundscapeScreen" component={SoundscapeScreen} />
       <Stack.Screen name="MenuScreen" component={MenuScreen} />
       <Stack.Screen
         name="VoiceRecorderScreen"

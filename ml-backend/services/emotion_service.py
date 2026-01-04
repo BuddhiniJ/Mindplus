@@ -1,3 +1,4 @@
+# Import required libraries for ML model, data validation, and file operations
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 from transformers import pipeline
@@ -30,14 +31,17 @@ class CopingStrategyResponse(BaseModel):
     strategy: Optional[str]
 
 
+# Common words to filter out when extracting keywords from text
 STOPWORDS = {
     "the","a","an","and","or","but","if","then","so","to","for","of","on","in","at","is","am","are","was","were","be","been","being","i","you","he","she","it","they","them","we","me","my","your","our","with","this","that","those","these","about","just","very","really","feel","feeling"
 }
 
+# Load the emotion classification model from Hugging Face
 MODEL_NAME = os.getenv("EMOTION_MODEL_NAME", "j-hartmann/emotion-english-distilroberta-base")
 
 classifier = pipeline("text-classification", model=MODEL_NAME)
 
+# Path to the coping strategies JSON file
 COPING_STRATEGY_PATH = Path(__file__).parent.parent / "CopingStrategy.json"
 
 
@@ -55,15 +59,17 @@ def load_coping_strategies(path: Path) -> Dict[str, Dict[str, str]]:
 COPING_STRATEGIES = load_coping_strategies(COPING_STRATEGY_PATH)
 
 
+# Health check endpoint to verify service is running
 async def health():
     return {"status": "ok", "service": "emotion", "model": MODEL_NAME}
 
 
+# Extract important keywords from text by filtering out stopwords
 def extract_keywords(text: str, max_keywords: int = 5) -> List[str]:
 
     tokens = re.findall(r"[A-Za-z']+", text.lower())
     filtered = [t for t in tokens if t not in STOPWORDS and len(t) > 2]
-   
+    
     seen = set()
     ordered_unique = []
     for t in filtered:
@@ -75,6 +81,7 @@ def extract_keywords(text: str, max_keywords: int = 5) -> List[str]:
     return ordered_unique
 
 
+# Determine severity level based on confidence score
 def pick_severity(confidence: float) -> str:
     if confidence >= 0.75:
         return "high"
@@ -83,20 +90,23 @@ def pick_severity(confidence: float) -> str:
     return "low"
 
 
+# Get appropriate coping strategy based on emotion and confidence level
 def get_coping_strategy(emotion: str, confidence: float) -> Optional[str]:
     severity = pick_severity(confidence)
+
     strategies = COPING_STRATEGIES.get(emotion.lower()) or COPING_STRATEGIES.get("neutral")
     if not strategies:
         return None
     return strategies.get(severity)
 
 
+# Predict emotion from input text
 async def predict(payload: PredictRequest) -> PredictResponse:
     text = payload.text.strip()
     if not text:
         return PredictResponse(emotion="neutral", confidence=0.0, model=MODEL_NAME, keywords=[])
     raw = classifier(text)   
-    first = raw[0]
+    first = raw[0]    
     if isinstance(first, list): 
         best = max(first, key=lambda x: x.get("score", 0.0))
     else:
@@ -107,7 +117,8 @@ async def predict(payload: PredictRequest) -> PredictResponse:
     return PredictResponse(emotion=emotion, confidence=confidence, model=MODEL_NAME, keywords=keywords)
 
 
-async def coping_strategy(payload: CopingStrategyRequest):
+# Get coping strategy recommendation for a detected emotion
+async def coping_strategy(payload: CopingStrategyRequest):    
     emotion = payload.emotion.strip().lower() or "neutral"
     confidence = max(0.0, min(1.0, payload.confidence))
     severity = pick_severity(confidence)

@@ -1,0 +1,514 @@
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
+} from "react-native";
+
+// Soundscape screen (design-only): a calming “sound player” UI for stress release.
+// No backend and no actual audio sources are included here.
+export default function SoundscapeScreen({ navigation }) {
+  const topPadding =
+    Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
+
+  const soundscapes = useMemo(
+    () => [
+      {
+        id: "rain",
+        emoji: "🌧️",
+        title: "Soft Rain",
+        subtitle: "Steady and cozy",
+        accent: "#EEF2FF",
+      },
+      {
+        id: "forest",
+        emoji: "🌲",
+        title: "Forest Breeze",
+        subtitle: "Light wind + leaves",
+        accent: "#D1FAE5",
+      },
+      {
+        id: "ocean",
+        emoji: "🌊",
+        title: "Ocean Waves",
+        subtitle: "Slow rhythmic tide",
+        accent: "#E0F2FE",
+      },
+      {
+        id: "fire",
+        emoji: "🔥",
+        title: "Fireplace",
+        subtitle: "Warm crackle",
+        accent: "#FEF3C7",
+      },
+      {
+        id: "white",
+        emoji: "🎧",
+        title: "White Noise",
+        subtitle: "Smooth blanket sound",
+        accent: "#DDD6FE",
+      },
+    ],
+    []
+  );
+
+  const [selectedId, setSelectedId] = useState(soundscapes[0]?.id);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [minutes, setMinutes] = useState(10);
+
+  const totalSeconds = minutes * 60;
+
+  // UI-only progress bar (0..1) that “plays” when user starts.
+  const progress = useRef(new Animated.Value(0)).current;
+  const playStartedAt = useRef(null);
+
+  const selected = useMemo(
+    () => soundscapes.find((s) => s.id === selectedId) || soundscapes[0],
+    [selectedId, soundscapes]
+  );
+
+  const resetProgress = () => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    playStartedAt.current = null;
+  };
+
+  const startProgress = () => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    playStartedAt.current = Date.now();
+
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: totalSeconds * 1000,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished) setIsPlaying(false);
+    });
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      // Design-only pause: stop the animation and keep current progress.
+      progress.stopAnimation();
+      setIsPlaying(false);
+      return;
+    }
+
+    setIsPlaying(true);
+
+    // If already progressed a bit, resume from current value.
+    progress.stopAnimation((current) => {
+      const remaining = Math.max(0, 1 - current);
+      const remainingMs = Math.max(0, Math.floor(remaining * totalSeconds * 1000));
+
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: remainingMs,
+        useNativeDriver: false,
+      }).start(({ finished }) => {
+        if (finished) setIsPlaying(false);
+      });
+    });
+  };
+
+  const handleSelect = (id) => {
+    setSelectedId(id);
+    setIsPlaying(false);
+    resetProgress();
+  };
+
+  const setSessionMinutes = (value) => {
+    setMinutes(value);
+    setIsPlaying(false);
+    resetProgress();
+  };
+
+  const progressWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+    extrapolate: "clamp",
+  });
+
+  return (
+    <View style={styles.screen}>
+      <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Soundscape</Text>
+          <View style={{ width: 64 }} />
+        </View>
+      </SafeAreaView>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>Stress Release</Text>
+          <Text style={styles.heroSubtitle}>
+            Pick a soundscape and take a few minutes to reset.
+          </Text>
+        </View>
+
+        <View style={styles.nowPlayingCard}>
+          <View style={styles.nowPlayingTop}>
+            <View style={[styles.nowPlayingBadge, { backgroundColor: selected.accent }]}>
+              <Text style={styles.nowPlayingEmoji}>{selected.emoji}</Text>
+            </View>
+            <View style={styles.nowPlayingText}>
+              <Text style={styles.nowPlayingTitle}>{selected.title}</Text>
+              <Text style={styles.nowPlayingSubtitle}>{selected.subtitle}</Text>
+            </View>
+          </View>
+
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+          </View>
+
+          <View style={styles.controlsRow}>
+            <TouchableOpacity
+              onPress={togglePlay}
+              activeOpacity={0.9}
+              style={[styles.playButton, isPlaying && styles.playButtonActive]}
+            >
+              <Text style={styles.playButtonText}>{isPlaying ? "Pause" : "Play"}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsPlaying(false);
+                resetProgress();
+              }}
+              activeOpacity={0.9}
+              style={styles.secondaryButton}
+            >
+              <Text style={styles.secondaryButtonText}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.sessionRow}>
+            <Text style={styles.sessionLabel}>Session</Text>
+            <View style={styles.chipsRow}>
+              {[5, 10, 15].map((m) => {
+                const active = minutes === m;
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setSessionMinutes(m)}
+                    activeOpacity={0.9}
+                    style={[styles.chip, active && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {m}m
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <Text style={styles.noteText}>
+            Design-only player UI — plug in audio sources later if needed.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Choose a Soundscape</Text>
+          <View style={styles.grid}>
+            {soundscapes.map((s) => {
+              const active = s.id === selectedId;
+              return (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => handleSelect(s.id)}
+                  activeOpacity={0.9}
+                  style={[styles.tile, active && styles.tileActive]}
+                >
+                  <View style={[styles.tileBadge, { backgroundColor: s.accent }]}>
+                    <Text style={styles.tileEmoji}>{s.emoji}</Text>
+                  </View>
+                  <Text style={styles.tileTitle}>{s.title}</Text>
+                  <Text style={styles.tileSubtitle}>{s.subtitle}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.footerCard}>
+          <Text style={styles.footerTitle}>Quick reset</Text>
+          <Text style={styles.footerText}>
+            Breathe in for 4 seconds, out for 6 seconds. Repeat 5 times.
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+    paddingHorizontal: 18,
+    paddingTop: 6,
+  },
+  safe: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    paddingTop: 6,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFFAA",
+  },
+  backText: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "700",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  hero: {
+    marginBottom: 12,
+    paddingHorizontal: 6,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 15,
+    color: "#374151",
+    lineHeight: 22,
+    fontWeight: "600",
+  },
+  nowPlayingCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  nowPlayingTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  nowPlayingBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nowPlayingEmoji: {
+    fontSize: 22,
+  },
+  nowPlayingText: {
+    flex: 1,
+  },
+  nowPlayingTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 2,
+  },
+  nowPlayingSubtitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#6B7280",
+  },
+  progressTrack: {
+    height: 10,
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  progressFill: {
+    height: 10,
+    borderRadius: 10,
+    backgroundColor: "#3B82F6",
+  },
+  controlsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  playButton: {
+    flex: 1,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  playButtonActive: {
+    backgroundColor: "#2563EB",
+  },
+  playButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+  secondaryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#111827",
+  },
+  sessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 4,
+  },
+  sessionLabel: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#374151",
+  },
+  chipsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#F3F4F6",
+  },
+  chipActive: {
+    backgroundColor: "#EEF2FF",
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#111827",
+  },
+  chipTextActive: {
+    color: "#1D4ED8",
+  },
+  noteText: {
+    marginTop: 10,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+    lineHeight: 18,
+  },
+  section: {
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 10,
+    paddingHorizontal: 6,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
+  tile: {
+    width: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+  },
+  tileActive: {
+    borderColor: "#BFDBFE",
+  },
+  tileBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  tileEmoji: {
+    fontSize: 22,
+  },
+  tileTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 2,
+  },
+  tileSubtitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#6B7280",
+    lineHeight: 16,
+  },
+  footerCard: {
+    backgroundColor: "#EEF2FF",
+    borderRadius: 18,
+    padding: 16,
+  },
+  footerTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
+  footerText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#374151",
+    lineHeight: 18,
+  },
+});

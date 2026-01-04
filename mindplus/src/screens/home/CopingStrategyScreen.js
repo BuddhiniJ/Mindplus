@@ -1,3 +1,5 @@
+// Coping Strategy screen - displays personalized strategies based on detected emotion
+// Shows severity level, confidence, and actionable coping recommendations
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { fetchCopingStrategy } from "../../services/api";
 
+// Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
   happy: { color: "#FBBF24", emoji: "😊", label: "Happy" },
   sad: { color: "#60A5FA", emoji: "😢", label: "Sad" },
@@ -31,6 +34,7 @@ const EMOTION_COLORS = {
   unknown: { color: "#6B7280", emoji: "❓", label: "Unknown" },
 };
 
+// Severity levels with descriptions and visual indicators
 const SEVERITY_INFO = {
   low: {
     label: "Low Intensity",
@@ -63,6 +67,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     loadCopingStrategy();
   }, []);
 
+  // Fetch coping strategy from API based on emotion and confidence
   const loadCopingStrategy = async () => {
     try {
       const { emotion, confidence } = route?.params || {};
@@ -79,7 +84,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
       setCopingData(result);
       setLoading(false);
 
-      // Trigger animations
+      // Play entrance animations
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -100,6 +105,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     }
   };
 
+  // Show loading spinner while fetching data
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -111,6 +117,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     );
   }
 
+  // Show error message if API call fails
   if (error) {
     return (
       <View style={styles.container}>
@@ -140,6 +147,38 @@ export default function CopingStrategyScreen({ route, navigation }) {
     EMOTION_COLORS[copingData.emotion] || EMOTION_COLORS.unknown;
   const severityInfo = SEVERITY_INFO[copingData.severity] || SEVERITY_INFO.low;
   const confidencePercentage = Math.round((copingData.confidence || 0) * 100);
+
+  const normalizedEmotion = String(copingData.emotion || "")
+    .trim()
+    .toLowerCase();
+
+  // Check if emotion is anxiety-related
+  const isAnxiety = normalizedEmotion === "anxiety";
+  // Check if emotion is stress-related
+  const isStress =
+    normalizedEmotion === "stress" || normalizedEmotion === "stressed";
+  // Determine anxiety severity band
+  const anxietyConfidence = Number(copingData.confidence);
+  const anxietyBand = !Number.isFinite(anxietyConfidence)
+    ? "medium"
+    : anxietyConfidence < 0.4
+    ? "low"
+    : anxietyConfidence < 0.7
+    ? "medium"
+    : "high";
+
+  const stressConfidence = Number(copingData.confidence);
+  const stressBand = !Number.isFinite(stressConfidence)
+    ? "medium"
+    : stressConfidence < 0.4
+    ? "low"
+    : stressConfidence < 0.7
+    ? "medium"
+    : "high";
+
+  const allowCalmSession =
+    !(isAnxiety && anxietyBand === "low") &&
+    !(isStress && stressBand === "low");
 
   return (
     <View style={styles.container}>
@@ -250,6 +289,34 @@ export default function CopingStrategyScreen({ route, navigation }) {
               : "During mild emotional fluctuations, simple awareness and small actions can prevent escalation and maintain your emotional balance."}
           </Text>
         </Animated.View>
+
+        {allowCalmSession && (
+          <Animated.View
+            style={[
+              styles.calmingCard,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <Text style={styles.calmingTitle}>Need a calming break?</Text>
+            <Text style={styles.calmingText}>
+              Start a 1-minute affirmation session tailored to your state.
+            </Text>
+            <TouchableOpacity
+              style={styles.calmingButton}
+              onPress={() =>
+                navigation.navigate("VisualAffirmationScreen", {
+                  emotion: copingData.emotion,
+                  severity: copingData.severity,
+                  confidence: copingData.confidence,
+                  strategy: copingData.strategy,
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <Text style={styles.calmingButtonText}>Open Calm Session</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Additional Resources */}
         <Animated.View
@@ -524,6 +591,48 @@ const styles = StyleSheet.create({
   },
   resourcesList: {
     gap: 12,
+  },
+  calmingCard: {
+    backgroundColor: "#E0ECFF",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  calmingTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
+  calmingText: {
+    fontSize: 14,
+    color: "#374151",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  calmingButton: {
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  calmingButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   resourceItem: {
     flexDirection: "row",

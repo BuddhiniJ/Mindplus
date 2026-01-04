@@ -368,6 +368,28 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate("SoundscapeScreen")}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#E0F2FE" },
+              ]}
+            >
+              <Text style={styles.actionIcon}>🎧</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Soundscape</Text>
+              <Text style={styles.actionDescription}>
+                Relax with calming sounds
+              </Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Bottom Spacing */}
