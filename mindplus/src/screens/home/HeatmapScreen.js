@@ -5,6 +5,11 @@ import DayDetailModal from "../../components/DayDetailModal";
 import { getDaysInMonth } from "../../utils/heatmapUtils";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { collection, addDoc, query, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  STRESS_COLORS,
+  generateMockPredictions,
+  calculateStressLevel, getStressLevel, getTodayMessage,
+} from "../../utils/heatmapUtils";
 
 const saveEvent = async (event) => {
   const user = auth.currentUser;
@@ -25,6 +30,7 @@ export default function HeatmapScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [eventsByDate, setEventsByDate] = useState({});
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [predictions, setPredictions] = useState({});
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -108,7 +114,12 @@ export default function HeatmapScreen({ navigation }) {
 
   useEffect(() => {
     fetchEventsForMonth();
+
+    const mock = generateMockPredictions(year, month);
+    setPredictions(mock);
+
   }, [month, year]);
+
 
   const updateEvent = async (eventId, updatedData) => {
     const user = auth.currentUser;
@@ -128,6 +139,18 @@ export default function HeatmapScreen({ navigation }) {
       doc(db, "users", user.uid, "calendarEvents", eventId)
     );
   };
+
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
+  const todayEventCount = (eventsByDate[todayKey] || []).length;
+
+  // Mocked base stress (from onboarding / DASS-21 cluster)
+  const BASE_STRESS = 2;
+
+  const todayStressLevel = getStressLevel(BASE_STRESS, todayEventCount);
+  const todayMessage = getTodayMessage(todayStressLevel, todayEventCount);
+
 
   return (
     <>
@@ -204,20 +227,59 @@ export default function HeatmapScreen({ navigation }) {
               const day = index + 1;
               const dateKey = `${year}-${month + 1}-${day}`;
               const hasEvents = (eventsByDate[dateKey] || []).length > 0;
+              // const prediction = predictions[dateKey];
               const eventCount = (eventsByDate[dateKey] || []).length;
+
+              const today = new Date();
+              const cellDate = new Date(year, month, day);
+
+              let stressLevel = null;
+              let stressColor = "transparent";
+
+              // Past & today → observed (mocked baseline)
+              if (cellDate <= today) {
+                stressLevel = calculateStressLevel(2, eventCount);
+                stressColor = STRESS_COLORS[stressLevel];
+              }
+
+              // Future (max 5 days) → predicted
+              else if (predictions[dateKey]) {
+                stressLevel = calculateStressLevel(
+                  predictions[dateKey].baseStress,
+                  eventCount
+                );
+                stressColor = STRESS_COLORS[stressLevel];
+              }
+
 
               return (
                 <CalendarDay
                   key={day}
                   day={day}
-                  hasEvents={hasEvents}
-                  eventCount={eventCount}
                   isToday={isToday(day)}
+                  hasEvents={eventCount > 0}
+                  eventCount={eventCount}
+                  stressColor={stressColor}
                   onPress={() => openDay(day)}
                 />
               );
             })}
           </View>
+
+          <View style={styles.todayMessageContainer}>
+            <View
+              style={[
+                styles.todayStressIndicator,
+                { backgroundColor: STRESS_COLORS[todayStressLevel] },
+              ]}
+            />
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.todayMessageTitle}>Today’s Stress Insight</Text>
+              <Text style={styles.todayMessageText}>{todayMessage}</Text>
+            </View>
+          </View>
+
         </View>
       </ScrollView>
 
@@ -247,7 +309,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
-    marginTop : 48,
+    marginTop: 48,
   },
   content: {
     padding: 16,
@@ -406,4 +468,38 @@ const styles = StyleSheet.create({
     color: "#3B82F6",
     fontWeight: "600",
   },
+  todayMessageContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 20,
+  padding: 16,
+  backgroundColor: "#FFFFFF",
+  borderRadius: 12,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.05,
+  shadowRadius: 3,
+  elevation: 2,
+},
+
+todayStressIndicator: {
+  width: 12,
+  height: 48,
+  borderRadius: 6,
+  marginRight: 12,
+},
+
+todayMessageTitle: {
+  fontSize: 14,
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: 4,
+},
+
+todayMessageText: {
+  fontSize: 14,
+  color: "#374151",
+  lineHeight: 20,
+},
+
 });

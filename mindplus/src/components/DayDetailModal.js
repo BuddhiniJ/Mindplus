@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import AddEventModal from "./AddEventModal";
 import EditEventModal from "./EditEventModal";
-
+import { calculateStressLevel, getStressMessage } from "../utils/heatmapUtils";
 
 export default function DayDetailModal({
     visible,
@@ -18,6 +18,15 @@ export default function DayDetailModal({
     const [editVisible, setEditVisible] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
 
+    const eventsCount = events.length;
+    const stressLevel = eventsCount
+        ? calculateStressLevel(2, eventsCount)
+        : null;
+
+    const stressMessage = stressLevel
+        ? getStressMessage(stressLevel, eventsCount)
+        : "No stress prediction available for this day.";
+
 
     return (
         <Modal visible={visible} transparent animationType="slide">
@@ -27,7 +36,12 @@ export default function DayDetailModal({
                     <Text style={{ fontSize: 20, fontWeight: "700" }}>
                         {date}
                     </Text>
-
+                    <View style={{ marginTop: 12, padding: 12, borderRadius: 10, backgroundColor: "#F9FAFB" }}>
+                        <Text style={{ fontWeight: "700" }}>Stress Insight</Text>
+                        <Text style={{ color: "#374151", marginTop: 4 }}>
+                            {stressMessage}
+                        </Text>
+                    </View>
                     <Text style={{ fontWeight: "600", marginTop: 16 }}>Events</Text>
 
                     {events.length === 0 ? (
