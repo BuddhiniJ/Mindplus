@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import styles from "./chatbotStyles";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -15,7 +15,7 @@ export default function ChatHeader({ onBack }) {
         <View style={styles.backContent}>
           <Ionicons
             name="chevron-back"
-            size={16}
+            size={14}
             style={{ marginLeft: -4 }}
             color="#000000ff"
           />
@@ -23,8 +23,16 @@ export default function ChatHeader({ onBack }) {
         </View>
       </TouchableOpacity>
 
-      <Text style={styles.headerTitle}>MindPlus Assistant 💙</Text>
-      <Text style={styles.headerSubtitle}>You’re safe to talk here</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>MindPlus Assistant</Text>
+          <Text style={styles.headerSubtitle}>You’re safe to talk here</Text>
+        </View>
+        <Image
+          source={require("../../../assets/bot3.jpg")}
+          style={styles.botIcon}
+        />
+      </View>
     </View>
   );
 }
