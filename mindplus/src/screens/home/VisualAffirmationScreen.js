@@ -11,7 +11,26 @@ import {
   StatusBar,
 } from "react-native";
 import VisualAffirmation from "../../components/VisualAffirmation";
+import BoxBreathingCard from "../../components/BoxBreathingCard";
+import GroundingCard from "../../components/GroundingCard";
 import { fetchCopingStrategy } from "../../services/api";
+
+const SESSION_SECONDS = 60;
+
+function normalizeEmotionKey(emotion) {
+  if (!emotion) return "unknown";
+  const key = String(emotion).trim().toLowerCase();
+  if (key === "anxious") return "anxiety";
+  return key;
+}
+
+function getConfidenceBand(confidence) {
+  const value = typeof confidence === "number" ? confidence : Number(confidence);
+  if (!Number.isFinite(value)) return "medium";
+  if (value < 0.4) return "low";
+  if (value < 0.7) return "medium";
+  return "high";
+}
 
 export default function VisualAffirmationScreen({ route, navigation }) {
   const {
@@ -32,7 +51,16 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     [emotion, severity]
   );
 
-  const showVisualSupport = true;
+  const normalizedEmotion = useMemo(
+    () => normalizeEmotionKey(emotion),
+    [emotion]
+  );
+  const isAnxiety = normalizedEmotion === "anxiety";
+  const anxietyBand = useMemo(() => getConfidenceBand(confidence), [confidence]);
+
+  const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
+  const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
+  const timerProgressAnim = useMemo(() => new Animated.Value(1), []);
 
   const [copingStrategy, setCopingStrategy] = useState(
     typeof strategyFromRoute === "string" ? strategyFromRoute : null
@@ -87,9 +115,59 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     };
   }, [confidence, emotion, strategyFromRoute, visualSupportKey]);
 
+  useEffect(() => {
+    if (!isAnxiety || anxietyBand !== "low") return;
+    // Requirement: for anxiety + low confidence, do not show this screen.
+    navigation.goBack();
+  }, [anxietyBand, isAnxiety, navigation]);
+
+  useEffect(() => {
+    // Timer pulse for anxiety exercises.
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(timerPulseAnim, {
+          toValue: 1.08,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(timerPulseAnim, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [timerPulseAnim]);
+
+  useEffect(() => {
+    if (!isAnxiety) return;
+    let mounted = true;
+    const interval = setInterval(() => {
+      if (!mounted || !started) return;
+      setSecondsRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [isAnxiety, started]);
+
+  useEffect(() => {
+    if (!isAnxiety) return;
+    const fraction = SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
+    Animated.timing(timerProgressAnim, {
+      toValue: fraction,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+  }, [isAnxiety, secondsRemaining, timerProgressAnim]);
+
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
     setStarted(true);
+    setSecondsRemaining(SESSION_SECONDS);
     bounceAnim.setValue(0);
     Animated.spring(bounceAnim, {
       toValue: 1,
@@ -124,6 +202,18 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   };
 
   const headerTitle = "Calm Session";
+
+  const anxietyExercise = useMemo(() => {
+    if (!isAnxiety) return null;
+    if (anxietyBand === "low") return "blocked";
+    if (anxietyBand === "medium") return "box";
+    return "grounding";
+  }, [anxietyBand, isAnxiety]);
+
+  if (isAnxiety && anxietyBand === "low") {
+    // Navigation back happens in effect; render nothing.
+    return null;
+  }
 
   return (
     <View style={styles.screen}>
@@ -168,27 +258,43 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           )}
         </View>
 
-        <Animated.View
-          style={{
-            transform: [
-              {
-                scale: bounceAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1, 1.04],
-                }),
-              },
-            ],
-          }}
-        >
-          <VisualAffirmation
-            key={sessionKey}
-            emotion={emotion}
-            severity={severity}
-            start={started}
-            autoStart={false}
-            durationSeconds={60}
+        {anxietyExercise === "box" ? (
+          <BoxBreathingCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={SESSION_SECONDS}
           />
-        </Animated.View>
+        ) : anxietyExercise === "grounding" ? (
+          <GroundingCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={SESSION_SECONDS}
+          />
+        ) : (
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  scale: bounceAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.04],
+                  }),
+                },
+              ],
+            }}
+          >
+            <VisualAffirmation
+              key={sessionKey}
+              emotion={emotion}
+              severity={severity}
+              start={started}
+              autoStart={false}
+              durationSeconds={60}
+            />
+          </Animated.View>
+        )}
 
         <View style={styles.ctaRow}>
           <TouchableOpacity

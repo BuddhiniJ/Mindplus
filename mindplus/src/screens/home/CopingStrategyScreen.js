@@ -141,6 +141,33 @@ export default function CopingStrategyScreen({ route, navigation }) {
   const severityInfo = SEVERITY_INFO[copingData.severity] || SEVERITY_INFO.low;
   const confidencePercentage = Math.round((copingData.confidence || 0) * 100);
 
+  const normalizedEmotion = String(copingData.emotion || "")
+    .trim()
+    .toLowerCase();
+
+  const isAnxiety = normalizedEmotion === "anxiety";
+  const isStress = normalizedEmotion === "stress" || normalizedEmotion === "stressed";
+  const anxietyConfidence = Number(copingData.confidence);
+  const anxietyBand = !Number.isFinite(anxietyConfidence)
+    ? "medium"
+    : anxietyConfidence < 0.4
+    ? "low"
+    : anxietyConfidence < 0.7
+    ? "medium"
+    : "high";
+
+  const stressConfidence = Number(copingData.confidence);
+  const stressBand = !Number.isFinite(stressConfidence)
+    ? "medium"
+    : stressConfidence < 0.4
+    ? "low"
+    : stressConfidence < 0.7
+    ? "medium"
+    : "high";
+
+  const allowCalmSession =
+    !(isAnxiety && anxietyBand === "low") && !(isStress && stressBand === "low");
+
   return (
     <View style={styles.container}>
       {/* Header Background */}
@@ -251,31 +278,33 @@ export default function CopingStrategyScreen({ route, navigation }) {
           </Text>
         </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.calmingCard,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          <Text style={styles.calmingTitle}>Need a calming break?</Text>
-          <Text style={styles.calmingText}>
-            Start a 1-minute affirmation session tailored to your state.
-          </Text>
-          <TouchableOpacity
-            style={styles.calmingButton}
-            onPress={() =>
-              navigation.navigate("VisualAffirmationScreen", {
-                emotion: copingData.emotion,
-                severity: copingData.severity,
-                confidence: copingData.confidence,
-                strategy: copingData.strategy,
-              })
-            }
-            activeOpacity={0.85}
+        {allowCalmSession && (
+          <Animated.View
+            style={[
+              styles.calmingCard,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
           >
-            <Text style={styles.calmingButtonText}>Open Calm Session</Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <Text style={styles.calmingTitle}>Need a calming break?</Text>
+            <Text style={styles.calmingText}>
+              Start a 1-minute affirmation session tailored to your state.
+            </Text>
+            <TouchableOpacity
+              style={styles.calmingButton}
+              onPress={() =>
+                navigation.navigate("VisualAffirmationScreen", {
+                  emotion: copingData.emotion,
+                  severity: copingData.severity,
+                  confidence: copingData.confidence,
+                  strategy: copingData.strategy,
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <Text style={styles.calmingButtonText}>Open Calm Session</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Additional Resources */}
         <Animated.View
