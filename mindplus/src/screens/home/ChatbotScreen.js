@@ -19,18 +19,36 @@ import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 
 const STATUS_THEME = {
-  critical: { bg: "#FEE2E2", border: "#EF4444" },
-  high_stress: { bg: "#FEF3C7", border: "#F59E0B" },
-  moderate_stress: { bg: "#E0F2FE", border: "#38BDF8" },
-  low_stress: { bg: "#DCFCE7", border: "#22C55E" },
-  normal: { bg: "#EEF2FF", border: "#6366F1" },
-  idle: { bg: "#EEF2FF", border: "#CBD5F5" },
+  critical: {
+    bg: "#F87171", // softer red for readability
+    border: "#B91C1C", // deep red border for emphasis
+  },
+  high_stress: {
+    bg: "#FB923C", // warm orange
+    border: "#C2410C", // dark orange border
+  },
+  moderate_stress: {
+    bg: "#60A5FA", // bright blue
+    border: "#2563EB", // darker blue for border
+  },
+  low_stress: {
+    bg: "#34D399", // fresh green
+    border: "#059669", // darker green
+  },
+  normal: {
+    bg: "#3B82F6", // classic primary blue
+    border: "#1E40AF", // deep blue border
+  },
+  idle: {
+    bg: "#A1A1AA", // neutral gray
+    border: "#52525B", // darker gray border
+  },
 };
 
 function formatOverallStatus(status) {
   switch (status) {
     case "critical":
-      return "Critical · Please reach out for real-time help";
+      return "Critical Please reach out for real-time help";
     case "high_stress":
       return "High stress detected";
     case "moderate_stress":
@@ -179,24 +197,12 @@ export default function ChatbotScreen({ navigation }) {
   const statusTheme = STATUS_THEME[statusThemeKey] || STATUS_THEME.idle;
 
   const overallLabel = formatOverallStatus(lastStatusMeta?.overallStatus);
-  const metaLabel = `${formatEmotion(
-    lastStatusMeta?.emotion
-  )} · ${formatStressLevel(
-    lastStatusMeta?.stressLevel
-  )} · ${formatAcademicStress(
-    lastStatusMeta?.academicStressCategory
-  )} · ${formatRiskLevel(lastStatusMeta?.riskLevel)}`;
-
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <ChatHeader onBack={() => navigation.goBack()} />
 
-        <ChatStatusCard
-          statusTheme={statusTheme}
-          overallLabel={overallLabel}
-          metaLabel={metaLabel}
-        />
+        <ChatStatusCard statusTheme={statusTheme} overallLabel={overallLabel} />
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}

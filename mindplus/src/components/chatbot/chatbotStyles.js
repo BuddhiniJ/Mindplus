@@ -198,22 +198,26 @@ const styles = StyleSheet.create({
   },
   statusCard: {
     marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 6,
-    paddingHorizontal: 14,
+    marginTop: 6,
+    marginBottom: 10,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 12, // slightly bigger, modern rounded corners
+    borderWidth: 0, // remove border for cleaner look
+    backgroundColor: "#000000ff", // white card background
+    shadowColor: "#000", // subtle shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4, // Android shadow
   },
+
   statusLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 2,
-    color: "#0F172A",
-  },
-  statusMeta: {
-    fontSize: 12,
-    color: "#475569",
+    fontSize: 14, // slightly bigger
+    fontWeight: "700", // bolder for emphasis
+    marginBottom: 4,
+    color: "#ffffffff", // darker text, modern gray-blue
+    textAlign: "center",
   },
   promptRow: {
     flexDirection: "row",
