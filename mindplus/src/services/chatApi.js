@@ -1,6 +1,7 @@
 // Base URL for the FastAPI backend.
 // You can override this with EXPO_PUBLIC_API_URL in .env if needed.
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.214.21:8000";
 
 const REQUEST_TIMEOUT = 25_000; // AI inference can be slow
 
