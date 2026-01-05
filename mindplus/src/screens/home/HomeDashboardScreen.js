@@ -405,7 +405,7 @@ export default function HomeDashboardScreen({ navigation }) {
                 Let your thoughts settle
               </Text>
             </View>
-            <Text style={styles.actionArrow}>→</Text>
+            <Text style={styles.actionArrow}> → </Text>
           </TouchableOpacity>
           //voice end
         </View>

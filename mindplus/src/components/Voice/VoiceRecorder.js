@@ -45,11 +45,11 @@ export default function VoiceRecorder({ navigation }) {
     initializeStorage();
     signInAnonymously();
     
-    // Gentle breathing animation for background
+    // Gentle breathing animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(breatheAnim, {
-          toValue: 1.05,
+          toValue: 1.04,
           duration: 4000,
           useNativeDriver: true,
         }),
@@ -65,13 +65,13 @@ export default function VoiceRecorder({ navigation }) {
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
-          toValue: -10,
-          duration: 3000,
+          toValue: -12,
+          duration: 3500,
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
-          duration: 3000,
+          duration: 3500,
           useNativeDriver: true,
         }),
       ])
@@ -105,27 +105,25 @@ export default function VoiceRecorder({ navigation }) {
     let interval;
 
     if (isRecording) {
-      // Gentle pulse for recording
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.15,
-            duration: 1500,
+            toValue: 1.12,
+            duration: 1600,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1500,
+            duration: 1600,
             useNativeDriver: true,
           }),
         ])
       ).start();
 
-      // Ripple effect
       Animated.loop(
         Animated.timing(rippleAnim, {
           toValue: 1,
-          duration: 2000,
+          duration: 2200,
           useNativeDriver: true,
         })
       ).start();
@@ -272,24 +270,24 @@ export default function VoiceRecorder({ navigation }) {
 
   const rippleOpacity = rippleAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.6, 0],
+    outputRange: [0.5, 0],
   });
 
   const rippleScale = rippleAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 2.5],
+    outputRange: [1, 2.8],
   });
 
   return (
     <LinearGradient
-      colors={['#E8F5E9', '#E1F5FE', '#F3E5F5', '#FFF9C4']}
+      colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
       style={styles.gradientBackground}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          {/* Decorative elements */}
+          {/* Decorative floating elements */}
           <Animated.View 
             style={[
               styles.floatingCircle,
@@ -304,12 +302,19 @@ export default function VoiceRecorder({ navigation }) {
               { transform: [{ scale: breatheAnim }] }
             ]} 
           />
+          <Animated.View 
+            style={[
+              styles.floatingCircle,
+              styles.circle3,
+              { transform: [{ translateY: floatAnim }] }
+            ]} 
+          />
           
           <View style={styles.card}>
             <View style={styles.headerContainer}>
-              <Text style={styles.emoji}>🌸</Text>
-              <Text style={styles.title}>Healing Space</Text>
-              <Text style={styles.subtitle}>Breathe. Speak. Release.</Text>
+              <Text style={styles.emoji}>🕊️</Text>
+              <Text style={styles.title}>Inner Peace Portal</Text>
+              <Text style={styles.subtitle}>Let your voice guide you to serenity</Text>
             </View>
 
             <View style={styles.recordingArea}>
@@ -331,7 +336,7 @@ export default function VoiceRecorder({ navigation }) {
                     ]}
                   >
                     <LinearGradient
-                      colors={['#FF9A9E', '#FAD0C4']}
+                      colors={['#7CB9E8', '#9DB4C0']}
                       style={styles.recordingGradient}
                     >
                       <View style={styles.recordingDot} />
@@ -346,7 +351,7 @@ export default function VoiceRecorder({ navigation }) {
                   ]}
                 >
                   <LinearGradient
-                    colors={['#A8E6CF', '#84D8E8']}
+                    colors={['#7CB9E8', '#B8D8E8']}
                     style={styles.micGradient}
                   >
                     <Text style={styles.micEmoji}>🎙️</Text>
@@ -358,10 +363,10 @@ export default function VoiceRecorder({ navigation }) {
 
               {isRecording && (
                 <>
-                  <Text style={styles.recordingText}>✨ Listening to your heart...</Text>
+                  <Text style={styles.recordingText}>✨ Receiving your energy...</Text>
                   {duration < 3 && (
                     <Text style={styles.hintText}>
-                      Take your time, speak from within
+                      Breathe deeply, speak your truth
                     </Text>
                   )}
                 </>
@@ -369,7 +374,7 @@ export default function VoiceRecorder({ navigation }) {
 
               {!isRecording && !loadingTranscript && !loadingAnalysis && (
                 <Text style={styles.inspiringText}>
-                  Your voice has power to heal
+                  Your words hold the key to tranquility
                 </Text>
               )}
             </View>
@@ -383,12 +388,12 @@ export default function VoiceRecorder({ navigation }) {
                     disabled={loadingTranscript || loadingAnalysis}
                   >
                     <LinearGradient
-                      colors={['#84FAB0', '#8FD3F4']}
+                      colors={['#5777AD', '#7CB9E8']}
                       style={styles.buttonGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={styles.buttonText}>Begin Release 🌊</Text>
+                      <Text style={styles.buttonText}>Begin Journey 🌊</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   
@@ -396,7 +401,7 @@ export default function VoiceRecorder({ navigation }) {
                     style={[styles.button, styles.historyButton]}
                     onPress={() => navigation.navigate('HistoryScreen')}
                   >
-                    <Text style={styles.historyButtonText}>📖 Journey Log</Text>
+                    <Text style={styles.historyButtonText}>📖 Reflection Log</Text>
                   </TouchableOpacity>
                 </>
               ) : (
@@ -405,7 +410,7 @@ export default function VoiceRecorder({ navigation }) {
                   onPress={stopRecording}
                 >
                   <LinearGradient
-                    colors={['#FFA8B8', '#FFDDE1']}
+                    colors={['#9DB4C0', '#B8D8E8']}
                     style={styles.buttonGradient}
                   >
                     <Text style={styles.buttonText}>Complete ✓</Text>
@@ -418,23 +423,38 @@ export default function VoiceRecorder({ navigation }) {
           {/* Loading States */}
           {loadingTranscript && (
             <View style={styles.loadingCard}>
-              <ActivityIndicator size="small" color="#81C784" />
-              <Text style={styles.loadingText}>✨ Capturing your words...</Text>
+              <LinearGradient
+                colors={['#FFFFFF', '#F0F4F8']}
+                style={styles.loadingGradient}
+              >
+                <ActivityIndicator size="small" color="#5777AD" />
+                <Text style={styles.loadingText}>✨ Translating your essence...</Text>
+              </LinearGradient>
             </View>
           )}
 
           {loadingAnalysis && (
             <View style={styles.loadingCard}>
-              <ActivityIndicator size="small" color="#64B5F6" />
-              <Text style={styles.loadingText}>🌿 Understanding your emotions...</Text>
+              <LinearGradient
+                colors={['#FFFFFF', '#F0F4F8']}
+                style={styles.loadingGradient}
+              >
+                <ActivityIndicator size="small" color="#7CB9E8" />
+                <Text style={styles.loadingText}>🌿 Reading your emotional landscape...</Text>
+              </LinearGradient>
             </View>
           )}
 
           {/* Transcript */}
           {transcript && !loadingTranscript && !transcript.includes("No speech") && (
             <View style={styles.transcriptCard}>
-              <Text style={styles.cardTitle}>💭 Your Expression</Text>
-              <Text style={styles.transcriptText}>{transcript}</Text>
+              <LinearGradient
+                colors={['#FFFFFF', '#F8FBFF']}
+                style={styles.transcriptGradient}
+              >
+                <Text style={styles.cardTitle}>💭 Your Sacred Words</Text>
+                <Text style={styles.transcriptText}>{transcript}</Text>
+              </LinearGradient>
             </View>
           )}
 
@@ -469,20 +489,27 @@ const styles = StyleSheet.create({
   floatingCircle: {
     position: 'absolute',
     borderRadius: 1000,
-    opacity: 0.15,
+    opacity: 0.12,
   },
   circle1: {
-    width: 300,
-    height: 300,
-    backgroundColor: '#81C784',
-    top: -100,
+    width: 320,
+    height: 320,
+    backgroundColor: '#7CB9E8',
+    top: -120,
     right: -100,
   },
   circle2: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#64B5F6',
-    bottom: 50,
+    width: 240,
+    height: 240,
+    backgroundColor: '#5777AD',
+    bottom: 80,
+    left: -80,
+  },
+  circle3: {
+    width: 180,
+    height: 180,
+    backgroundColor: '#B8D8E8',
+    top: 200,
     left: -50,
   },
   card: {
@@ -492,32 +519,34 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     elevation: 8,
-    shadowColor: '#4CAF50',
+    shadowColor: '#5777AD',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    backdropFilter: 'blur(10px)',
+    borderWidth: 1,
+    borderColor: 'rgba(87, 119, 173, 0.1)',
   },
   headerContainer: {
     alignItems: 'center',
     marginBottom: 32,
   },
   emoji: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: 52,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '700',
     textAlign: 'center',
-    color: '#2E7D32',
+    color: '#5777AD',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#66BB6A',
+    fontSize: 15,
+    color: '#7CB9E8',
     fontStyle: 'italic',
     textAlign: 'center',
+    lineHeight: 22,
   },
   recordingArea: {
     alignItems: 'center',
@@ -532,96 +561,101 @@ const styles = StyleSheet.create({
   },
   ripple: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#FFB6C1',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: '#B8D8E8',
     borderWidth: 2,
-    borderColor: '#FFA8B8',
+    borderColor: '#7CB9E8',
   },
   micIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     marginBottom: 20,
-    elevation: 8,
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+    shadowColor: '#5777AD',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 10,
   },
   micGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 60,
+    borderRadius: 65,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   micEmoji: {
-    fontSize: 56,
+    fontSize: 60,
   },
   recordingIndicator: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     marginBottom: 20,
-    elevation: 8,
-    shadowColor: '#FF9A9E',
-    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+    shadowColor: '#7CB9E8',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowRadius: 10,
   },
   recordingGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 60,
+    borderRadius: 65,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   recordingDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FF6B6B',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#5777AD',
   },
   timer: {
-    fontSize: 40,
+    fontSize: 42,
     fontWeight: '300',
     marginBottom: 12,
-    color: '#2E7D32',
-    letterSpacing: 2,
+    color: '#5777AD',
+    letterSpacing: 3,
   },
   recordingText: {
-    fontSize: 18,
-    color: '#FF6B6B',
+    fontSize: 17,
+    color: '#7CB9E8',
     fontWeight: '500',
     fontStyle: 'italic',
   },
   hintText: {
     fontSize: 14,
-    color: '#81C784',
+    color: '#9DB4C0',
     marginTop: 12,
     textAlign: 'center',
     fontStyle: 'italic',
   },
   inspiringText: {
-    fontSize: 16,
-    color: '#66BB6A',
+    fontSize: 15,
+    color: '#7CB9E8',
     marginTop: 8,
     textAlign: 'center',
     fontStyle: 'italic',
+    lineHeight: 22,
   },
   controls: {
     gap: 16,
   },
   button: {
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    elevation: 5,
+    shadowColor: '#5777AD',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
   buttonGradient: {
     paddingVertical: 18,
@@ -630,70 +664,74 @@ const styles = StyleSheet.create({
   recordButton: {},
   stopButton: {},
   historyButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 2,
-    borderColor: '#81C784',
-    borderRadius: 16,
+    borderColor: '#7CB9E8',
+    borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
   },
   historyButtonText: {
-    color: '#2E7D32',
+    color: '#5777AD',
     fontSize: 17,
     fontWeight: '600',
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '600',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
   loadingCard: {
     marginTop: 20,
-    padding: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     width: '100%',
     maxWidth: 400,
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 16,
+    overflow: 'hidden',
     elevation: 6,
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#2E7D32',
-    fontWeight: '500',
-  },
-  transcriptCard: {
-    marginTop: 20,
-    padding: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 24,
-    width: '100%',
-    maxWidth: 400,
-    elevation: 6,
-    shadowColor: '#4CAF50',
+    shadowColor: '#5777AD',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
+  loadingGradient: {
+    padding: 24,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#5777AD',
+    fontWeight: '500',
+  },
+  transcriptCard: {
+    marginTop: 20,
+    borderRadius: 24,
+    width: '100%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#5777AD',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  transcriptGradient: {
+    padding: 28,
+  },
   cardTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2E7D32',
+    color: '#5777AD',
     marginBottom: 16,
   },
   transcriptText: {
     fontSize: 16,
-    color: '#424242',
-    lineHeight: 26,
+    color: '#5777AD',
+    lineHeight: 28,
     fontStyle: 'italic',
   },
 });
