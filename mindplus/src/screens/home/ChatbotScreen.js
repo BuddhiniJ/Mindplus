@@ -48,7 +48,7 @@ const STATUS_THEME = {
 function formatOverallStatus(status) {
   switch (status) {
     case "critical":
-      return "Critical Please reach out for real-time help";
+      return "Critical Please reach out for help";
     case "high_stress":
       return "High stress detected";
     case "moderate_stress":
@@ -60,6 +60,28 @@ function formatOverallStatus(status) {
     default:
       return "Tell me how you're feeling to get a snapshot";
   }
+}
+
+function getStressPercent({ overallStatus, stressLevel } = {}) {
+  const byOverall = {
+    critical: 100,
+    high_stress: 80,
+    moderate_stress: 55,
+    low_stress: 30,
+    normal: 15,
+    idle: 0,
+  };
+  if (overallStatus && byOverall[overallStatus] != null) {
+    return byOverall[overallStatus];
+  }
+
+  const byStress = {
+    high: 75,
+    medium: 50,
+    low: 25,
+  };
+  const key = typeof stressLevel === "string" ? stressLevel.toLowerCase() : "";
+  return byStress[key] ?? 0;
 }
 
 export default function ChatbotScreen({ navigation }) {
@@ -178,12 +200,20 @@ export default function ChatbotScreen({ navigation }) {
   const statusTheme = STATUS_THEME[statusThemeKey] || STATUS_THEME.idle;
 
   const overallLabel = formatOverallStatus(lastStatusMeta?.overallStatus);
+  const stressPercent = getStressPercent({
+    overallStatus: lastStatusMeta?.overallStatus,
+    stressLevel: lastStatusMeta?.stressLevel,
+  });
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <ChatHeader onBack={() => navigation.goBack()} />
 
-        <ChatStatusCard statusTheme={statusTheme} overallLabel={overallLabel} />
+        <ChatStatusCard
+          statusTheme={statusTheme}
+          overallLabel={overallLabel}
+          stressPercent={stressPercent}
+        />
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}

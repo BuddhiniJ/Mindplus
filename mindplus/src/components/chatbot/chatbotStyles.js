@@ -212,12 +212,40 @@ const styles = StyleSheet.create({
     elevation: 4, // Android shadow
   },
 
+  statusHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   statusLabel: {
+    flex: 1,
     fontSize: 14, // slightly bigger
     fontWeight: "700", // bolder for emphasis
     marginBottom: 4,
     color: "#ffffffff", // darker text, modern gray-blue
-    textAlign: "center",
+    textAlign: "left",
+  },
+  statusPercentText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffffff",
+  },
+  statusSubLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.9)",
+    marginBottom: 8,
+  },
+  statusBarTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.35)",
+    overflow: "hidden",
+  },
+  statusBarFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
   },
   promptRow: {
     flexDirection: "row",
@@ -338,7 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
 
     // Primary calm blue
-    backgroundColor: "#2563EB",
+    backgroundColor: "#ff0000ff",
 
     alignItems: "center",
 
@@ -356,7 +384,7 @@ const styles = StyleSheet.create({
   },
 
   callNowButtonDisabled: {
-    backgroundColor: "#CBD5E1",
+    backgroundColor: "#f50000ff",
     shadowOpacity: 0.05,
   },
 
