@@ -10,6 +10,7 @@ import {
   generateMockPredictions,
   calculateStressLevel, getStressLevel, getTodayMessage,
 } from "../../utils/heatmapUtils";
+import { Ionicons } from '@expo/vector-icons'; // Assuming Expo, otherwise use react-native-vector-icons
 
 const saveEvent = async (event) => {
   const user = auth.currentUser;
@@ -156,16 +157,16 @@ export default function HeatmapScreen({ navigation }) {
     <>
       <ScrollView style={styles.container}>
         <View style={styles.content}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
+
 
           {/* Header with Title and Today Button */}
           <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
             <Text style={styles.title}>Calendar</Text>
             <TouchableOpacity onPress={goToToday} style={styles.todayButton}>
               <Text style={styles.todayButtonText}>Today</Text>
@@ -226,31 +227,26 @@ export default function HeatmapScreen({ navigation }) {
             {[...Array(daysInMonth)].map((_, index) => {
               const day = index + 1;
               const dateKey = `${year}-${month + 1}-${day}`;
-              const hasEvents = (eventsByDate[dateKey] || []).length > 0;
-              // const prediction = predictions[dateKey];
-              const eventCount = (eventsByDate[dateKey] || []).length;
+              const eventCount = (eventsByDate[dateKey] || [])?.length || 0;
 
               const today = new Date();
               const cellDate = new Date(year, month, day);
 
-              let stressLevel = null;
-              let stressColor = "transparent";
+              let stressColor = null; // Use null for no color instead of "transparent" string
 
-              // Past & today → observed (mocked baseline)
+              // Past & today 
               if (cellDate <= today) {
-                stressLevel = calculateStressLevel(2, eventCount);
-                stressColor = STRESS_COLORS[stressLevel];
+                const level = calculateStressLevel(2, eventCount);
+                stressColor = STRESS_COLORS[level];
               }
-
-              // Future (max 5 days) → predicted
+              // Future predicted (max 5 days)
               else if (predictions[dateKey]) {
-                stressLevel = calculateStressLevel(
+                const level = calculateStressLevel(
                   predictions[dateKey].baseStress,
                   eventCount
                 );
-                stressColor = STRESS_COLORS[stressLevel];
+                stressColor = STRESS_COLORS[level];
               }
-
 
               return (
                 <CalendarDay
@@ -258,8 +254,7 @@ export default function HeatmapScreen({ navigation }) {
                   day={day}
                   isToday={isToday(day)}
                   hasEvents={eventCount > 0}
-                  eventCount={eventCount}
-                  stressColor={stressColor}
+                  stressColor={stressColor} // Component now handles null as transparent
                   onPress={() => openDay(day)}
                 />
               );
@@ -469,37 +464,44 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   todayMessageContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginTop: 20,
-  padding: 16,
-  backgroundColor: "#FFFFFF",
-  borderRadius: 12,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.05,
-  shadowRadius: 3,
-  elevation: 2,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
 
-todayStressIndicator: {
-  width: 12,
-  height: 48,
-  borderRadius: 6,
-  marginRight: 12,
-},
+  todayStressIndicator: {
+    width: 12,
+    height: 48,
+    borderRadius: 6,
+    marginRight: 12,
+  },
 
-todayMessageTitle: {
-  fontSize: 14,
-  fontWeight: "700",
-  color: "#111827",
-  marginBottom: 4,
-},
-
-todayMessageText: {
-  fontSize: 14,
-  color: "#374151",
-  lineHeight: 20,
-},
+  todayMessageTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  todayMessageText: {
+    fontSize: 14,
+    color: "#374151",
+    lineHeight: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#5FA1D5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
 });

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollView, View, Text, TouchableOpacity, Modal } from "react-native";
 import { DASS21_QUESTIONS } from "../../utils/dass21Questions";
 import QuestionCard from "../../components/QuestionCard";
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
@@ -141,7 +142,10 @@ export default function Dass21Screen3({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <Text style={styles.title}>DASS-21 Assessment</Text>
           <Text style={styles.subtitle}>Part 3 of 3 - Final Section</Text>
@@ -161,7 +165,7 @@ export default function Dass21Screen3({ route, navigation }) {
             {Object.keys(answers).length} of {questions.length} answered
           </Text>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Questions */}
       <ScrollView 
@@ -169,11 +173,10 @@ export default function Dass21Screen3({ route, navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.finalCard}>
-          <Text style={styles.finalCardEmoji}>🎯</Text>
-          <Text style={styles.finalCardTitle}>Almost Done!</Text>
-          <Text style={styles.finalCardText}>
-            This is the final section. After completing these questions, you'll receive your personalized assessment results.
+        <View style={styles.instructionsCard}>
+          <Text style={styles.instructionsTitle}>Instructions</Text>
+          <Text style={styles.instructionsText}>
+            Please read each statement and select a number that indicates how much the statement applied to you over the past week.
           </Text>
         </View>
 
@@ -206,7 +209,7 @@ export default function Dass21Screen3({ route, navigation }) {
             activeOpacity={0.8}
           >
             <Text style={styles.completeButtonText}>
-              {Object.keys(answers).length === questions.length ? "View Results" : "Complete Survey"}
+              {Object.keys(answers).length === questions.length ? "Complete Survey" : "Complete Survey"}
             </Text>
             <Text style={styles.completeButtonIcon}>
               {Object.keys(answers).length === questions.length ? "✓" : "→"}
@@ -255,12 +258,12 @@ const styles = {
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: "#ffffffff",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#ffffffff",
     fontWeight: "500",
   },
   overallProgressBadge: {
@@ -292,7 +295,7 @@ const styles = {
   },
   progressText: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "#ffffffff",
     marginTop: 8,
     fontWeight: "500",
   },
@@ -302,31 +305,24 @@ const styles = {
   scrollContent: {
     padding: 20,
   },
-  finalCard: {
-    backgroundColor: "#FEF3C7",
+  instructionsCard: {
+    backgroundColor: "#EEF2FF",
     borderLeftWidth: 4,
-    borderLeftColor: "#F59E0B",
+    borderLeftColor: "#3B82F6",
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     marginBottom: 20,
-    alignItems: "center",
   },
-  finalCardEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  finalCardTitle: {
-    fontSize: 18,
+  instructionsTitle: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#92400E",
+    color: "#1E40AF",
     marginBottom: 8,
   },
-  finalCardText: {
+  instructionsText: {
     fontSize: 14,
-    color: "#78350F",
+    color: "#374151",
     lineHeight: 20,
-    fontWeight: "500",
-    textAlign: "center",
   },
   buttonContainer: {
     flexDirection: "row",
