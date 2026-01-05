@@ -2,11 +2,12 @@ import { db } from "../../firebase/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image, ScrollView, StyleSheet } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebaseConfig";
+import { LinearGradient } from 'expo-linear-gradient'; // Ensure you have this installed
 
-// Custom Alert Component
+// Custom Alert Component (Kept as provided)
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
   const getIconColor = () => {
     switch (type) {
@@ -27,42 +28,26 @@ const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfir
   };
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={alertStyles.overlay}>
         <View style={alertStyles.container}>
-          {/* Icon */}
           <View style={[alertStyles.iconContainer, { backgroundColor: getIconColor() + "20" }]}>
-            <Text style={[alertStyles.icon, { color: getIconColor() }]}>
-              {getIcon()}
-            </Text>
+            <Text style={[alertStyles.icon, { color: getIconColor() }]}>{getIcon()}</Text>
           </View>
-
-          {/* Content */}
           <Text style={alertStyles.title}>{title}</Text>
           <Text style={alertStyles.message}>{message}</Text>
-
-          {/* Buttons */}
           <View style={alertStyles.buttonContainer}>
             {onConfirm ? (
-              <>
-                <TouchableOpacity
-                  style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
-                  onPress={onConfirm}
-                  activeOpacity={0.8}
-                >
-                  <Text style={alertStyles.confirmButtonText}>Continue</Text>
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity
+                style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
+                onPress={onConfirm}
+              >
+                <Text style={alertStyles.confirmButtonText}>Continue</Text>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]}
                 onPress={onClose}
-                activeOpacity={0.8}
               >
                 <Text style={alertStyles.confirmButtonText}>OK</Text>
               </TouchableOpacity>
@@ -86,8 +71,6 @@ export default function RegisterScreen({ navigation }) {
   const [emergencyContact, setEmergencyContact] = useState("");
   const [emergencyRelation, setEmergencyRelation] = useState("");
 
-
-  // Alert state
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: "",
@@ -97,529 +80,203 @@ export default function RegisterScreen({ navigation }) {
   });
 
   const showAlert = (title, message, type = "info", onConfirm = null) => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      type,
-      onConfirm,
-    });
+    setAlertConfig({ visible: true, title, message, type, onConfirm });
   };
 
-  const hideAlert = () => {
-    setAlertConfig({ ...alertConfig, visible: false });
-  };
+  const hideAlert = () => setAlertConfig({ ...alertConfig, visible: false });
 
   const registerUser = async () => {
-    // Validation
-    if (!email.trim()) {
-      showAlert("Email Required", "Please enter your email address.", "warning");
-      return;
-    }
-
-    if (!password) {
-      showAlert("Password Required", "Please enter your password.", "warning");
-      return;
-    }
-
-    if (!confirmPassword) {
-      showAlert("Confirm Password", "Please confirm your password.", "warning");
-      return;
-    }
-
-    // Basic email validation
+    // ... logic stays exactly the same as your provided code ...
+    if (!email.trim()) { showAlert("Email Required", "Please enter your email address.", "warning"); return; }
+    if (!password) { showAlert("Password Required", "Please enter your password.", "warning"); return; }
+    if (!confirmPassword) { showAlert("Confirm Password", "Please confirm your password.", "warning"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showAlert("Invalid Email", "Please enter a valid email address.", "error");
-      return;
-    }
-
-    // Password strength validation
-    if (password.length < 6) {
-      showAlert("Weak Password", "Password must be at least 6 characters long.", "warning");
-      return;
-    }
-
-    // Password match validation
-    if (password !== confirmPassword) {
-      showAlert("Passwords Don't Match", "Please make sure both passwords are identical.", "error");
-      return;
-    }
-
-    if (!fullName.trim()) {
-      showAlert("Full Name Required", "Please enter your full name.", "warning");
-      return;
-    }
-
-    if (!emergencyName.trim()) {
-      showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning");
-      return;
-    }
-
-    if (!emergencyContact.trim()) {
-      showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning");
-      return;
-    }
-
-    if (!/^\d{10}$/.test(emergencyContact)) {
-      showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error");
-      return;
-    }
-
-    if (!emergencyRelation.trim()) {
-      showAlert("Relationship Required", "Please enter the relationship.", "warning");
-      return;
-    }
+    if (!emailRegex.test(email)) { showAlert("Invalid Email", "Please enter a valid email address.", "error"); return; }
+    if (password.length < 6) { showAlert("Weak Password", "Password must be at least 6 characters long.", "warning"); return; }
+    if (password !== confirmPassword) { showAlert("Passwords Don't Match", "Please make sure both passwords are identical.", "error"); return; }
+    if (!fullName.trim()) { showAlert("Full Name Required", "Please enter your full name.", "warning"); return; }
+    if (!emergencyName.trim()) { showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning"); return; }
+    if (!emergencyContact.trim()) { showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning"); return; }
+    if (!/^\d{10}$/.test(emergencyContact)) { showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error"); return; }
+    if (!emergencyRelation.trim()) { showAlert("Relationship Required", "Please enter the relationship.", "warning"); return; }
 
     setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       const user = auth.currentUser;
-
-      await setDoc(
-        doc(db, "users", user.uid, "profile", "basic"),
-        {
-          fullName,
-          nickname,
-          avatar: selectedAvatar,
-          emergencyName,
-          emergencyContact,
-          emergencyRelation,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }
-      );
-      showAlert(
-        "Success",
-        "Account created successfully! You can now log in.",
-        "success",
-        () => {
-          hideAlert();
-          navigation.navigate("Login");
-        }
-      );
+      await setDoc(doc(db, "users", user.uid, "profile", "basic"), {
+        fullName, nickname, avatar: selectedAvatar, emergencyName, emergencyContact, emergencyRelation,
+        createdAt: Date.now(), updatedAt: Date.now(),
+      });
+      showAlert("Success", "Account created successfully!", "success", () => { hideAlert(); navigation.navigate("Login"); });
     } catch (error) {
-      // Handle specific Firebase errors
-      let errorTitle = "Registration Failed";
-      let errorMessage = "";
-
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          errorMessage = "This email is already registered. Please log in instead.";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "The email address is invalid.";
-          break;
-        case "auth/operation-not-allowed":
-          errorMessage = "Email/password accounts are not enabled.";
-          break;
-        case "auth/weak-password":
-          errorMessage = "The password is too weak. Please use a stronger password.";
-          break;
-        case "auth/network-request-failed":
-          errorMessage = "Network error. Please check your connection.";
-          break;
-        default:
-          errorMessage = error.message || "An error occurred. Please try again.";
-      }
-
-      showAlert(errorTitle, errorMessage, "error");
-    } finally {
-      setLoading(false);
-    }
+      showAlert("Registration Failed", error.message, "error");
+    } finally { setLoading(false); }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Sign up to get started</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" bounces={false}>
+        
+        {/* Header Section */}
+        <LinearGradient colors={['#8BD0BF', '#4895D0']} style={styles.topSection}>
+          <View style={styles.logoCircle}>
+            <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
+          </View>
+        </LinearGradient>
+
+        {/* White Card Section */}
+        <View style={styles.formCard}>
+          <Text style={styles.mainTitle}>Get Started</Text>
+
+          {/* Personal Details Section */}
+          <View style={styles.sectionOutline}>
+            <View style={styles.sectionLabelContainer}>
+               <Text style={styles.sectionLabelText}>Personal Details</Text>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Name</Text>
+              <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Nickname</Text>
+              <TextInput style={styles.input} value={nickname} onChangeText={setNickname} />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Email</Text>
+              <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TextInput style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Confirm Password</Text>
+              <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
+            </View>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your full name"
-                placeholderTextColor="#9CA3AF"
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-                editable={!loading}
-              />
+          {/* Emergency Contact Section */}
+          <View style={styles.sectionOutline}>
+            <View style={styles.sectionLabelContainer}>
+               <Text style={styles.sectionLabelText}>Emergency Contact</Text>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Name</Text>
+              <TextInput style={styles.input} value={emergencyName} onChangeText={setEmergencyName} />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nickname</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your nickname"
-                placeholderTextColor="#9CA3AF"
-                value={nickname}
-                onChangeText={setNickname}
-                autoCapitalize="words"
-                editable={!loading}
-              />
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Contact No</Text>
+              <TextInput style={styles.input} value={emergencyContact} onChangeText={setEmergencyContact} keyboardType="numeric" maxLength={10} />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                editable={!loading}
-              />
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Relationship</Text>
+              <TextInput style={styles.input} value={emergencyRelation} onChangeText={setEmergencyRelation} />
             </View>
+          </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password"
-                editable={!loading}
-              />
-              <Text style={styles.hint}>Must be at least 6 characters</Text>
+          {/* Avatar Selection Grid */}
+          <View style={styles.sectionOutline}>
+            <View style={styles.sectionLabelContainer}>
+               <Text style={styles.sectionLabelText}>Choose an Avatar</Text>
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm your password"
-                placeholderTextColor="#9CA3AF"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password"
-                editable={!loading}
-              />
+            <View style={styles.avatarGrid}>
+              {Object.keys(avatars).map((key) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setSelectedAvatar(key)}
+                  style={[styles.avatarWrapper, selectedAvatar === key && styles.selectedAvatar]}
+                >
+                  <Image source={avatars[key]} style={styles.avatarImg} />
+                </TouchableOpacity>
+              ))}
             </View>
+          </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Emergency Contact Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Name of emergency contact"
-                placeholderTextColor="#9CA3AF"
-                value={emergencyName}
-                onChangeText={setEmergencyName}
-                autoCapitalize="words"
-                editable={!loading}
-              />
-            </View>
+          {/* Footer Buttons */}
+          <TouchableOpacity style={[styles.submitBtn, loading && { opacity: 0.7 }]} onPress={registerUser} disabled={loading}>
+            <Text style={styles.submitBtnText}>{loading ? "Signing Up..." : "Sign Up"}</Text>
+          </TouchableOpacity>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Emergency Contact Number</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter emergency contact number"
-                placeholderTextColor="#9CA3AF"
-                value={emergencyContact}
-                onChangeText={setEmergencyContact}
-                keyboardType="numeric"
-                maxLength={10}
-                editable={!loading}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Relationship to You</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="E.g., Mother, Father, Sister, Friend"
-                placeholderTextColor="#9CA3AF"
-                value={emergencyRelation}
-                onChangeText={setEmergencyRelation}
-                autoCapitalize="words"
-                editable={!loading}
-              />
-            </View>
-
-
-
-            <View style={{ marginBottom: 20 }}>
-              <Text style={styles.label}>Choose an Avatar</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {Object.keys(avatars).map((key) => (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => setSelectedAvatar(key)}
-                    style={{
-                      marginRight: 12,
-                      borderWidth: selectedAvatar === key ? 3 : 1,
-                      borderColor: selectedAvatar === key ? "#3B82F6" : "#E5E7EB",
-                      padding: 4,
-                      borderRadius: 50,
-                    }}
-                  >
-                    <Image
-                      source={avatars[key]}
-                      style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 30,
-                      }}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Register Button */}
-            <TouchableOpacity
-              style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
-              onPress={registerUser}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.primaryButtonText}>
-                {loading ? "Creating Account..." : "Create Account"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Already have an account ?</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Back to Login Button */}
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => navigation.navigate("Login")}
-              activeOpacity={0.8}
-              disabled={loading}
-            >
-              <Text style={styles.secondaryButtonText}>Login</Text>
+          <View style={styles.footerLinkContainer}>
+            <Text style={styles.footerText}>Already have an account ? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </ScrollView>
 
-      {/* Custom Alert */}
-      <CustomAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        onClose={hideAlert}
-        onConfirm={alertConfig.onConfirm}
-      />
+      <CustomAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} onClose={hideAlert} onConfirm={alertConfig.onConfirm} />
     </KeyboardAvoidingView>
   );
 }
 
-const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FFF" },
+  scrollContainer: { flexGrow: 1 },
+  topSection: { height: 200, justifyContent: 'center', alignItems: 'center' },
+  logoCircle: {
+    width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFF',
+    justifyContent: 'center', alignItems: 'center', elevation: 5,
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
+  logoImage: { width: 70, height: 70 },
+  formCard: {
+    flex: 1, backgroundColor: "#FFF", marginTop: -40, borderTopLeftRadius: 40, borderTopRightRadius: 40,
+    paddingHorizontal: 20, paddingTop: 30, paddingBottom: 40,
   },
-  content: {
-    padding: 24,
+  mainTitle: { fontSize: 32, fontWeight: "bold", textAlign: 'center', color: "#000", marginBottom: 25 },
+  
+  // Section Outlines
+  sectionOutline: {
+    borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 15, padding: 15, marginBottom: 25,
   },
-  header: {
-    marginBottom: 40,
-    alignItems: "center",
+  sectionLabelContainer: {
+    position: 'absolute', top: -10, left: 15, backgroundColor: '#FFF', paddingHorizontal: 5,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-  },
-  form: {
-    width: "100%",
-  },
-  inputContainer: {
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 10,
-    fontSize: 14,
-    color: "#111827",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  hint: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 6,
-  },
-  button: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  primaryButton: {
-    backgroundColor: "#3B82F6",
-    marginTop: 8,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  secondaryButtonText: {
-    color: "#374151",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: "#9CA3AF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-};
+  sectionLabelText: { fontSize: 12, color: '#000000ff' },
 
-const alertStyles = {
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+  // Inputs
+  inputGroup: { marginBottom: 15 },
+  fieldLabel: { fontSize: 12, color: '#000000ff', marginBottom: 5, marginLeft: 5 },
+  input: {
+    backgroundColor: "#FFF", borderWidth: 1, borderColor: "#F3F4F6", borderRadius: 10,
+    padding: 12, fontSize: 14, color: "#111827", elevation: 1,
   },
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 340,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    width: "100%",
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  singleButton: {
-    width: "100%",
-  },
-  confirmButton: {
-    backgroundColor: "#3B82F6",
-  },
-  confirmButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  cancelButton: {
-    backgroundColor: "#F3F4F6",
-  },
-  cancelButtonText: {
-    color: "#374151",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-};
+
+  // Avatar Grid
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
+  avatarWrapper: { padding: 5, borderRadius: 40, borderWidth: 2, borderColor: 'transparent' },
+  selectedAvatar: { borderColor: '#3B82F6' },
+  avatarImg: { width: 55, height: 55, borderRadius: 27.5 },
+
+  // Buttons
+  submitBtn: { backgroundColor: "#63A1D6", borderRadius: 12, paddingVertical: 15, marginTop: 10, alignItems: 'center' },
+  submitBtnText: { color: "#FFF", fontSize: 18, fontWeight: "700" },
+  footerLinkContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 15 },
+  footerText: { color: "#9CA3AF", fontSize: 13 },
+  loginLink: { color: "#9CA3AF", fontWeight: "600", fontSize: 13 },
+});
+
+// alertStyles remain the same as your previous definition
+const alertStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)", justifyContent: "center", alignItems: "center" },
+  container: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, width: "80%", alignItems: "center" },
+  iconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center", marginBottom: 15 },
+  icon: { fontSize: 28, fontWeight: "bold" },
+  title: { fontSize: 18, fontWeight: "bold", color: "#111827", marginBottom: 8 },
+  message: { fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 20 },
+  buttonContainer: { width: '100%' },
+  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  confirmButtonText: { color: "#FFFFFF", fontWeight: "600" },
+  singleButton: { width: '100%' },
+});

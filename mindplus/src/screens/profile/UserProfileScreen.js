@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Image, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Image, ScrollView, StyleSheet } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
+import { Ionicons } from '@expo/vector-icons'; // Assuming Expo, otherwise use react-native-vector-icons
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-  const [fingerprint, setFingerprint] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -18,22 +18,12 @@ export default function ProfileScreen({ navigation }) {
       const user = auth.currentUser;
       if (!user) return;
 
-      // Load profile
       const profileRef = doc(db, "users", user.uid, "profile", "basic");
       const profileSnap = await getDoc(profileRef);
 
       if (profileSnap.exists()) {
         setProfile(profileSnap.data());
       }
-
-      // Load fingerprint
-      const fpRef = doc(db, "users", user.uid, "fingerprint", "current");
-      const fpSnap = await getDoc(fpRef);
-
-      if (fpSnap.exists()) {
-        setFingerprint(fpSnap.data());
-      }
-
       setLoading(false);
     } catch (error) {
       console.error("Profile load error:", error);
@@ -50,469 +40,180 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const getClusterInfo = (label) => {
-    const clusterMap = {
-      anxiety_reactive: {
-        emoji: "⏰",
-        title: "Anxiety Reactive",
-        color: "#F59E0B"
-      },
-      stress_dominant: {
-        emoji: "👥",
-        title: "Stress Dominant",
-        color: "#8B5CF6"
-      },
-      depression_prone: {
-        emoji: "🎯",
-        title: "Depression Prone",
-        color: "#3B82F6"
-      },
-      balanced_low_stress: {
-        emoji: "🎯",
-        title: "Balanced Low Stress",
-        color: "#3B82F6"
-      },
-      processing: {
-        emoji: "🔄",
-        title: "Processing",
-        color: "#6B7280"
-      }
-    };
-
-    return clusterMap[label] || {
-      emoji: "📊",
-      title: label || "Unknown",
-      color: "#6B7280"
-    };
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text style={styles.loadingText}>Loading Profile...</Text>
+        <ActivityIndicator size="large" color="#5FA1D5" />
       </View>
     );
   }
 
   const user = auth.currentUser;
-  const clusterInfo = fingerprint ? getClusterInfo(fingerprint.label) : null;
 
   return (
     <View style={styles.container}>
-      {/* Header Background */}
-      <View style={styles.headerBackground} />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.navigate("HomeDashboardScreen")}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Profile</Text>
+        <View style={{ width: 40 }} /> 
+      </View>
 
-        {/* Profile Header Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarSection}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={avatars[profile?.avatar || "avatar1"]}
-                style={styles.avatar}
-              />
-              <View style={styles.avatarBadge}>
-                <Text style={styles.avatarBadgeText}>✓</Text>
-              </View>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.nickname}>{profile?.nickname || "User"}</Text>
-              <Text style={styles.email}>{user?.email ?? "N/A"}</Text>
-            </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={avatars[profile?.avatar || "avatar1"]}
+              style={styles.avatar}
+            />
           </View>
+          <Text style={styles.nickname}>{profile?.nickname || "User"}</Text>
+          <Text style={styles.email}>{user?.email ?? "N/A"}</Text>
         </View>
 
-        {/* Stress Fingerprint Card */}
-        {/* <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Stress Fingerprint</Text>
-
-          {fingerprint && clusterInfo ? (
-            <>
-              <View style={[styles.clusterBanner, { backgroundColor: clusterInfo.color + "20" }]}>
-                <Text style={styles.clusterEmoji}>{clusterInfo.emoji}</Text>
-                <View style={styles.clusterTextContainer}>
-                  <Text style={styles.clusterTitle}>{clusterInfo.title}</Text>
-                  <Text style={styles.clusterSubtitle}>Your stress pattern type</Text>
-                </View>
-              </View>
-
-              <View style={styles.fingerprintDetails}>
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Confidence Score</Text>
-                  <View style={styles.confidenceContainer}>
-                    <Text style={styles.detailValue}>
-                      {(fingerprint.confidence * 100).toFixed(1)}%
-                    </Text>
-                    <View style={styles.confidenceBar}>
-                      <View 
-                        style={[
-                          styles.confidenceBarFill,
-                          { 
-                            width: `${fingerprint.confidence * 100}%`,
-                            backgroundColor: clusterInfo.color 
-                          }
-                        ]} 
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Last Updated</Text>
-                  <Text style={styles.detailValue}>
-                    {new Date(fingerprint.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-            </>
-          ) : (
-            <View style={styles.noFingerprintContainer}>
-              <Text style={styles.noFingerprintIcon}>📊</Text>
-              <Text style={styles.noFingerprintTitle}>No Fingerprint Available</Text>
-              <Text style={styles.noFingerprintText}>
-                Complete the DASS-21 assessment to generate your stress fingerprint.
-              </Text>
-            </View>
-          )}
-        </View> */}
-
-        {/* Action Buttons */}
-        <View style={styles.actionsSection}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.primaryButton]}
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          <TouchableOpacity 
+            style={styles.menuItem}
             onPress={() => navigation.navigate("EditProfileScreen")}
-            activeOpacity={0.8}
           >
-            <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>✏️</Text>
-              <Text style={styles.buttonText}>Edit Profile</Text>
-            </View>
+            <Ionicons name="person-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+            <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
+          <TouchableOpacity 
+            style={styles.menuItem}
             onPress={() => navigation.navigate("Dass21Screen1")}
-            activeOpacity={0.8}
           >
-            <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>📝</Text>
-              <Text style={styles.buttonText}>Retake Assessment</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.dangerButton]}
-            onPress={handleLogout}
-            activeOpacity={0.8}
-          >
-            <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>🚪</Text>
-              <Text style={[styles.buttonText, styles.dangerButtonText]}>Logout</Text>
-            </View>
+            <Ionicons name="document-text-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+            <Text style={styles.menuText}>Retake Assessment</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacer} />
+        {/* Logout Button */}
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={handleLogout}
+        >
+          <Ionicons name="exit-outline" size={24} color="#A52A2A" style={styles.menuIcon} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  headerBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    backgroundColor: "#EEF2FF",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-  },
-  profileCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  avatarSection: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 20,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 3,
-    borderColor: "#3B82F6",
-  },
-  avatarBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#10B981",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#5FA1D5",
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "bold",
+    color: "#000",
   },
-  profileInfo: {
-    flex: 1,
+  scrollContent: {
+    alignItems: "center",
+    paddingBottom: 40,
+  },
+  avatarSection: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: "#5FA1D5",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "#E3F2FD",
   },
   nickname: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 15,
   },
   email: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#777",
+    fontStyle: "italic",
   },
-  sectionCard: {
+  menuSection: {
+    width: "90%",
+    marginBottom: 100,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    padding: 18,
+    borderRadius: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    // Shadow for iOS
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  infoIcon: {
-    fontSize: 20,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginBottom: 4,
-    fontWeight: "500",
-  },
-  infoValue: {
-    fontSize: 16,
-    color: "#111827",
-    fontWeight: "600",
-  },
-  smallAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E7EB",
-    marginVertical: 8,
-  },
-  clusterBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  clusterEmoji: {
-    fontSize: 40,
-    marginRight: 16,
-  },
-  clusterTextContainer: {
-    flex: 1,
-  },
-  clusterTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  clusterSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
-  },
-  fingerprintDetails: {
-    gap: 12,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  detailValue: {
-    fontSize: 15,
-    color: "#111827",
-    fontWeight: "600",
-  },
-  confidenceContainer: {
-    alignItems: "flex-end",
-    flex: 1,
-    marginLeft: 16,
-  },
-  confidenceBar: {
-    width: "100%",
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-    marginTop: 6,
-    overflow: "hidden",
-  },
-  confidenceBarFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  noFingerprintContainer: {
-    alignItems: "center",
-    paddingVertical: 32,
-  },
-  noFingerprintIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  noFingerprintTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  noFingerprintText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  actionsSection: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  actionButton: {
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    // Elevation for Android
     elevation: 2,
   },
-  primaryButton: {
-    backgroundColor: "#6366F1",
+  menuIcon: {
+    marginRight: 15,
   },
-  secondaryButton: {
-    backgroundColor: "#3B82F6",
+  menuText: {
+    fontSize: 18,
+    color: "#000",
+    fontWeight: "500",
   },
-  dangerButton: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#EF4444",
-  },
-  buttonContent: {
+  logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#FFF0F0",
+    width: "90%",
+    padding: 18,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#FFDADA",
   },
-  buttonIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  logoutText: {
+    fontSize: 18,
+    color: "#000",
+    fontWeight: "500",
   },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  dangerButtonText: {
-    color: "#EF4444",
-  },
-  bottomSpacer: {
-    height: 40,
-  },
-  backButton: {
-    width: 60,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#3B82F6",
-    fontWeight: "600",
-  },
-};
+});

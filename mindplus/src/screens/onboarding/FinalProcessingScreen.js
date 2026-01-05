@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, Animated } from "react-native";
+import { View, Text, ActivityIndicator, Animated, StyleSheet, Image } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
+// Import the Gradient component
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Example ML API URL (replace with your real endpoint)
-const ML_API_URL = "http://192.168.1.100:8000/predict";
+const ML_API_URL = "http://192.168.114.78:8000/predict";
 
 export default function FinalProcessingScreen({ route, navigation }) {
   const { allAnswers, scores } = route.params;
@@ -28,16 +29,11 @@ export default function FinalProcessingScreen({ route, navigation }) {
     try {
       const user = auth.currentUser;
       if (!user) {
-        alert("User not logged in");
         navigation.navigate("Login");
         return;
       }
-
       const uid = user.uid;
 
-      // --------------------------
-      // 1️⃣ SAVE RAW DATA TO FIRESTORE
-      // --------------------------
       setCurrentStep(1);
       await setDoc(doc(db, "users", uid, "assessments", "dass21"), {
         timestamp: new Date().toISOString(),
@@ -46,19 +42,8 @@ export default function FinalProcessingScreen({ route, navigation }) {
         version: 1
       });
 
-      console.log("DASS-21 data saved successfully.");
-
-      // --------------------------
-      // 2️⃣ SEND SCORES TO ML API FOR CLUSTERING
-      // --------------------------
       setCurrentStep(2);
-
-      // Only call API if URL is provided
-      let fingerprintData = {
-        clusterId: 0,
-        label: "processing",
-        confidence: 0
-      };
+      let fingerprintData = { clusterId: 0, label: "processing", confidence: 0 };
 
       if (ML_API_URL && ML_API_URL.trim() !== "") {
         const response = await fetch(ML_API_URL, {
@@ -70,47 +55,30 @@ export default function FinalProcessingScreen({ route, navigation }) {
             depression: scores.depression
           })
         });
-
-        if (!response.ok) {
-          throw new Error("ML API returned an error");
-        }
-
-        fingerprintData = await response.json();
-        console.log("ML fingerprint:", fingerprintData);
+        if (response.ok) fingerprintData = await response.json();
       } else {
-        console.log("ML API URL not configured, using default fingerprint");
-        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      // --------------------------
-      // 3️⃣ SAVE FINGERPRINT TO FIRESTORE
-      // --------------------------
       setCurrentStep(3);
       await setDoc(doc(db, "users", uid, "fingerprint", "current"), {
         ...fingerprintData,
         createdAt: new Date().toISOString()
       });
 
-      console.log("Fingerprint saved to Firestore.");
-
-      // --------------------------
-      // 4️⃣ NAVIGATE TO DASHBOARD
-      // --------------------------
       setCurrentStep(4);
       await new Promise(resolve => setTimeout(resolve, 800));
       navigation.replace("HomeDashboardScreen");
 
     } catch (error) {
       console.error("Processing error:", error);
-      alert("Something went wrong while processing your data.");
     }
   };
 
   const steps = [
     { id: 1, label: "Saving your responses", icon: "💾" },
     { id: 2, label: "Analyzing patterns", icon: "🧠" },
-    { id: 3, label: "Creating your profile", icon: "📊" },
+    { id: 3, label: "Creating your profile", icon: "👤" },
     { id: 4, label: "Preparing dashboard", icon: "✨" }
   ];
 
@@ -121,34 +89,31 @@ export default function FinalProcessingScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Animated Background Gradient Effect */}
-      <View style={styles.backgroundGradient} />
-
-      {/* Main Content */}
-      <View style={styles.content}>
-        {/* Main Icon */}
+      {/* 🟢 Updated Header Section with LinearGradient */}
+      <LinearGradient
+        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        style={styles.headerGradient}
+      >
         <View style={styles.iconContainer}>
-          <Text style={styles.mainIcon}>🔄</Text>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Processing Your Results</Text>
-        <Text style={styles.subtitle}>This will only take a moment</Text>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBar}>
-            <Animated.View
-              style={[
-                styles.progressBarFill,
-                { width: progressWidth }
-              ]}
-            />
+          <View style={styles.whiteCircle}>
+             <Text style={styles.mainIcon}>🔄</Text>
           </View>
         </View>
 
-        {/* Steps */}
-        <View style={styles.stepsContainer}>
+        <Text style={styles.title}>Processing Your Results</Text>
+        <Text style={styles.subtitle}>This will only take a moment</Text>
+
+        {/* Progress Bar inside the gradient area */}
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View style={[styles.progressBarFill, { width: progressWidth }]} />
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Main Content (Steps) */}
+      <View style={styles.content}>
+        <View style={styles.stepsCard}>
           {steps.map((step) => (
             <View
               key={step.id}
@@ -159,191 +124,113 @@ export default function FinalProcessingScreen({ route, navigation }) {
               ]}
             >
               <View style={[
-                styles.stepIconContainer,
-                currentStep === step.id && styles.stepIconContainerActive,
-                currentStep > step.id && styles.stepIconContainerComplete
+                styles.stepIconCircle,
+                currentStep === step.id && styles.circleActive,
+                currentStep > step.id && styles.circleComplete
               ]}>
-                {currentStep === step.id ? (
-                  <ActivityIndicator size="small" color="#3B82F6" />
-                ) : currentStep > step.id ? (
+                {currentStep > step.id ? (
                   <Text style={styles.stepCheckmark}>✓</Text>
                 ) : (
-                  <Text style={styles.stepIcon}>{step.icon}</Text>
+                  currentStep === step.id ? <ActivityIndicator size="small" color="#4895D0" /> : <Text style={styles.stepIcon}>{step.icon}</Text>
                 )}
               </View>
               <View style={styles.stepTextContainer}>
-                <Text style={[
-                  styles.stepLabel,
-                  currentStep >= step.id && styles.stepLabelActive
-                ]}>
+                <Text style={[styles.stepLabel, currentStep >= step.id && styles.stepLabelActive]}>
                   {step.label}
                 </Text>
-                {currentStep === step.id && (
-                  <View style={styles.loadingDots}>
-                    <Text style={styles.dotText}>●</Text>
-                    <Text style={styles.dotText}>●</Text>
-                    <Text style={styles.dotText}>●</Text>
-                  </View>
-                )}
               </View>
             </View>
           ))}
-        </View>
-
-        {/* Footer Message */}
-        <View style={styles.footerCard}>
-          <Text style={styles.footerText}>
-            We're creating a personalized experience based on your responses
-          </Text>
         </View>
       </View>
     </View>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
-  backgroundGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: "#EEF2FF",
+  headerGradient: {
+    height: 330,
+    paddingTop: 60,
+    alignItems: "center",
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 24,
-    alignItems: "center",
+    paddingHorizontal: 30,
   },
   iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#FFFFFF",
+    marginBottom: 20,
+  },
+  whiteCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.3)", // Glass effect
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
   },
-  mainIcon: {
-    fontSize: 48,
-  },
+  mainIcon: { fontSize: 40, color: '#FFF' },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 8,
-    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 32,
-    textAlign: "center",
+    color: "#FFFFFF",
+    opacity: 0.9,
+    marginBottom: 30,
   },
   progressBarContainer: {
     width: "100%",
-    marginBottom: 40,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 3,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#3B82F6",
-    borderRadius: 4,
+    backgroundColor: "#6366F1", // Indigo fill
   },
-  stepsContainer: {
-    width: "100%",
+  content: {
+    flex: 1,
+    paddingHorizontal: 25,
+    marginTop: 30, // Pulls the card up slightly
+  },
+  stepsCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
+    elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    opacity: 0.4,
+    paddingVertical: 15,
+    opacity: 0.3,
   },
-  stepItemActive: {
-    opacity: 1,
-  },
-  stepItemComplete: {
-    opacity: 0.7,
-  },
-  stepIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  stepItemActive: { opacity: 1 },
+  stepItemComplete: { opacity: 0.8 },
+  stepIconCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 15,
   },
-  stepIconContainerActive: {
-    backgroundColor: "#EEF2FF",
-  },
-  stepIconContainerComplete: {
-    backgroundColor: "#D1FAE5",
-  },
-  stepIcon: {
-    fontSize: 20,
-  },
-  stepCheckmark: {
-    fontSize: 18,
-    color: "#10B981",
-    fontWeight: "bold",
-  },
-  stepTextContainer: {
-    flex: 1,
-  },
-  stepLabel: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  stepLabelActive: {
-    color: "#111827",
-    fontWeight: "600",
-  },
-  loadingDots: {
-    flexDirection: "row",
-    marginTop: 4,
-    gap: 4,
-  },
-  dotText: {
-    fontSize: 8,
-    color: "#3B82F6",
-  },
-  footerCard: {
-    marginTop: 32,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 12,
-    padding: 16,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#92400E",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-};
+  circleActive: { backgroundColor: "#EEF2FF" },
+  circleComplete: { backgroundColor: "#D1FAE5" },
+  stepCheckmark: { color: "#10B981", fontSize: 20, fontWeight: "bold" },
+  stepLabel: { fontSize: 16, color: "#6B7280" },
+  stepLabelActive: { color: "#111827", fontWeight: "600" },
+});
