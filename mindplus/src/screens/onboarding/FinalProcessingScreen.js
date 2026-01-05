@@ -4,7 +4,7 @@ import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
 // Example ML API URL (replace with your real endpoint)
-const ML_API_URL = "http://192.168.1.101:8000/predict";
+const ML_API_URL = "http://192.168.1.100:8000/predict";
 
 export default function FinalProcessingScreen({ route, navigation }) {
   const { allAnswers, scores } = route.params;
@@ -52,7 +52,7 @@ export default function FinalProcessingScreen({ route, navigation }) {
       // 2️⃣ SEND SCORES TO ML API FOR CLUSTERING
       // --------------------------
       setCurrentStep(2);
-      
+
       // Only call API if URL is provided
       let fingerprintData = {
         clusterId: 0,
@@ -70,6 +70,10 @@ export default function FinalProcessingScreen({ route, navigation }) {
             depression: scores.depression
           })
         });
+
+        if (!response.ok) {
+          throw new Error("ML API returned an error");
+        }
 
         fingerprintData = await response.json();
         console.log("ML fingerprint:", fingerprintData);
@@ -134,11 +138,11 @@ export default function FinalProcessingScreen({ route, navigation }) {
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.progressBarFill,
                 { width: progressWidth }
-              ]} 
+              ]}
             />
           </View>
         </View>
@@ -146,8 +150,8 @@ export default function FinalProcessingScreen({ route, navigation }) {
         {/* Steps */}
         <View style={styles.stepsContainer}>
           {steps.map((step) => (
-            <View 
-              key={step.id} 
+            <View
+              key={step.id}
               style={[
                 styles.stepItem,
                 currentStep === step.id && styles.stepItemActive,
