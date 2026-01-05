@@ -21,6 +21,7 @@ import ChatbotScreen from "../screens/home/ChatbotScreen";
 
 //voice recorder
 import VoiceRecorderScreen from "../components/Voice/VoiceRecorder.js";
+import StressMindMap from "../components/Voice/StressMindMap.js";
 
 const Stack = createStackNavigator();
 
@@ -60,11 +61,11 @@ export default function AppNavigator() {
       />
       <Stack.Screen name="SoundscapeScreen" component={SoundscapeScreen} />
       <Stack.Screen name="MenuScreen" component={MenuScreen} />
-      <Stack.Screen
-        name="VoiceRecorderScreen"
-        component={VoiceRecorderScreen}
-      />
       <Stack.Screen name="ChatbotScreen" component={ChatbotScreen} />
+
+      {/* //voice recorder */}
+      <Stack.Screen name="StressMindMap" component={StressMindMap} />
+      <Stack.Screen name="VoiceRecorderScreen" component={VoiceRecorderScreen} />
     </Stack.Navigator>
   );
 }

@@ -23,7 +23,8 @@ from services.chatbot_service import (
 
 )
 
-app = FastAPI()
+app = FastAPI(title="MindPlus Backend API", version="1.0")
+
 
 # Load model at startup
 model = joblib.load("models/model.pkl")
@@ -91,6 +92,34 @@ def chat_start():
 def chat_message(input: ChatMessageInput):
     return chat_message_service(input)
 
+# ================= CHATBOT ROUTES ====================
+@app.get("/")
+def root():
+    return {
+        "message": "MindPlus Backend API",
+        "status": "running",
+        "version": "1.0",
+        "endpoints": {
+            "health": "/voice/health",
+            "analyze": "/voice/analyze-stress",
+            "history": "/voice/stress-history/{user_id}",
+            "predict": "/predict"
+        }
+    }
+
+
 
 # Include voice routes
 app.include_router(voice_routes)
+
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    print("=" * 50)
+    print("🚀 MindPlus Backend Started")
+    print("=" * 50)
+    print("📍 Voice Analysis: /voice/analyze-stress")
+    print("📊 Health Check: /voice/health")
+    print("📜 History: /voice/stress-history/{user_id}")
+    print("=" * 50)
