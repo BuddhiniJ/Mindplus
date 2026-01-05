@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Modal, Image, StyleSheet } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebaseConfig";
+
+// New Imports
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 // Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
@@ -24,50 +28,26 @@ const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfir
   };
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={alertStyles.overlay}>
         <View style={alertStyles.container}>
-          {/* Icon */}
           <View style={[alertStyles.iconContainer, { backgroundColor: getIconColor() + "20" }]}>
-            <Text style={[alertStyles.icon, { color: getIconColor() }]}>
-              {getIcon()}
-            </Text>
+            <Text style={[alertStyles.icon, { color: getIconColor() }]}>{getIcon()}</Text>
           </View>
-
-          {/* Content */}
           <Text style={alertStyles.title}>{title}</Text>
           <Text style={alertStyles.message}>{message}</Text>
-
-          {/* Buttons */}
           <View style={alertStyles.buttonContainer}>
             {onConfirm ? (
               <>
-                <TouchableOpacity
-                  style={[alertStyles.button, alertStyles.cancelButton]}
-                  onPress={onClose}
-                  activeOpacity={0.8}
-                >
+                <TouchableOpacity style={[alertStyles.button, alertStyles.cancelButton]} onPress={onClose}>
                   <Text style={alertStyles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
-                  onPress={onConfirm}
-                  activeOpacity={0.8}
-                >
+                <TouchableOpacity style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]} onPress={onConfirm}>
                   <Text style={alertStyles.confirmButtonText}>Continue</Text>
                 </TouchableOpacity>
               </>
             ) : (
-              <TouchableOpacity
-                style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]}
-                onPress={onClose}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]} onPress={onClose}>
                 <Text style={alertStyles.confirmButtonText}>OK</Text>
               </TouchableOpacity>
             )}
@@ -82,8 +62,8 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  // Alert state
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Toggle visibility state
+
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: "",
@@ -93,352 +73,184 @@ export default function LoginScreen({ navigation }) {
   });
 
   const showAlert = (title, message, type = "info", onConfirm = null) => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      type,
-      onConfirm,
-    });
+    setAlertConfig({ visible: true, title, message, type, onConfirm });
   };
 
-  const hideAlert = () => {
-    setAlertConfig({ ...alertConfig, visible: false });
-  };
+  const hideAlert = () => setAlertConfig({ ...alertConfig, visible: false });
 
   const loginUser = async () => {
-    // Validation
-    if (!email.trim()) {
-      showAlert("Email Required", "Please enter your email address.", "warning");
+    if (!email.trim() || !password) {
+      showAlert("Required", "Please fill in all details.", "warning");
       return;
     }
-
-    if (!password) {
-      showAlert("Password Required", "Please enter your password.", "warning");
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showAlert("Invalid Email", "Please enter a valid email address.", "error");
-      return;
-    }
-
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigation.navigate("AuthCheckScreen");
     } catch (error) {
-      // Handle specific Firebase errors
-      let errorTitle = "Login Failed";
-      let errorMessage = "";
-
-      switch (error.code) {
-        case "auth/invalid-email":
-          errorMessage = "The email address is invalid.";
-          break;
-        case "auth/user-disabled":
-          errorMessage = "This account has been disabled.";
-          break;
-        case "auth/user-not-found":
-          errorMessage = "No account found with this email address.";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Incorrect password. Please try again.";
-          break;
-        case "auth/invalid-credential":
-          errorMessage = "Invalid email or password. Please check your credentials.";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Too many failed attempts. Please try again later.";
-          break;
-        case "auth/network-request-failed":
-          errorMessage = "Network error. Please check your connection.";
-          break;
-        default:
-          errorMessage = error.message || "An error occurred. Please try again.";
-      }
-
-      showAlert(errorTitle, errorMessage, "error");
+      showAlert("Login Failed", error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
-          </View>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" bounces={false}>
 
-          {/* Form */}
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+          style={styles.topSection}
+        >
+          <View style={styles.logoCircle}>
+            <Image
+              source={require('../../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+        </LinearGradient>
+
+        {/* White Card Section */}
+        <View style={styles.formCard}>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Enter your details below</Text>
+
           <View style={styles.form}>
+            {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete="email"
-                editable={!loading}
               />
             </View>
 
+            {/* Password Input with Toggle Icon */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password"
-                editable={!loading}
-              />
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={styles.passwordInput}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!isPasswordVisible}
+                />
+                <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
+                  <Ionicons
+                    name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#D1D5DB"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Login Button */}
+            {/* Sign In Button */}
             <TouchableOpacity
               style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
               onPress={loginUser}
               disabled={loading}
-              activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>
-                {loading ? "Signing in..." : "Sign In"}
-              </Text>
+              <Text style={styles.primaryButtonText}>{loading ? "Signing in..." : "Sign In"}</Text>
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Don't have an account ?</Text>
-              <View style={styles.dividerLine} />
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account ? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                <Text style={styles.signUpLink}>Sign Up</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* Create Account Button */}
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => navigation.navigate("Register")}
-              activeOpacity={0.8}
-              disabled={loading}
-            >
-              <Text style={styles.secondaryButtonText}>Create Account</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
-      {/* Custom Alert */}
       <CustomAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}
         onClose={hideAlert}
-        onConfirm={alertConfig.onConfirm}
       />
     </KeyboardAvoidingView>
   );
 }
 
-const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FFF" },
+  scrollContainer: { flexGrow: 1 },
+  topSection: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  content: {
-    padding: 24,
-  },
-  header: {
-    marginBottom: 40,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-  },
-  form: {
-    width: "100%",
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#111827",
+  logoCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  button: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 10,
   },
-  primaryButton: {
-    backgroundColor: "#3B82F6",
-    marginTop: 8,
+  logoImage: { width: 100, height: 100 },
+  formCard: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    marginTop: -50,
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    paddingHorizontal: 35,
+    paddingTop: 40,
+    alignItems: 'center'
   },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    backgroundColor: "#FFFFFF",
+  title: { fontSize: 32, fontWeight: "bold", color: "#000" },
+  subtitle: { fontSize: 16, color: "#9CA3AF", marginTop: 8, marginBottom: 30 },
+  form: { width: "100%" },
+  inputContainer: { marginBottom: 20 },
+  label: { fontSize: 13, color: "#000000ff", marginBottom: 8 },
+  input: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  secondaryButtonText: {
-    color: "#374151",
+    borderColor: "#F3F4F6",
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
-    fontWeight: "600",
   },
-  buttonDisabled: {
-    opacity: 0.6,
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+    borderRadius: 12,
   },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: "#9CA3AF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-};
+  passwordInput: { flex: 1, padding: 16, fontSize: 16 },
+  eyeIcon: { paddingRight: 15 },
+  button: { borderRadius: 12, paddingVertical: 18, marginTop: 10 },
+  primaryButton: { backgroundColor: "#5FA1D5" },
+  primaryButtonText: { color: "#FFF", fontSize: 20, fontWeight: "700", textAlign: 'center' },
+  buttonDisabled: { opacity: 0.7 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25 },
+  footerText: { color: "#9CA3AF" },
+  signUpLink: { color: "#9CA3AF" },
+});
 
-const alertStyles = {
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 340,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    width: "100%",
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  singleButton: {
-    width: "100%",
-  },
-  confirmButton: {
-    backgroundColor: "#3B82F6",
-  },
-  confirmButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  cancelButton: {
-    backgroundColor: "#F3F4F6",
-  },
-  cancelButtonText: {
-    color: "#374151",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-};
+// (alertStyles same as previous)
+const alertStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
+  container: { backgroundColor: "#FFF", borderRadius: 20, padding: 24, width: "85%", alignItems: "center" },
+  iconContainer: { width: 64, height: 64, borderRadius: 32, justifyContent: "center", alignItems: "center", marginBottom: 16 },
+  icon: { fontSize: 32, fontWeight: "bold" },
+  title: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
+  message: { fontSize: 15, color: "#6B7280", textAlign: "center", marginBottom: 24 },
+  buttonContainer: { width: "100%" },
+  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  singleButton: { width: "100%" },
+  confirmButtonText: { color: "#FFF", fontWeight: "600" },
+});

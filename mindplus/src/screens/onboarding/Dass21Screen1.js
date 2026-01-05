@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollView, View, Text, TouchableOpacity, Modal } from "react-native";
 import { DASS21_QUESTIONS } from "../../utils/dass21Questions";
 import QuestionCard from "../../components/QuestionCard";
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
@@ -78,7 +79,7 @@ const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfir
 export default function Dass21Screen1({ navigation }) {
   const questions = DASS21_QUESTIONS.slice(0, 7);
   const [answers, setAnswers] = useState({});
-  
+
   // Alert state
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
@@ -128,12 +129,16 @@ export default function Dass21Screen1({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+
+      <LinearGradient
+        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <Text style={styles.title}>DASS-21 Assessment</Text>
           <Text style={styles.subtitle}>Part 1 of 3</Text>
         </View>
-        
+
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
@@ -143,10 +148,11 @@ export default function Dass21Screen1({ navigation }) {
             {Object.keys(answers).length} of {questions.length} answered
           </Text>
         </View>
-      </View>
+      </LinearGradient>
+
 
       {/* Questions */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -176,7 +182,7 @@ export default function Dass21Screen1({ navigation }) {
           onPress={handleNext}
           activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>Continue to Part 2</Text>
+          <Text style={styles.buttonText}>Continue</Text>
           <Text style={styles.buttonArrow}>→</Text>
         </TouchableOpacity>
 
@@ -193,7 +199,7 @@ export default function Dass21Screen1({ navigation }) {
         onClose={hideAlert}
         onConfirm={alertConfig.onConfirm}
       />
-    </View>
+    </View >
   );
 }
 
@@ -221,12 +227,12 @@ const styles = {
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: "#ffffffff",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#ffffffff",
     fontWeight: "500",
   },
   progressContainer: {
@@ -245,7 +251,7 @@ const styles = {
   },
   progressText: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "#ffffffff",
     marginTop: 8,
     fontWeight: "500",
   },
