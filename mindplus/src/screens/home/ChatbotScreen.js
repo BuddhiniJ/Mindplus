@@ -203,6 +203,7 @@ export default function ChatbotScreen({ navigation }) {
             technique={selectedTechnique}
             emergencyContact={emergencyContact}
             emergencyName={emergencyName}
+            onClose={() => setSelectedTechnique(null)}
           />
 
           <ChatInputBar

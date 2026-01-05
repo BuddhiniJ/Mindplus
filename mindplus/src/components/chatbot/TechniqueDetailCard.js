@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import styles from "./chatbotStyles";
+import { Ionicons } from "@expo/vector-icons";
 
 const TECHNIQUE_DETAILS = {
   "5-4-3-2-1 grounding":
@@ -31,6 +32,7 @@ export default function TechniqueDetailCard({
   technique,
   emergencyContact,
   emergencyName,
+  onClose,
 }) {
   if (!technique) return null;
 
@@ -55,7 +57,21 @@ export default function TechniqueDetailCard({
 
   return (
     <View style={styles.techDetailCard}>
-      <Text style={styles.techDetailTitle}>{technique}</Text>
+      <View style={styles.techDetailHeaderRow}>
+        <Text style={styles.techDetailTitle}>{technique}</Text>
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close technique details"
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.techDetailCloseButton,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Ionicons name="close" size={24} color="#ff0000ff" />
+        </Pressable>
+      </View>
 
       {isEmergencyService && (
         <>
