@@ -5,7 +5,7 @@ import { doc, setDoc } from "firebase/firestore";
 // Import the Gradient component
 import { LinearGradient } from 'expo-linear-gradient';
 
-const ML_API_URL = "http://192.168.114.78:8000/predict";
+const ML_API_URL = "http://192.168.1.2:8000/predict";
 
 export default function FinalProcessingScreen({ route, navigation }) {
   const { allAnswers, scores } = route.params;

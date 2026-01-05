@@ -1,68 +1,123 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://192.168.1.2:8000';
+const BACKEND_URL = 'http:// 192.168.1.2:8000'; // Replace with your backend URL
 
 /**
- * Analyze stress from transcribed voice text
+ * Analyze stress using backend API
  */
-export async function analyzeStress(userId, text, audioUrl = null) {
+export async function analyzeStress(userId, text, audioUrl) {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/voice/analyze-stress`,
-      {
-        user_id: userId,
-        text,
-        audio_url: audioUrl
+    console.log('📡 Sending request to backend...');
+    console.log('URL:', `${BACKEND_URL}/voice/analyze-stress`);
+    
+    const response = await fetch(`${BACKEND_URL}/voice/analyze-stress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 15000
-      }
-    );
+      body: JSON.stringify({
+        user_id: userId,
+        text: text,
+        audio_url: audioUrl,
+      }),
+      timeout: 10000, // 10 second timeout
+    });
 
-    return response.data;
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Backend response:', data);
+
+    return {
+      stress_scores: data.stress_scores || {},
+      stress_levels: data.stress_levels || {},
+      dominant_type: data.dominant_type || 'Emotional',
+      total_stress_score: data.total_stress_score || 0,
+      overall_level: data.overall_level || 0,
+      confidence: data.confidence || 0.5,
+    };
 
   } catch (error) {
-    console.error('Stress analysis error:', error);
+    console.log('⚠️ Backend not reachable, using local analysis:', error.message);
+    
+    // Fallback to local keyword-based analysis
+    return analyzeStressLocally(text);
+  }
+}
 
-    if (error.response) {
-      throw new Error(error.response.data?.detail || 'Analysis failed');
-    } else if (error.request) {
-      throw new Error('Backend not reachable');
-    } else {
-      throw new Error(error.message);
+/**
+ * Local fallback stress analysis (keyword-based)
+ */
+function analyzeStressLocally(text) {
+  console.log('🔍 Running local stress analysis...');
+  
+  const textLower = text.toLowerCase();
+  
+  // Initialize scores
+  const scores = {
+    Academic: 0.0,
+    Financial: 0.0,
+    Social: 0.0,
+    Emotional: 0.0,
+  };
+
+  // Academic keywords
+  const academicKeywords = ['exam', 'test', 'study', 'studies', 'homework', 'grade', 'school', 'college', 'university', 'assignment', 'deadline', 'project', 'academic', 'class', 'course', 'learning'];
+  const academicCount = academicKeywords.filter(word => textLower.includes(word)).length;
+  scores.Academic = Math.min(1.0, academicCount * 0.20);
+
+  // Financial keywords
+  const financialKeywords = ['money', 'debt', 'bill', 'pay', 'payment', 'payments', 'cost', 'expensive', 'afford', 'budget', 'financial', 'financially', 'income', 'rent', 'loan', 'credit', 'broke', 'poor'];
+  const financialCount = financialKeywords.filter(word => textLower.includes(word)).length;
+  scores.Financial = Math.min(1.0, financialCount * 0.20);
+
+  // Social keywords
+  const socialKeywords = ['lonely', 'alone', 'friend', 'friends', 'relationship', 'relationships', 'social', 'isolated', 'isolation', 'people', 'family', 'talk', 'connect', 'rejected'];
+  const socialCount = socialKeywords.filter(word => textLower.includes(word)).length;
+  scores.Social = Math.min(1.0, socialCount * 0.20);
+
+  // Emotional keywords
+  const emotionalKeywords = ['sad', 'anxious', 'anxiety', 'worried', 'worry', 'depressed', 'depression', 'overwhelm', 'overwhelmed', 'cry', 'crying', 'feel', 'feeling', 'emotion', 'emotional', 'upset', 'hurt', 'pain', 'stress', 'stressed'];
+  const emotionalCount = emotionalKeywords.filter(word => textLower.includes(word)).length;
+  scores.Emotional = Math.min(1.0, emotionalCount * 0.20);
+
+  // If no keywords found, set default moderate scores
+  const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+  if (totalScore === 0) {
+    scores.Academic = 0.3;
+    scores.Financial = 0.2;
+    scores.Social = 0.3;
+    scores.Emotional = 0.5;
+  } else {
+    // Boost the highest scoring category
+    const maxKey = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+    if (scores[maxKey] > 0) {
+      scores[maxKey] = Math.min(1.0, scores[maxKey] + 0.15);
     }
   }
-}
 
-/**
- * Fetch stress history
- */
-export async function getStressHistory(userId) {
-  try {
-    const response = await axios.get(
-      `${API_BASE_URL}/voice/stress-history/${userId}`,
-      { timeout: 10000 }
-    );
+  console.log('📊 Local scores:', scores);
 
-    return response.data.analyses || [];
-  } catch (error) {
-    console.error('History fetch failed:', error);
-    return [];
-  }
-}
+  // Calculate levels
+  const stress_levels = {};
+  Object.keys(scores).forEach(type => {
+    const score = scores[type];
+    if (score < 0.33) stress_levels[type] = 0; // Low
+    else if (score < 0.66) stress_levels[type] = 1; // Medium
+    else stress_levels[type] = 2; // High
+  });
 
-/**
- * Health check
- */
-export async function checkBackendHealth() {
-  try {
-    const res = await axios.get(
-      `${API_BASE_URL}/voice/health`,
-      { timeout: 5000 }
-    );
-    return res.data.status === 'healthy';
-  } catch {
-    return false;
-  }
+  // Find dominant type
+  const dominant_type = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+  const total_stress_score = Object.values(scores).reduce((a, b) => a + b, 0);
+  const overall_level = total_stress_score / 4 < 0.33 ? 0 : total_stress_score / 4 < 0.66 ? 1 : 2;
+
+  return {
+    stress_scores: scores,
+    stress_levels: stress_levels,
+    dominant_type: dominant_type,
+    total_stress_score: total_stress_score,
+    overall_level: overall_level,
+    confidence: scores[dominant_type],
+  };
 }
