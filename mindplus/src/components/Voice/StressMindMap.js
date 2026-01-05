@@ -1,120 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Animated,
-  Dimensions,
 } from 'react-native';
-import { auth, db } from '../../firebase/firebaseConfig';
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-} from 'firebase/firestore';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 
-const { width } = Dimensions.get('window');
-
-export default function StressMindMap({ onJoinCommunity }) {
-  const [latestAnalysis, setLatestAnalysis] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+export default function StressAnalysisScreen({ route, navigation }) {
+  const { analysis } = route.params;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
-    const user = auth.currentUser;
-    
-    if (!user) {
-      console.log('❌ No authenticated user');
-      setLoading(false);
-      return;
-    }
-
-    console.log('✅ Authenticated user:', user.uid);
-
-    const stressAnalysesRef = collection(db, 'users', user.uid, 'stressAnalyses');
-    
-    const q = query(
-      stressAnalysesRef,
-      orderBy('timestamp', 'desc'),
-      limit(1)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        console.log('📊 Snapshot received, docs:', snapshot.size);
-        
-        if (!snapshot.empty) {
-          const data = snapshot.docs[0].data();
-          console.log('✅ Latest analysis:', data);
-          setLatestAnalysis(data);
-          
-          // Animate in
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              friction: 8,
-              tension: 40,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        } else {
-          console.log('⚠️ No stress analyses found');
-          setLatestAnalysis(null);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('❌ Firestore error:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  if (loading) {
-    return (
-      <LinearGradient
-        colors={['#E9EAEB', '#D4E4F7']}
-        style={styles.loadingContainer}
-      >
-        <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color="#5777AD" />
-          <Text style={styles.loadingText}>Analyzing your inner peace...</Text>
-        </View>
-      </LinearGradient>
-    );
-  }
-
-  if (!latestAnalysis) {
-    return (
-      <LinearGradient
-        colors={['#E9EAEB', '#D4E4F7']}
-        style={styles.emptyContainer}
-      >
-        <View style={styles.emptyContent}>
-          <Text style={styles.emptyEmoji}>🎤</Text>
-          <Text style={styles.emptyText}>
-            Share your thoughts to begin your healing journey
-          </Text>
-        </View>
-      </LinearGradient>
-    );
-  }
 
   const {
     stress_scores = {},
@@ -125,218 +38,296 @@ export default function StressMindMap({ onJoinCommunity }) {
     confidence,
     text,
     timestamp,
-  } = latestAnalysis;
+  } = analysis;
 
   const getStressColor = (level) => {
     const colors = {
-      0: '#7CB9E8', // Low - Calm Blue
-      1: '#9DB4C0', // Medium - Soft Gray-Blue
-      2: '#5777AD', // High - Deep Blue
+      0: '#22c55e',
+      1: '#f59e0b',
+      2: '#ef4444',
     };
-    return colors[level] || '#E9EAEB';
+    return colors[level] || '#6b7280';
   };
 
   const getStressLevelText = (level) => {
     const levels = {
-      0: 'Peaceful',
-      1: 'Mindful',
-      2: 'Needs Care',
+      0: 'Low',
+      1: 'Medium',
+      2: 'High',
     };
     return levels[level] || 'Unknown';
   };
 
-  const getHealingMessage = (level) => {
-    const messages = {
-      0: '🌸 You\'re in a calm state',
-      1: '🌊 Take a moment to breathe',
-      2: '🕊️ Let\'s find your peace together',
+  const getStressTypeIcon = (type) => {
+    const icons = {
+      'Academic': '📚',
+      'Financial': '💰',
+      'Social': '👥',
+      'Emotional': '💭'
     };
-    return messages[level] || '';
+    return icons[type] || '📊';
   };
 
-  // Calculate positions for mind map circles
-  const stressTypes = Object.keys(stress_scores);
-  const centerX = width * 0.45;
-  const centerY = 150;
-  const radius = 80;
+  const getStressTypeColor = (type) => {
+    const colors = {
+      'Academic': '#ef4444',
+      'Financial': '#f59e0b',
+      'Social': '#3b82f6',
+      'Emotional': '#8b5cf6'
+    };
+    return colors[type] || '#6b7280';
+  };
+
+  // const getHealingAdvice = (type) => {
+  //   const advice = {
+  //     'Academic': {
+  //       title: 'Academic Stress Relief',
+  //       tips: [
+  //         'Break tasks into smaller, manageable chunks',
+  //         'Create a realistic study schedule',
+  //         'Take regular breaks (Pomodoro technique)',
+  //         'Practice deep breathing before studying',
+  //         'Join study groups for support',
+  //       ]
+  //     },
+  //     'Financial': {
+  //       title: 'Financial Wellness',
+  //       tips: [
+  //         'Create a simple budget plan',
+  //         'Focus on what you can control today',
+  //         'Seek financial counseling if needed',
+  //         'Practice gratitude for what you have',
+  //         'Avoid comparing yourself to others',
+  //       ]
+  //     },
+  //     'Social': {
+  //       title: 'Social Connection',
+  //       tips: [
+  //         'Reach out to trusted friends',
+  //         'Practice active listening',
+  //         'Set healthy boundaries',
+  //         'Join communities with similar interests',
+  //         'Remember: quality over quantity',
+  //       ]
+  //     },
+  //     'Emotional': {
+  //       title: 'Emotional Balance',
+  //       tips: [
+  //         'Journal your feelings daily',
+  //         'Practice mindfulness meditation',
+  //         'Engage in physical activity',
+  //         'Talk to a counselor or therapist',
+  //         'Allow yourself to feel emotions',
+  //       ]
+  //     }
+  //   };
+  //   return advice[type] || advice['Emotional'];
+  // };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // const healingAdvice = getHealingAdvice(dominant_type);
 
   return (
     <LinearGradient
-      colors={['#E9EAEB', '#D4E4F7', '#FFFFFF']}
+      colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View 
           style={[
             styles.content,
-            {
+            { 
               opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
+              transform: [{ translateY: slideAnim }]
             }
           ]}
         >
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerEmoji}>🌺</Text>
-            <Text style={styles.title}>Your Emotional Landscape</Text>
-            <Text style={styles.subtitle}>Understanding your inner world</Text>
+          <View style={styles.headerSection}>
+            <Text style={styles.headerEmoji}></Text>
+            <Text style={styles.headerTitle}>Your Healing Path</Text>
+            <Text style={styles.headerSubtitle}>Understanding your stress to find peace</Text>
           </View>
 
-          {/* Central Mind Map Visualization */}
-          <View style={styles.mindMapContainer}>
-            <View style={styles.svgWrapper}>
-              <Svg height="300" width={width - 40}>
-                {/* Draw lines from center to stress types */}
-                {stressTypes.map((type, index) => {
-                  const angle = (index * 2 * Math.PI) / stressTypes.length - Math.PI / 2;
-                  const x = centerX + radius * Math.cos(angle);
-                  const y = centerY + radius * Math.sin(angle);
-                  
-                  return (
-                    <Line
-                      key={`line-${type}`}
-                      x1={centerX}
-                      y1={centerY}
-                      x2={x}
-                      y2={y}
-                      stroke="#B8C5D6"
-                      strokeWidth="2"
-                      opacity="0.5"
-                    />
-                  );
-                })}
-              </Svg>
-
-              {/* Center circle - Overall stress */}
-              <View style={[styles.centerCircle, { top: centerY - 40, left: centerX - 40 }]}>
-                <LinearGradient
-                  colors={[getStressColor(overall_level), '#FFFFFF']}
-                  style={styles.centerGradient}
+          {/* Overall Status Card */}
+          <View style={styles.overallCard}>
+            <LinearGradient
+              colors={['#FFFFFF', '#F8FBFF']}
+              style={styles.cardGradient}
+            >
+              <Text style={styles.cardTitle}>Overall Wellness</Text>
+              <View style={styles.overallContent}>
+                <View
+                  style={[
+                    styles.levelBadge,
+                    { backgroundColor: getStressColor(overall_level) }
+                  ]}
                 >
-                  <Text style={styles.centerScore}>
-                    {total_stress_score?.toFixed(1) || '0.0'}
+                  <Text style={styles.levelBadgeText}>
+                    {getStressLevelText(overall_level)}
                   </Text>
-                  <Text style={styles.centerLabel}>Overall</Text>
-                </LinearGradient>
+                </View>
+                <Text style={styles.scoreText}>
+                  Score: {total_stress_score?.toFixed(1) || 'N/A'} / 10
+                </Text>
+                <View style={styles.confidenceRow}>
+                  <Text style={styles.confidenceLabel}>Analysis Confidence</Text>
+                  <Text style={styles.confidenceValue}>
+                    {((confidence || 0) * 100).toFixed(0)}%
+                  </Text>
+                </View>
               </View>
+            </LinearGradient>
+          </View>
 
-              {/* Stress type circles */}
-              {stressTypes.map((type, index) => {
-                const angle = (index * 2 * Math.PI) / stressTypes.length - Math.PI / 2;
-                const x = centerX + radius * Math.cos(angle) - 35;
-                const y = centerY + radius * Math.sin(angle) - 35;
-                const level = stress_levels[type] || 0;
-                const score = stress_scores[type] || 0;
-
-                return (
-                  <View
-                    key={type}
+          {/* Dominant Stress Type */}
+          {dominant_type && (
+            <View style={styles.dominantCard}>
+              <LinearGradient
+                colors={['#FFFFFF', '#F8FBFF']}
+                style={styles.cardGradient}
+              >
+                <Text style={styles.cardTitle}>Primary Concern</Text>
+                <View style={styles.dominantContent}>
+                  <Text style={styles.dominantIcon}>
+                    {getStressTypeIcon(dominant_type)}
+                  </Text>
+                  <Text 
                     style={[
-                      styles.stressCircle,
-                      { top: y, left: x, backgroundColor: getStressColor(level) }
+                      styles.dominantType,
+                      { color: getStressTypeColor(dominant_type) }
                     ]}
                   >
-                    <Text style={styles.circleScore}>{score.toFixed(1)}</Text>
-                    <Text style={styles.circleLabel} numberOfLines={2}>
-                      {type.split(' ')[0]}
+                    {dominant_type} Stress
+                  </Text>
+                </View>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Stress Breakdown */}
+          <View style={styles.breakdownCard}>
+            <LinearGradient
+              colors={['#FFFFFF', '#F8FBFF']}
+              style={styles.cardGradient}
+            >
+              <Text style={styles.cardTitle}>Stress Breakdown</Text>
+              {Object.entries(stress_scores).map(([type, score]) => {
+                const level = stress_levels[type] || 0;
+                return (
+                  <View key={type} style={styles.stressItem}>
+                    <View style={styles.stressHeader}>
+                      <Text style={styles.stressTypeLabel}>
+                        {getStressTypeIcon(type)} {type}
+                      </Text>
+                      <View
+                        style={[
+                          styles.miniLevelBadge,
+                          { backgroundColor: getStressColor(level) }
+                        ]}
+                      >
+                        <Text style={styles.miniLevelText}>
+                          {getStressLevelText(level)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${(score / 10) * 100}%`,
+                            backgroundColor: getStressColor(level),
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.scoreValue}>
+                      {score?.toFixed(1) || '0.0'} / 10
                     </Text>
                   </View>
                 );
               })}
-            </View>
-          </View>
-
-          {/* Overall Status Card */}
-          <View style={styles.statusCard}>
-            <LinearGradient
-              colors={['#FFFFFF', '#F0F4F8']}
-              style={styles.statusGradient}
-            >
-              <Text style={styles.statusTitle}>Current State</Text>
-              <View style={[styles.statusBadge, { backgroundColor: getStressColor(overall_level) }]}>
-                <Text style={styles.statusText}>{getStressLevelText(overall_level)}</Text>
-              </View>
-              <Text style={styles.healingMessage}>{getHealingMessage(overall_level)}</Text>
-              <Text style={styles.confidenceText}>
-                Analysis Confidence: {((confidence || 0) * 100).toFixed(0)}%
-              </Text>
             </LinearGradient>
           </View>
 
-          {/* Dominant Type Card */}
-          {dominant_type && (
-            <View style={styles.dominantCard}>
-              <Text style={styles.dominantTitle}>Primary Focus Area</Text>
-              <View style={styles.dominantBadge}>
-                <Text style={styles.dominantType}>{dominant_type}</Text>
+          {/* Healing Guidance */}
+          {/* <View style={styles.guidanceCard}>
+            <LinearGradient
+              colors={['#7CB9E8', '#5777AD']}
+              style={styles.guidanceGradient}
+            >
+              <Text style={styles.guidanceEmoji}>🌿</Text>
+              <Text style={styles.guidanceTitle}>{healingAdvice.title}</Text>
+              <Text style={styles.guidanceSubtitle}>Gentle steps toward wellness</Text>
+              
+              <View style={styles.tipsContainer}>
+                {healingAdvice.tips.map((tip, index) => (
+                  <View key={index} style={styles.tipItem}>
+                    <View style={styles.tipBullet}>
+                      <Text style={styles.tipBulletText}>•</Text>
+                    </View>
+                    <Text style={styles.tipText}>{tip}</Text>
+                  </View>
+                ))
+                }
               </View>
-              <Text style={styles.dominantMessage}>
-                This area needs your gentle attention
-              </Text>
-            </View>
-          )}
+            </LinearGradient>
+          </View> */}
 
-          {/* Detailed Breakdown */}
-          <View style={styles.breakdownCard}>
-            <Text style={styles.breakdownTitle}>Energy Distribution</Text>
-            {Object.entries(stress_scores).map(([type, score]) => {
-              const level = stress_levels[type] || 0;
-              return (
-                <View key={type} style={styles.breakdownItem}>
-                  <View style={styles.breakdownHeader}>
-                    <Text style={styles.breakdownType}>{type}</Text>
-                    <Text style={styles.breakdownScore}>{score.toFixed(1)}</Text>
-                  </View>
-                  <View style={styles.progressBar}>
-                    <LinearGradient
-                      colors={[getStressColor(level), '#E9EAEB']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={[
-                        styles.progressFill,
-                        { width: `${(score / 10) * 100}%` }
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.levelLabel}>{getStressLevelText(level)}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Transcript Card */}
+          {/* Your Words */}
           {text && (
             <View style={styles.transcriptCard}>
-              <Text style={styles.transcriptTitle}>💭 Your Words</Text>
-              <Text style={styles.transcriptText}>{text}</Text>
+              <LinearGradient
+                colors={['#FFFFFF', '#F8FBFF']}
+                style={styles.cardGradient}
+              >
+                <Text style={styles.cardTitle}>💭 Your Words</Text>
+                <Text style={styles.transcriptText}>{text}</Text>
+              </LinearGradient>
             </View>
           )}
-
-          {/* Community Button */}
-          <TouchableOpacity
-            style={styles.communityButton}
-            onPress={() => onJoinCommunity(dominant_type || 'general')}
-          >
-            <LinearGradient
-              colors={['#5777AD', '#7CB9E8']}
-              style={styles.communityGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.communityIcon}>🤝</Text>
-              <Text style={styles.communityText}>Join Healing Community</Text>
-              <Text style={styles.communitySubtext}>Connect with others on similar journeys</Text>
-            </LinearGradient>
-          </TouchableOpacity>
 
           {/* Timestamp */}
           {timestamp && (
             <Text style={styles.timestamp}>
-              Reflected on: {timestamp.toDate
-                ? timestamp.toDate().toLocaleString()
-                : new Date(timestamp).toLocaleString()}
+              Analyzed on {formatDate(timestamp)}
             </Text>
           )}
+
+          {/* Action Buttons */}
+          <View style={styles.actionSection}>
+            <TouchableOpacity
+              style={styles.communityButton}
+              onPress={() => navigation.navigate('Community', { stressType: dominant_type })}
+            >
+              <LinearGradient
+                colors={['#5777AD', '#7CB9E8']}
+                style={styles.communityGradient}
+              >
+                <Text style={styles.communityButtonText}>
+                  💬 Join Support Community
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backButtonText}>← Back to History</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </ScrollView>
     </LinearGradient>
@@ -347,260 +338,150 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContent: {
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    color: '#5777AD',
-    fontSize: 16,
-    fontStyle: 'italic',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyContent: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 40,
-    borderRadius: 24,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    color: '#5777AD',
-    fontSize: 18,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: 26,
-  },
   scrollContent: {
-    flexGrow: 1,
     padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   content: {
     flex: 1,
   },
-  header: {
+  headerSection: {
     alignItems: 'center',
     marginBottom: 32,
-    paddingTop: 20,
   },
   headerEmoji: {
-    fontSize: 56,
+    fontSize: 64,
     marginBottom: 12,
   },
-  title: {
-    fontSize: 28,
+  headerTitle: {
+    fontSize: 32,
     fontWeight: '700',
     color: '#5777AD',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 8,
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 16,
     color: '#7CB9E8',
-    fontStyle: 'italic',
     textAlign: 'center',
+    fontStyle: 'italic',
   },
-  mindMapContainer: {
-    marginBottom: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  overallCard: {
+    marginBottom: 16,
     borderRadius: 24,
-    padding: 20,
-    elevation: 4,
+    overflow: 'hidden',
+    elevation: 6,
     shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
-  svgWrapper: {
-    height: 300,
-    position: 'relative',
+  cardGradient: {
+    padding: 24,
   },
-  centerCircle: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    elevation: 8,
-    shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  centerGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  centerScore: {
+  cardTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#5777AD',
+    marginBottom: 16,
   },
-  centerLabel: {
-    fontSize: 11,
-    color: '#5777AD',
-    marginTop: 2,
-  },
-  stressCircle: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  circleScore: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  circleLabel: {
-    fontSize: 10,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  statusCard: {
-    marginBottom: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  statusGradient: {
-    padding: 24,
+  overallContent: {
     alignItems: 'center',
   },
-  statusTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#5777AD',
-    marginBottom: 12,
-  },
-  statusBadge: {
+  levelBadge: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
     marginBottom: 12,
   },
-  statusText: {
-    color: '#FFFFFF',
-    fontSize: 20,
+  levelBadgeText: {
+    color: '#ffffff',
+    fontSize: 22,
     fontWeight: '700',
   },
-  healingMessage: {
-    fontSize: 16,
-    color: '#7CB9E8',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  confidenceText: {
-    fontSize: 13,
-    color: '#9DB4C0',
-  },
-  dominantCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 24,
-    borderRadius: 20,
-    marginBottom: 20,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  dominantTitle: {
-    fontSize: 16,
+  scoreText: {
+    fontSize: 20,
     fontWeight: '600',
     color: '#5777AD',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  dominantBadge: {
-    backgroundColor: '#5777AD',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 16,
+  confidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(124, 185, 232, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  confidenceLabel: {
+    fontSize: 14,
+    color: '#7CB9E8',
+    marginRight: 8,
+  },
+  confidenceValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#5777AD',
+  },
+  dominantCard: {
+    marginBottom: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#5777AD',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  dominantContent: {
+    alignItems: 'center',
+  },
+  dominantIcon: {
+    fontSize: 48,
     marginBottom: 8,
   },
   dominantType: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
   },
-  dominantMessage: {
-    fontSize: 14,
-    color: '#7CB9E8',
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
   breakdownCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 24,
-    borderRadius: 20,
-    marginBottom: 20,
-    elevation: 3,
+    marginBottom: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 6,
     shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
-  breakdownTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#5777AD',
+  stressItem: {
     marginBottom: 20,
   },
-  breakdownItem: {
-    marginBottom: 20,
-  },
-  breakdownHeader: {
+  stressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  breakdownType: {
-    fontSize: 15,
+  stressTypeLabel: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#5777AD',
   },
-  breakdownScore: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#7CB9E8',
+  miniLevelBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  miniLevelText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   progressBar: {
     height: 10,
-    backgroundColor: '#E9EAEB',
+    backgroundColor: 'rgba(124, 185, 232, 0.2)',
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 6,
@@ -609,27 +490,74 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 5,
   },
-  levelLabel: {
-    fontSize: 12,
+  scoreValue: {
+    fontSize: 14,
     color: '#9DB4C0',
+    fontWeight: '500',
+  },
+  guidanceCard: {
+    marginBottom: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#5777AD',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  guidanceGradient: {
+    padding: 28,
+  },
+  guidanceEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  guidanceTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  guidanceSubtitle: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
     fontStyle: 'italic',
+    marginBottom: 24,
+  },
+  tipsContainer: {
+    gap: 16,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  tipBullet: {
+    width: 24,
+    marginRight: 8,
+  },
+  tipBulletText: {
+    fontSize: 20,
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#ffffff',
+    lineHeight: 22,
   },
   transcriptCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 24,
-    borderRadius: 20,
-    marginBottom: 20,
-    elevation: 3,
+    marginBottom: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 6,
     shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  transcriptTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#5777AD',
-    marginBottom: 12,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
   transcriptText: {
     fontSize: 15,
@@ -637,40 +565,44 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontStyle: 'italic',
   },
+  timestamp: {
+    fontSize: 13,
+    color: '#9DB4C0',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  actionSection: {
+    gap: 12,
+  },
   communityButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    marginBottom: 20,
     elevation: 6,
     shadowColor: '#5777AD',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
     shadowRadius: 8,
   },
   communityGradient: {
-    padding: 24,
+    paddingVertical: 18,
     alignItems: 'center',
   },
-  communityIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  communityText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+  communityButtonText: {
+    color: '#ffffff',
+    fontSize: 17,
     fontWeight: '700',
-    marginBottom: 4,
   },
-  communitySubtext: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 13,
-    fontStyle: 'italic',
+  backButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#7CB9E8',
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#9DB4C0',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontStyle: 'italic',
+  backButtonText: {
+    color: '#5777AD',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
