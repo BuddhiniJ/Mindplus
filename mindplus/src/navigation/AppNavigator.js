@@ -24,6 +24,8 @@ import VoiceRecorderScreen from "../components/Voice/VoiceRecorder.js";
 import StressMindMap from "../components/Voice/StressMindMap.js";
 import HistoryScreen from "../components/Voice/HistoryScreen.js";
 import GreetingContainer from "../components/GreetingContainer.js";
+import CommunityScreen from "../components/Voice/CommunityScreen.js";
+import ChatScreen from "../components/Voice/ChatScreen.js";
 
 const Stack = createStackNavigator();
 
@@ -70,6 +72,8 @@ export default function AppNavigator() {
       <Stack.Screen name="VoiceRecorderScreen" component={VoiceRecorderScreen} />
       <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
       <Stack.Screen name="GreetingContainer" component={GreetingContainer} />
+      <Stack.Screen name="CommunityScreen" component={CommunityScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
         </Stack.Navigator>
   );
 }

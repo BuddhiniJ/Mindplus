@@ -309,7 +309,7 @@ export default function StressAnalysisScreen({ route, navigation }) {
           <View style={styles.actionSection}>
             <TouchableOpacity
               style={styles.communityButton}
-              onPress={() => navigation.navigate('Community', { stressType: dominant_type })}
+              onPress={() => navigation.navigate('CommunityScreen', { stressType: dominant_type })}
             >
               <LinearGradient
                 colors={['#5777AD', '#7CB9E8']}
