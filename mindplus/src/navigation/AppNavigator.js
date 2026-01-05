@@ -17,8 +17,10 @@ import CopingStrategyScreen from "../screens/home/CopingStrategyScreen.js";
 import VisualAffirmationScreen from "../screens/home/VisualAffirmationScreen";
 import SoundscapeScreen from "../screens/home/SoundscapeScreen";
 import MenuScreen from "../screens/home/menu.js";
-import VoiceRecorderScreen from "../components/VoiceRecorder.js";
 import ChatbotScreen from "../screens/home/ChatbotScreen";
+
+//voice recorder
+import VoiceRecorderScreen from "../components/Voice/VoiceRecorder.js";
 
 const Stack = createStackNavigator();
 

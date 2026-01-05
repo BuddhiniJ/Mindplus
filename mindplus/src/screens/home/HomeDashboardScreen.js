@@ -198,7 +198,6 @@ export default function HomeDashboardScreen({ navigation }) {
         {/* Quick Actions */}
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate("HeatmapScreen")}
@@ -220,7 +219,6 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate("UserProfileScreen")}
@@ -242,7 +240,6 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleViewTodayEmotion}
@@ -264,7 +261,6 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate("ChatbotScreen")}
@@ -286,7 +282,6 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={async () => {
@@ -368,7 +363,6 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate("SoundscapeScreen")}
@@ -390,6 +384,30 @@ export default function HomeDashboardScreen({ navigation }) {
             </View>
             <Text style={styles.actionArrow}>→</Text>
           </TouchableOpacity>
+          // Voice Recorder Action //voice
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate("VoiceRecorderScreen")}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: "#89a0072a" },
+              ]}
+            >
+              <Text style={styles.actionIcon}>💆🏽‍♀️</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Tell Your Story</Text>
+              <Text style={styles.actionDescription}>
+                Let your thoughts settle
+              </Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+          //voice end
         </View>
 
         {/* Bottom Spacing */}
@@ -398,7 +416,7 @@ export default function HomeDashboardScreen({ navigation }) {
 
       {/* Bottom Navigation */}
 
-      <BottomActionButton
+      {/* <BottomActionButton
         label="Home"
         onPress={() =>
           navigation.reset({
@@ -406,7 +424,7 @@ export default function HomeDashboardScreen({ navigation }) {
             routes: [{ name: "MenuScreen" }],
           })
         }
-      />
+      /> */}
       {/* Bottom Navigation */}
     </View>
   );
