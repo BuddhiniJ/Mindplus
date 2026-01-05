@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { auth, db } from '../firebase/firebaseConfig';
+import { auth, db } from '../../firebase/firebaseConfig';
 import {
   collection,
   query,
