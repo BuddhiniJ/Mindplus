@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-// Directory for permanent audio storage
 const AUDIO_DIR = `${FileSystem.documentDirectory}voice_recordings/`;
 
 /**
@@ -13,56 +12,60 @@ export async function initializeStorage() {
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(AUDIO_DIR, { intermediates: true });
       console.log('✅ Audio directory created:', AUDIO_DIR);
+    } else {
+      console.log('✅ Audio directory exists:', AUDIO_DIR);
     }
   } catch (error) {
-    console.error('Error initializing storage:', error);
+    console.error('❌ Error initializing storage:', error);
   }
 }
 
 /**
  * Save audio file to permanent storage
- * @param {string} tempUri - Temporary file URI from recording
- * @param {string} userId - User ID
- * @returns {Promise<object>} - File info with permanent path
  */
 export async function saveAudioFile(tempUri, userId) {
   try {
     await initializeStorage();
     
-    // Create filename with timestamp
     const timestamp = Date.now();
     const filename = `recording_${userId}_${timestamp}.amr`;
     const permanentUri = `${AUDIO_DIR}${filename}`;
     
+    console.log('📁 Saving audio...');
+    console.log('From:', tempUri);
+    console.log('To:', permanentUri);
+    
     // Copy from temp to permanent storage
     await FileSystem.copyAsync({
       from: tempUri,
-      to: permanentUri
+      to: permanentUri,
     });
     
-    // Get file info
+    // Verify file exists
     const fileInfo = await FileSystem.getInfoAsync(permanentUri);
     
-    console.log('✅ Audio saved permanently:', permanentUri);
-    console.log('📊 File size:', fileInfo.size, 'bytes');
+    if (!fileInfo.exists) {
+      throw new Error('File was not saved properly');
+    }
+    
+    console.log('✅ Audio saved successfully');
+    console.log('Size:', fileInfo.size, 'bytes');
     
     return {
       uri: permanentUri,
       filename: filename,
       size: fileInfo.size,
-      timestamp: timestamp
+      timestamp: timestamp,
     };
     
   } catch (error) {
-    console.error('Error saving audio file:', error);
-    throw new Error('Failed to save audio file');
+    console.error('❌ Error saving audio file:', error);
+    throw new Error('Failed to save audio file: ' + error.message);
   }
 }
 
 /**
  * Check if audio file exists
- * @param {string} uri - File URI
- * @returns {Promise<boolean>}
  */
 export async function audioFileExists(uri) {
   try {
@@ -75,7 +78,6 @@ export async function audioFileExists(uri) {
 
 /**
  * Delete audio file
- * @param {string} uri - File URI
  */
 export async function deleteAudioFile(uri) {
   try {
@@ -83,15 +85,16 @@ export async function deleteAudioFile(uri) {
     if (exists) {
       await FileSystem.deleteAsync(uri);
       console.log('🗑️ Audio file deleted:', uri);
+    } else {
+      console.log('⚠️ Audio file does not exist:', uri);
     }
   } catch (error) {
-    console.error('Error deleting audio file:', error);
+    console.error('❌ Error deleting audio file:', error);
   }
 }
 
 /**
  * Get all stored audio files
- * @returns {Promise<Array>} - List of audio files
  */
 export async function getAllAudioFiles() {
   try {
@@ -106,21 +109,20 @@ export async function getAllAudioFiles() {
           filename,
           uri,
           size: info.size,
-          modificationTime: info.modificationTime
+          modificationTime: info.modificationTime,
         };
       })
     );
     
     return fileList;
   } catch (error) {
-    console.error('Error getting audio files:', error);
+    console.error('❌ Error getting audio files:', error);
     return [];
   }
 }
 
 /**
  * Get storage usage statistics
- * @returns {Promise<object>}
  */
 export async function getStorageStats() {
   try {
@@ -132,37 +134,10 @@ export async function getStorageStats() {
       totalFiles: totalCount,
       totalSize: totalSize,
       totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
-      directory: AUDIO_DIR
+      directory: AUDIO_DIR,
     };
   } catch (error) {
-    console.error('Error getting storage stats:', error);
+    console.error('❌ Error getting storage stats:', error);
     return { totalFiles: 0, totalSize: 0, totalSizeMB: '0' };
-  }
-}
-
-/**
- * Clear old audio files (keep last N files)
- * @param {number} keepCount - Number of recent files to keep
- */
-export async function clearOldAudioFiles(keepCount = 20) {
-  try {
-    const files = await getAllAudioFiles();
-    
-    // Sort by modification time (newest first)
-    files.sort((a, b) => b.modificationTime - a.modificationTime);
-    
-    // Delete files beyond keepCount
-    const filesToDelete = files.slice(keepCount);
-    
-    for (const file of filesToDelete) {
-      await deleteAudioFile(file.uri);
-    }
-    
-    console.log(`🗑️ Deleted ${filesToDelete.length} old audio files`);
-    return filesToDelete.length;
-    
-  } catch (error) {
-    console.error('Error clearing old files:', error);
-    return 0;
   }
 }

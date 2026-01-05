@@ -1,250 +1,127 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 const HISTORY_KEY = 'stress_analysis_history';
+const AUDIO_DIR = `${FileSystem.documentDirectory}voice_recordings/`;
 
-/**
- * Save analysis to local storage
- * @param {object} analysis - Analysis data
- * @param {string} userId - User ID
- */
-export async function saveAnalysisLocally(analysis, userId) {
-  try {
-    // Get existing history
-    const history = await getLocalHistory(userId);
-    
-    // Create new entry
-    const newEntry = {
-      id: `${userId}_${analysis.timestamp}`,
-      userId: userId,
-      text: analysis.text,
-      localAudioPath: analysis.localAudioPath,
-      stress_scores: analysis.stress_scores,
-      stress_levels: analysis.stress_levels,
-      dominant_type: analysis.dominant_type,
-      total_stress_score: analysis.total_stress_score,
-      overall_level: analysis.overall_level,
-      confidence: analysis.confidence,
-      timestamp: analysis.timestamp,
-      recordedAt: analysis.timestamp,
-      analyzedAt: Date.now(),
-      createdAt: Date.now()
-    };
-    
-    // Add to beginning of array (newest first)
-    history.unshift(newEntry);
-    
-    // Keep only last 100 entries
-    const trimmedHistory = history.slice(0, 100);
-    
-    // Save back to storage
-    await AsyncStorage.setItem(
-      `${HISTORY_KEY}_${userId}`,
-      JSON.stringify(trimmedHistory)
-    );
-    
-    console.log('✅ Analysis saved to local storage');
-    return newEntry;
-    
-  } catch (error) {
-    console.error('Error saving analysis locally:', error);
-    throw error;
+// ------------------- AUDIO STORAGE -------------------
+
+export async function initializeStorage() {
+  const dirInfo = await FileSystem.getInfoAsync(AUDIO_DIR);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(AUDIO_DIR, { intermediates: true });
   }
 }
 
 /**
- * Get history from local storage
- * @param {string} userId - User ID
- * @returns {Promise<Array>} - Array of analysis records
+ * Save audio file to permanent storage
+ */
+export async function saveAudioFile(tempUri, userId) {
+  await initializeStorage();
+  const timestamp = Date.now();
+  const filename = `recording_${userId}_${timestamp}.amr`;
+  const permanentUri = `${AUDIO_DIR}${filename}`;
+
+  await FileSystem.copyAsync({ from: tempUri, to: permanentUri });
+
+  return { uri: permanentUri, filename, timestamp };
+}
+
+/**
+ * Delete an audio file
+ */
+export async function deleteAudioFile(uri) {
+  try {
+    const info = await FileSystem.getInfoAsync(uri);
+    if (info.exists) {
+      await FileSystem.deleteAsync(uri);
+    }
+  } catch (err) {
+    console.error('Failed to delete audio file:', err);
+  }
+}
+
+// ------------------- HISTORY STORAGE -------------------
+
+/**
+ * Save analysis locally for a user
+ */
+export async function saveAnalysisLocally(analysis, userId) {
+  try {
+    const history = await getLocalHistory(userId);
+
+    const newEntry = {
+      id: `${userId}_${analysis.timestamp}`,
+      userId,
+      text: analysis.text || '',
+      localAudioPath: analysis.localAudioPath || null,
+      stressType: analysis.stressType || 'Unknown',
+      confidence: analysis.confidence || 0,
+      timestamp: analysis.timestamp || Date.now(),
+    };
+
+    history.unshift(newEntry); // newest first
+    const trimmedHistory = history.slice(0, 100);
+
+    await AsyncStorage.setItem(
+      `${HISTORY_KEY}_${userId}`,
+      JSON.stringify(trimmedHistory)
+    );
+
+    return newEntry;
+  } catch (err) {
+    console.error('Failed to save analysis:', err);
+    throw err;
+  }
+}
+
+/**
+ * Get local history for a user
  */
 export async function getLocalHistory(userId) {
   try {
     const data = await AsyncStorage.getItem(`${HISTORY_KEY}_${userId}`);
-    
-    if (!data) {
-      return [];
-    }
-    
+    if (!data) return [];
     const history = JSON.parse(data);
-    
-    // Convert timestamp strings back to Date objects
+    // Ensure timestamp is a Date object
     return history.map(item => ({
       ...item,
       timestamp: new Date(item.timestamp),
-      recordedAt: new Date(item.recordedAt),
-      analyzedAt: new Date(item.analyzedAt),
-      createdAt: new Date(item.createdAt)
     }));
-    
-  } catch (error) {
-    console.error('Error getting local history:', error);
+  } catch (err) {
+    console.error('Failed to get local history:', err);
     return [];
   }
 }
 
 /**
- * Update a specific analysis entry
- * @param {string} userId - User ID
- * @param {string} entryId - Entry ID
- * @param {object} updates - Fields to update
- */
-export async function updateLocalAnalysis(userId, entryId, updates) {
-  try {
-    const history = await getLocalHistory(userId);
-    
-    const index = history.findIndex(item => item.id === entryId);
-    
-    if (index !== -1) {
-      history[index] = { ...history[index], ...updates };
-      
-      await AsyncStorage.setItem(
-        `${HISTORY_KEY}_${userId}`,
-        JSON.stringify(history)
-      );
-      
-      console.log('✅ Analysis updated in local storage');
-    }
-    
-  } catch (error) {
-    console.error('Error updating local analysis:', error);
-  }
-}
-
-/**
- * Delete a specific analysis entry
- * @param {string} userId - User ID
- * @param {string} entryId - Entry ID
+ * Delete an entry for a user
  */
 export async function deleteLocalAnalysis(userId, entryId) {
-  try {
-    const history = await getLocalHistory(userId);
-    
-    const filtered = history.filter(item => item.id !== entryId);
-    
-    await AsyncStorage.setItem(
-      `${HISTORY_KEY}_${userId}`,
-      JSON.stringify(filtered)
-    );
-    
-    console.log('✅ Analysis deleted from local storage');
-    return true;
-    
-  } catch (error) {
-    console.error('Error deleting local analysis:', error);
-    return false;
-  }
+  const history = await getLocalHistory(userId);
+  const filtered = history.filter(item => item.id !== entryId);
+  await AsyncStorage.setItem(`${HISTORY_KEY}_${userId}`, JSON.stringify(filtered));
 }
 
 /**
- * Clear all history for a user
- * @param {string} userId - User ID
- */
-export async function clearLocalHistory(userId) {
-  try {
-    await AsyncStorage.removeItem(`${HISTORY_KEY}_${userId}`);
-    console.log('✅ Local history cleared');
-    return true;
-  } catch (error) {
-    console.error('Error clearing local history:', error);
-    return false;
-  }
-}
-
-/**
- * Get history statistics
- * @param {string} userId - User ID
- * @returns {Promise<object>} - Statistics
+ * Get statistics
  */
 export async function getHistoryStats(userId) {
-  try {
-    const history = await getLocalHistory(userId);
-    
-    if (history.length === 0) {
-      return {
-        totalRecordings: 0,
-        stressTypes: { Academic: 0, Financial: 0, Social: 0, Emotional: 0 },
-        mostCommonType: null,
-        lastRecording: null
-      };
-    }
-    
-    const stressTypes = { Academic: 0, Financial: 0, Social: 0, Emotional: 0 };
-    
-    history.forEach(item => {
-      if (item.stressType && stressTypes.hasOwnProperty(item.stressType)) {
-        stressTypes[item.stressType]++;
-      }
-    });
-    
-    // Find most common stress type
-    const mostCommonType = Object.entries(stressTypes)
-      .reduce((a, b) => a[1] > b[1] ? a : b)[0];
-    
-    return {
-      totalRecordings: history.length,
-      stressTypes: stressTypes,
-      mostCommonType: mostCommonType,
-      lastRecording: history[0]?.timestamp || null
-    };
-    
-  } catch (error) {
-    console.error('Error getting history stats:', error);
-    return null;
-  }
-}
+  const history = await getLocalHistory(userId);
+  const stressTypes = { Academic: 0, Financial: 0, Social: 0, Emotional: 0 };
 
-/**
- * Export history as JSON
- * @param {string} userId - User ID
- * @returns {Promise<string>} - JSON string
- */
-export async function exportHistory(userId) {
-  try {
-    const history = await getLocalHistory(userId);
-    return JSON.stringify(history, null, 2);
-  } catch (error) {
-    console.error('Error exporting history:', error);
-    return null;
-  }
-}
-
-/**
- * Sync local history with Firestore (optional backup)
- * @param {string} userId - User ID
- * @param {Array} firestoreHistory - History from Firestore
- */
-export async function syncWithFirestore(userId, firestoreHistory) {
-  try {
-    const localHistory = await getLocalHistory(userId);
-    
-    // Merge: Keep local entries and add any missing from Firestore
-    const localIds = new Set(localHistory.map(item => item.id));
-    
-    const missingFromLocal = firestoreHistory.filter(
-      item => !localIds.has(item.id)
-    );
-    
-    if (missingFromLocal.length > 0) {
-      const merged = [...localHistory, ...missingFromLocal];
-      
-      // Sort by timestamp (newest first)
-      merged.sort((a, b) => 
-        new Date(b.timestamp) - new Date(a.timestamp)
-      );
-      
-      // Keep only last 100
-      const trimmed = merged.slice(0, 100);
-      
-      await AsyncStorage.setItem(
-        `${HISTORY_KEY}_${userId}`,
-        JSON.stringify(trimmed)
-      );
-      
-      console.log(`✅ Synced ${missingFromLocal.length} entries from Firestore`);
+  history.forEach(item => {
+    if (item.stressType && stressTypes[item.stressType] !== undefined) {
+      stressTypes[item.stressType]++;
     }
-    
-    return localHistory.length;
-    
-  } catch (error) {
-    console.error('Error syncing with Firestore:', error);
-  }
+  });
+
+  const mostCommonType = Object.entries(stressTypes).reduce((a, b) => (a[1] > b[1] ? a : b))[0] || null;
+
+  return {
+    totalRecordings: history.length,
+    stressTypes,
+    mostCommonType,
+    lastRecording: history[0]?.timestamp || null,
+  };
 }

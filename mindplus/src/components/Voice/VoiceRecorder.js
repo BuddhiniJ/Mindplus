@@ -14,11 +14,11 @@ import { speechToText } from '../../services/speechToText';
 import { analyzeStress } from '../../services/stressService';
 import { saveAudioFile, initializeStorage } from '../../services/localStorageService';
 import { saveAnalysisLocally } from '../../services/historyStorageService';
-import StressMindMap from '../Voice/StressMindMap';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFirestore, doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { LinearGradient } from 'expo-linear-gradient';
+import GreetingContainer from "../../components/GreetingContainer";
 
 export default function VoiceRecorder({ navigation }) {
   const [recording, setRecording] = useState(null);
@@ -80,7 +80,7 @@ export default function VoiceRecorder({ navigation }) {
 
   const signInAnonymously = async () => {
     try {
-      const { signInAnonymously: signIn } = await import('../firebase/firebaseConfig');
+      const { signInAnonymously: signIn } = await import('../../firebase/firebaseConfig');
       await signIn();
       console.log('✅ Signed in to Firebase anonymously');
     } catch (error) {
@@ -232,29 +232,68 @@ export default function VoiceRecorder({ navigation }) {
         return;
       }
 
-      const savedAudio = await saveAudioFile(uri, auth.currentUser.uid);
+      // Get current user ID (local)
+      const currentUserId = await AsyncStorage.getItem('userId');
+
+      // Save audio file locally with user ID
+      const savedAudio = await saveAudioFile(uri, currentUserId);
 
       setLoadingAnalysis(true);
-      const analysis = await analyzeStress(auth.currentUser.uid, text, null);
+      const analysis = await analyzeStress(currentUserId, text, null);
       setStressAnalysis(analysis);
       setLoadingAnalysis(false);
 
-      const userId = auth.currentUser.uid;
-      const stressAnalysesRef = collection(db, 'users', userId, 'stressAnalyses');
-
-      await addDoc(stressAnalysesRef, {
+      // Save to local storage with audio path
+      await saveAnalysisLocally({
         text: text,
-        audio_url: savedAudio.uri,
-        timestamp: serverTimestamp(),
+        localAudioPath: savedAudio.uri,
+        timestamp: Date.now(),
         stress_scores: analysis.stress_scores,
         stress_levels: analysis.stress_levels,
-        dominant_type: analysis.dominant_type,
+        stressType: analysis.dominant_type,
         total_stress_score: analysis.total_stress_score,
         overall_level: analysis.overall_level,
         confidence: analysis.confidence,
-      });
+      }, currentUserId);
 
-      console.log('✅ Saved stress analysis to Firebase for user:', userId);
+      console.log('✅ Saved stress analysis locally for user:', currentUserId);
+
+      // Show popup with options
+      Alert.alert(
+        '✨ Analysis Complete',
+        'Your stress analysis is ready. What would you like to do?',
+        [
+          {
+            text: 'View Analysis',
+            onPress: () => navigation.navigate('StressMindMap', { analysis: analysis }),
+          },
+          {
+            text: 'OK',
+            style: 'cancel',
+          },
+        ]
+      );
+
+      // Also save to Firebase if authenticated
+      try {
+        if (auth.currentUser) {
+          const stressAnalysesRef = collection(db, 'users', auth.currentUser.uid, 'stressAnalyses');
+          await addDoc(stressAnalysesRef, {
+            text: text,
+            audio_url: savedAudio.uri,
+            timestamp: serverTimestamp(),
+            stress_scores: analysis.stress_scores,
+            stress_levels: analysis.stress_levels,
+            dominant_type: analysis.dominant_type,
+            total_stress_score: analysis.total_stress_score,
+            overall_level: analysis.overall_level,
+            confidence: analysis.confidence,
+          });
+          console.log('✅ Saved to Firebase');
+        }
+      } catch (fbError) {
+        console.log('⚠️ Firebase save failed (continuing with local storage):', fbError.message);
+      }
 
     } catch (error) {
       console.error('Processing error:', error);
@@ -264,8 +303,10 @@ export default function VoiceRecorder({ navigation }) {
     }
   };
 
-  const handleJoinCommunity = (stressType) => {
-    navigation.navigate('Community', { stressType });
+  const handleViewAnalysis = () => {
+    if (stressAnalysis) {
+      navigation.navigate('StressMindMap', { analysis: stressAnalysis });
+    }
   };
 
   const rippleOpacity = rippleAnim.interpolate({
@@ -285,8 +326,14 @@ export default function VoiceRecorder({ navigation }) {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
+       <View style={{width: '100%', paddingHorizontal: 10, marginTop: 40}}>
+          <GreetingContainer prefix="Hey, you are free to talk now," />
+        </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+       
         <View style={styles.container}>
+
+         
           {/* Decorative floating elements */}
           <Animated.View 
             style={[
@@ -313,8 +360,8 @@ export default function VoiceRecorder({ navigation }) {
           <View style={styles.card}>
             <View style={styles.headerContainer}>
               <Text style={styles.emoji}>🕊️</Text>
-              <Text style={styles.title}>Inner Peace Portal</Text>
-              <Text style={styles.subtitle}>Let your voice guide you to serenity</Text>
+              <Text style={styles.title}>Tell Your Story</Text>
+              <Text style={styles.subtitle}>Let your thoughts settle</Text>
             </View>
 
             <View style={styles.recordingArea}>
@@ -363,7 +410,7 @@ export default function VoiceRecorder({ navigation }) {
 
               {isRecording && (
                 <>
-                  <Text style={styles.recordingText}>✨ Receiving your energy...</Text>
+                  <Text style={styles.recordingText}> </Text>
                   {duration < 3 && (
                     <Text style={styles.hintText}>
                       Breathe deeply, speak your truth
@@ -374,7 +421,7 @@ export default function VoiceRecorder({ navigation }) {
 
               {!isRecording && !loadingTranscript && !loadingAnalysis && (
                 <Text style={styles.inspiringText}>
-                  Your words hold the key to tranquility
+                  {/* Your words hold the key to tranquility */}
                 </Text>
               )}
             </View>
@@ -388,12 +435,12 @@ export default function VoiceRecorder({ navigation }) {
                     disabled={loadingTranscript || loadingAnalysis}
                   >
                     <LinearGradient
-                      colors={['#5777AD', '#7CB9E8']}
+                      colors={['#93bafabb', '#73addbea']}
                       style={styles.buttonGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={styles.buttonText}>Begin Journey 🌊</Text>
+                      <Text style={styles.buttonText}>Just Say It</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   
@@ -401,7 +448,7 @@ export default function VoiceRecorder({ navigation }) {
                     style={[styles.button, styles.historyButton]}
                     onPress={() => navigation.navigate('HistoryScreen')}
                   >
-                    <Text style={styles.historyButtonText}>📖 Reflection Log</Text>
+                    <Text style={styles.historyButtonText}>My Journey</Text>
                   </TouchableOpacity>
                 </>
               ) : (
@@ -413,7 +460,7 @@ export default function VoiceRecorder({ navigation }) {
                     colors={['#9DB4C0', '#B8D8E8']}
                     style={styles.buttonGradient}
                   >
-                    <Text style={styles.buttonText}>Complete ✓</Text>
+                    <Text style={styles.buttonText}>STOP</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               )}
@@ -448,22 +495,31 @@ export default function VoiceRecorder({ navigation }) {
           {/* Transcript */}
           {transcript && !loadingTranscript && !transcript.includes("No speech") && (
             <View style={styles.transcriptCard}>
-              <LinearGradient
+              {/* <LinearGradient
                 colors={['#FFFFFF', '#F8FBFF']}
                 style={styles.transcriptGradient}
               >
                 <Text style={styles.cardTitle}>💭 Your Sacred Words</Text>
                 <Text style={styles.transcriptText}>{transcript}</Text>
-              </LinearGradient>
+              </LinearGradient> */}
             </View>
           )}
 
-          {/* Stress Analysis */}
-          {stressAnalysis && (
-            <StressMindMap 
-              stressAnalysis={stressAnalysis}
-              onJoinCommunity={handleJoinCommunity}
-            />
+          {/* Analysis Ready Button */}
+          {stressAnalysis && !loadingAnalysis && (
+            <TouchableOpacity
+              style={styles.viewAnalysisButton}
+              onPress={handleViewAnalysis}
+            >
+              <LinearGradient
+                colors={['#7CB9E8', '#5777AD']}
+                style={styles.viewAnalysisGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.viewAnalysisText}>View Full Analysis</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           )}
         </View>
       </ScrollView>
@@ -642,17 +698,16 @@ const styles = StyleSheet.create({
     color: '#7CB9E8',
     marginTop: 8,
     textAlign: 'center',
-    fontStyle: 'italic',
     lineHeight: 22,
   },
   controls: {
     gap: 16,
   },
   button: {
-    borderRadius: 18,
+    borderRadius: 50,
     overflow: 'hidden',
     elevation: 5,
-    shadowColor: '#5777AD',
+    shadowColor: '#6a94dd36',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -667,7 +722,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 2,
     borderColor: '#7CB9E8',
-    borderRadius: 18,
+    borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
   },
@@ -733,5 +788,29 @@ const styles = StyleSheet.create({
     color: '#5777AD',
     lineHeight: 28,
     fontStyle: 'italic',
+  },
+  viewAnalysisButton: {
+    marginTop: 20,
+    borderRadius: 24,
+    width: '100%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#7CB9E8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  viewAnalysisGradient: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  viewAnalysisText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });
