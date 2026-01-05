@@ -212,12 +212,40 @@ const styles = StyleSheet.create({
     elevation: 4, // Android shadow
   },
 
+  statusHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   statusLabel: {
+    flex: 1,
     fontSize: 14, // slightly bigger
     fontWeight: "700", // bolder for emphasis
     marginBottom: 4,
     color: "#ffffffff", // darker text, modern gray-blue
-    textAlign: "center",
+    textAlign: "left",
+  },
+  statusPercentText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffffff",
+  },
+  statusSubLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.9)",
+    marginBottom: 8,
+  },
+  statusBarTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.35)",
+    overflow: "hidden",
+  },
+  statusBarFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
   },
   promptRow: {
     flexDirection: "row",
@@ -237,40 +265,141 @@ const styles = StyleSheet.create({
     color: "#3730A3",
   },
   techDetailCard: {
-    marginHorizontal: 16,
-    marginBottom: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-    backgroundColor: "#F9FAFB",
+    marginHorizontal: 20,
+    marginBottom: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 22,
+
+    // Soft calming background
+    backgroundColor: "#F8FAFF",
+
+    // Gentle border
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E2E8F0",
+
+    // Premium floating shadow
+    shadowColor: "#1E293B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  techDetailTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 4,
-    color: "#0F172A",
-  },
-  techDetailBody: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#4B5563",
-  },
-  callNowButton: {
-    marginTop: 10,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "#6366F1",
+
+  /* =======================
+     HEADER
+  ======================= */
+  techDetailHeaderRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    paddingBottom: 12,
+
+    // Soft divider
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5EDFF",
   },
-  callNowButtonDisabled: {
-    backgroundColor: "#9CA3AF",
+
+  techDetailTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.3,
+
+    // Calm dark-blue (not harsh black)
+    color: "#1E3A8A",
+
+    fontFamily: "System",
   },
-  callNowButtonText: {
-    color: "#FFFFFF",
+
+  /* =======================
+     CLOSE BUTTON
+  ======================= */
+  techDetailCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+
+    // Frosted light background
+    backgroundColor: "#EEF2FF",
+
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  techDetailCloseIcon: {
     fontSize: 14,
     fontWeight: "700",
+    color: "#4F46E5",
+  },
+
+  /* =======================
+     BODY TEXT
+  ======================= */
+  techDetailBody: {
+    fontSize: 14,
+    lineHeight: 22,
+
+    // Warm gray for stress-friendly reading
+    color: "#475569",
+
+    letterSpacing: -0.1,
+    marginTop: 6,
+    fontFamily: "System",
+  },
+
+  /* =======================
+     CALL NOW BUTTON
+  ======================= */
+  callNowButton: {
+    marginTop: 22,
+    paddingVertical: 15,
+    borderRadius: 18,
+
+    // Primary calm blue
+    backgroundColor: "#ff0000ff",
+
+    alignItems: "center",
+
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+
+  callNowButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+  },
+
+  callNowButtonDisabled: {
+    backgroundColor: "#f50000ff",
+    shadowOpacity: 0.05,
+  },
+
+  callNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    fontFamily: "System",
+  },
+
+  // Optional: Add a subtle icon to the button
+  callNowButtonIcon: {
+    marginRight: 8,
+    fontSize: 16,
   },
   messageRow: {
     flexDirection: "row",
