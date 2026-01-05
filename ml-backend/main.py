@@ -1,11 +1,12 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import numpy as np
 from utils.cluster_labels import LABELS
 from routes.voice_routes import router as voice_routes
 
-app = FastAPI()
+app = FastAPI(title="MindPlus Backend API", version="1.0")
 
 # Load model at startup
 model = joblib.load("models/model.pkl")
@@ -17,8 +18,17 @@ class UserScores(BaseModel):
 
 @app.get("/")
 def root():
-    return {"message": "Stress ML Backend running"}
-
+    return {
+        "message": "MindPlus Backend API",
+        "status": "running",
+        "version": "1.0",
+        "endpoints": {
+            "health": "/voice/health",
+            "analyze": "/voice/analyze-stress",
+            "history": "/voice/stress-history/{user_id}",
+            "predict": "/predict"
+        }
+    }
 @app.post("/predict")
 def predict_cluster(scores: UserScores):
 
@@ -42,11 +52,18 @@ def predict_cluster(scores: UserScores):
     }
 
 # Include voice routes
-
-
-
-
-
+app.include_router(voice_routes)
 
 
 app.include_router(voice_routes)
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    print("=" * 50)
+    print("🚀 MindPlus Backend Started")
+    print("=" * 50)
+    print("📍 Voice Analysis: /voice/analyze-stress")
+    print("📊 Health Check: /voice/health")
+    print("📜 History: /voice/stress-history/{user_id}")
+    print("=" * 50)

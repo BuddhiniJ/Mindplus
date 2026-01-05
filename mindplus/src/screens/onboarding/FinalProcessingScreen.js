@@ -4,7 +4,7 @@ import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
 // Example ML API URL (replace with your real endpoint)
-const ML_API_URL = "http://192.168.1.101:8000/predict";
+const ML_API_URL = "http://192.168.1.2:8000/predict";
 
 export default function FinalProcessingScreen({ route, navigation }) {
   const { allAnswers, scores } = route.params;

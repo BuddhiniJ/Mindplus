@@ -13,6 +13,9 @@ import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import HeatmapScreen from "../screens/home/HeatmapScreen.js";
 import MenuScreen from '../screens/home/menu.js';
 import VoiceRecorderScreen from '../components/VoiceRecorder.js';
+import HistoryScreen from '../components/HistoryScreen.js';
+import CommunityScreen from '../components/CommunityScreen.js';
+import StressMindMap from '../components/StressMindMap.jsx';
 
 const Stack = createStackNavigator();
 
@@ -33,6 +36,10 @@ export default function AppNavigator() {
             <Stack.Screen name="HeatmapScreen" component={HeatmapScreen} />
             <Stack.Screen name="MenuScreen" component={MenuScreen} />
             <Stack.Screen name="VoiceRecorderScreen" component={VoiceRecorderScreen} />
+            <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
+            <Stack.Screen name="CommunityScreen" component={CommunityScreen} />
+            <Stack.Screen name="StressMindMap" component={StressMindMap} />
+            
 
         </Stack.Navigator>
     );

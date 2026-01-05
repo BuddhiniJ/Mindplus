@@ -5,21 +5,70 @@ import {
   Text,
   StyleSheet,
   Animated,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Audio } from 'expo-av';
+import { speechToText } from '../services/speechToText';
+import { analyzeStress } from '../services/stressService';
+// import { saveUserProfile } from '../firebase/firebaseConfig';
+import { saveAudioFile, initializeStorage } from '../services/localStorageService';
+import { saveAnalysisLocally } from '../services/historyStorageService';
+import StressMindMap from '../components/StressMindMap';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-export default function VoiceRecorder() {
+export default function VoiceRecorder({ navigation }) {
   const [recording, setRecording] = useState(null);
   const [recordedUri, setRecordedUri] = useState(null);
+  const [recordingTimestamp, setRecordingTimestamp] = useState(null);
   const [duration, setDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [stressAnalysis, setStressAnalysis] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const db = getFirestore();
+const auth = getAuth();
+  
+  // Loading states
+  const [loadingTranscript, setLoadingTranscript] = useState(false);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
-  // ✅ FIX: useRef instead of useState
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // ---------------------------
-  // Recording animation + timer
-  // ---------------------------
+  // Get or create user ID
+  useEffect(() => {
+    loadUserId();
+    initializeStorage(); // Initialize audio storage directory
+    signInAnonymously(); // Sign in to Firebase
+  }, []);
+
+  const signInAnonymously = async () => {
+    try {
+      const { signInAnonymously: signIn } = await import('../firebase/firebaseConfig');
+      await signIn();
+      console.log('✅ Signed in to Firebase anonymously');
+    } catch (error) {
+      console.log('⚠️ Firebase sign-in failed (community features disabled):', error.message);
+    }
+  };
+
+  const loadUserId = async () => {
+    try {
+      let id = await AsyncStorage.getItem('userId');
+      if (!id) {
+        id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await AsyncStorage.setItem('userId', id);
+      }
+      setUserId(id);
+    } catch (error) {
+      console.error('Error loading user ID:', error);
+    }
+  };
+
+  // Recording animation
   useEffect(() => {
     let interval;
 
@@ -51,25 +100,17 @@ export default function VoiceRecorder() {
     };
   }, [isRecording]);
 
-  // ---------------------------
-  // Helpers
-  // ---------------------------
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs
-      .toString()
-      .padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ---------------------------
-  // Start Recording
-  // ---------------------------
   const startRecording = async () => {
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
-        alert('Microphone permission is required!');
+        Alert.alert('Permission Required', 'Microphone permission is required!');
         return;
       }
 
@@ -80,25 +121,46 @@ export default function VoiceRecorder() {
 
       const newRecording = new Audio.Recording();
 
-      await newRecording.prepareToRecordAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      await newRecording.prepareToRecordAsync({
+        android: {
+          extension: '.amr',
+          outputFormat: Audio.AndroidOutputFormat.AMR_WB,
+          audioEncoder: Audio.AndroidAudioEncoder.AMR_WB,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.caf',
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+      });
 
       await newRecording.startAsync();
 
+      // Store timestamp when recording starts
+      const timestamp = Date.now();
+      
       setRecording(newRecording);
       setIsRecording(true);
       setDuration(0);
       setRecordedUri(null);
+      setRecordingTimestamp(timestamp);
+      setTranscript("");
+      setStressAnalysis(null);
+
     } catch (error) {
       console.error('Start recording error:', error);
-      alert('Failed to start recording');
+      Alert.alert('Error', 'Failed to start recording');
     }
   };
 
-  // ---------------------------
-  // Stop Recording
-  // ---------------------------
   const stopRecording = async () => {
     try {
       if (!recording) return;
@@ -110,88 +172,183 @@ export default function VoiceRecorder() {
       setIsRecording(false);
       setRecordedUri(uri);
 
-      console.log('Recording saved at:', uri);
+      // Process the recording
+      await processRecording(uri);
+
     } catch (error) {
       console.error('Stop recording error:', error);
-      alert('Failed to stop recording');
+      Alert.alert('Error', 'Failed to stop recording');
     }
   };
 
-  // ---------------------------
-  // UI
-  // ---------------------------
+  const processRecording = async (uri) => {
+  try {
+    setLoadingTranscript(true);
+    const text = await speechToText(uri);
+    setTranscript(text);
+    setLoadingTranscript(false);
+
+    if (!text || text.includes("No speech detected")) {
+      Alert.alert('Notice', 'No clear speech detected. Please try again.');
+      return;
+    }
+
+    // Save audio locally if needed
+    const savedAudio = await saveAudioFile(uri, auth.currentUser.uid);
+
+    setLoadingAnalysis(true);
+    const analysis = await analyzeStress(auth.currentUser.uid, text, null);
+    setStressAnalysis(analysis);
+    setLoadingAnalysis(false);
+
+    // --------------------------
+    // Save to Firestore
+    // --------------------------
+    const userId = auth.currentUser.uid;
+    const stressAnalysesRef = collection(db, 'users', userId, 'stressAnalyses');
+
+    await addDoc(stressAnalysesRef, {
+      text: text,
+      audio_url: savedAudio.uri,
+      timestamp: serverTimestamp(),
+      stress_scores: analysis.stress_scores,
+      stress_levels: analysis.stress_levels,
+      dominant_type: analysis.dominant_type,
+      total_stress_score: analysis.total_stress_score,
+      overall_level: analysis.overall_level,
+      confidence: analysis.confidence,
+    });
+
+    console.log('✅ Saved stress analysis to Firebase for user:', userId);
+
+  } catch (error) {
+    console.error('Processing error:', error);
+    Alert.alert('Error', error.message || 'Failed to process recording');
+    setLoadingTranscript(false);
+    setLoadingAnalysis(false);
+  }
+};
+
+  const handleJoinCommunity = (stressType) => {
+    navigation.navigate('Community', { stressType });
+  };
+
+  const getStressColor = (level) => {
+    const colors = ['#22c55e', '#f59e0b', '#ef4444'];
+    return colors[level] || '#6b7280';
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Voice Recorder</Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Voice Stress Analysis</Text>
 
-        <View style={styles.recordingArea}>
-          {isRecording ? (
-            <Animated.View
-              style={[
-                styles.recordingIndicator,
-                { transform: [{ scale: pulseAnim }] },
-              ]}
-            >
-              <View style={styles.recordingDot} />
-            </Animated.View>
-          ) : (
-            <View style={styles.micIcon}>
-              <Text style={styles.micEmoji}>🎤</Text>
-            </View>
-          )}
+          <View style={styles.recordingArea}>
+            {isRecording ? (
+              <Animated.View
+                style={[
+                  styles.recordingIndicator,
+                  { transform: [{ scale: pulseAnim }] },
+                ]}
+              >
+                <View style={styles.recordingDot} />
+              </Animated.View>
+            ) : (
+              <View style={styles.micIcon}>
+                <Text style={styles.micEmoji}>🎤</Text>
+              </View>
+            )}
 
-          <Text style={styles.timer}>{formatTime(duration)}</Text>
+            <Text style={styles.timer}>{formatTime(duration)}</Text>
 
-          {isRecording && (
-            <Text style={styles.recordingText}>Recording...</Text>
-          )}
+            {isRecording && (
+              <>
+                <Text style={styles.recordingText}>Recording...</Text>
+                {duration < 3 && (
+                  <Text style={styles.hintText}>
+                    Speak clearly for at least 3 seconds
+                  </Text>
+                )}
+              </>
+            )}
+          </View>
+
+          <View style={styles.controls}>
+            {!isRecording ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.button, styles.recordButton]}
+                  onPress={startRecording}
+                  disabled={loadingTranscript || loadingAnalysis}
+                >
+                  <Text style={styles.buttonText}>Start Recording</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.button, styles.historyButton]}
+                  onPress={() => navigation.navigate('HistoryScreen')}
+                >
+                  <Text style={styles.historyButtonText}>📜 View History</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.button, styles.stopButton]}
+                onPress={stopRecording}
+              >
+                <Text style={styles.buttonText}>Stop Recording</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        <View style={styles.controls}>
-          {!isRecording ? (
-            <TouchableOpacity
-              style={[styles.button, styles.recordButton]}
-              onPress={startRecording}
-            >
-              <Text style={styles.buttonText}>Start Recording</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.button, styles.stopButton]}
-              onPress={stopRecording}
-            >
-              <Text style={styles.buttonText}>Stop Recording</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {recordedUri && !isRecording && (
-          <View style={styles.successCard}>
-            <Text style={styles.successIcon}>✓</Text>
-            <Text style={styles.successText}>
-              Recording saved successfully!
-            </Text>
-            <Text style={styles.uriText} numberOfLines={1}>
-              {recordedUri.split('/').pop()}
-            </Text>
+        {/* Loading States */}
+        {loadingTranscript && (
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="small" color="#3b82f6" />
+            <Text style={styles.loadingText}>Converting speech to text...</Text>
           </View>
         )}
+
+        {loadingAnalysis && (
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="small" color="#3b82f6" />
+            <Text style={styles.loadingText}>Analyzing stress level...</Text>
+          </View>
+        )}
+
+        {/* Transcript */}
+        {transcript && !loadingTranscript && !transcript.includes("No speech") && (
+          <View style={styles.transcriptCard}>
+            <Text style={styles.cardTitle}>📝 Transcript</Text>
+            <Text style={styles.transcriptText}>{transcript}</Text>
+          </View>
+        )}
+
+        {/* Stress Analysis Mind Map */}
+        {stressAnalysis && (
+          <StressMindMap 
+            stressAnalysis={stressAnalysis}
+            onJoinCommunity={handleJoinCommunity}
+          />
+        )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
-// ---------------------------
-// Styles
-// ---------------------------
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#f5f7fa',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    minHeight: '100%',
   },
   card: {
     backgroundColor: '#ffffff',
@@ -200,17 +357,22 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 32,
+    color: '#1f2937',
   },
   recordingArea: {
     alignItems: 'center',
     marginBottom: 32,
-    minHeight: 180,
+    minHeight: 200,
     justifyContent: 'center',
   },
   micIcon: {
@@ -244,10 +406,18 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '600',
     marginBottom: 8,
+    color: '#1f2937',
   },
   recordingText: {
     fontSize: 16,
     color: '#ef4444',
+    fontWeight: '500',
+  },
+  hintText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 8,
+    textAlign: 'center',
   },
   controls: {
     gap: 12,
@@ -263,31 +433,56 @@ const styles = StyleSheet.create({
   stopButton: {
     backgroundColor: '#ef4444',
   },
+  historyButton: {
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+  },
+  historyButtonText: {
+    color: '#3b82f6',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
   },
-  successCard: {
-    marginTop: 24,
+  loadingCard: {
+    marginTop: 16,
     padding: 20,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
+    width: '100%',
+    maxWidth: 400,
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    elevation: 3,
   },
-  successIcon: {
-    fontSize: 32,
-    color: '#22c55e',
-    marginBottom: 8,
-  },
-  successText: {
+  loadingText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#15803d',
-    marginBottom: 8,
+    color: '#3b82f6',
+    fontWeight: '500',
   },
-  uriText: {
-    fontSize: 12,
-    color: '#16a34a',
+  transcriptCard: {
+    marginTop: 16,
+    padding: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  transcriptText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
   },
 });
