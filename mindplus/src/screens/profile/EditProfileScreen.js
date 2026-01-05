@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator, StyleSheet } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
+import { Ionicons } from '@expo/vector-icons'; // Assuming Expo environment
 
-// Custom Alert Component
+// Custom Alert Component (Retained as requested)
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
   const getIconColor = () => {
     switch (type) {
@@ -25,39 +26,26 @@ const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfir
   };
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={alertStyles.overlay}>
         <View style={alertStyles.container}>
           <View style={[alertStyles.iconContainer, { backgroundColor: getIconColor() + "20" }]}>
-            <Text style={[alertStyles.icon, { color: getIconColor() }]}>
-              {getIcon()}
-            </Text>
+            <Text style={[alertStyles.icon, { color: getIconColor() }]}>{getIcon()}</Text>
           </View>
-
           <Text style={alertStyles.title}>{title}</Text>
           <Text style={alertStyles.message}>{message}</Text>
-
           <View style={alertStyles.buttonContainer}>
             {onConfirm ? (
-              <>
-                <TouchableOpacity
-                  style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
-                  onPress={onConfirm}
-                  activeOpacity={0.8}
-                >
-                  <Text style={alertStyles.confirmButtonText}>Continue</Text>
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity
+                style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
+                onPress={onConfirm}
+              >
+                <Text style={alertStyles.confirmButtonText}>Continue</Text>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]}
                 onPress={onClose}
-                activeOpacity={0.8}
               >
                 <Text style={alertStyles.confirmButtonText}>OK</Text>
               </TouchableOpacity>
@@ -71,6 +59,7 @@ const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfir
 
 export default function EditProfileScreen({ navigation }) {
   const [nickname, setNickname] = useState("");
+  const [fullName, setFullName] = useState("");
   const [avatar, setAvatar] = useState("avatar1");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,8 +67,6 @@ export default function EditProfileScreen({ navigation }) {
   const [emergencyContact, setEmergencyContact] = useState("");
   const [emergencyRelation, setEmergencyRelation] = useState("");
 
-
-  // Alert state
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: "",
@@ -89,118 +76,60 @@ export default function EditProfileScreen({ navigation }) {
   });
 
   const showAlert = (title, message, type = "info", onConfirm = null) => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      type,
-      onConfirm,
-    });
+    setAlertConfig({ visible: true, title, message, type, onConfirm });
   };
 
-  const hideAlert = () => {
-    setAlertConfig({ ...alertConfig, visible: false });
-  };
+  const hideAlert = () => setAlertConfig({ ...alertConfig, visible: false });
 
-  useEffect(() => {
-    loadExistingProfile();
-  }, []);
+  useEffect(() => { loadExistingProfile(); }, []);
 
   const loadExistingProfile = async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-
       const ref = doc(db, "users", user.uid, "profile", "basic");
       const snap = await getDoc(ref);
-
       if (snap.exists()) {
         const data = snap.data();
         setNickname(data.nickname || "");
+        setFullName(data.fullName || "");
         setAvatar(data.avatar || "avatar1");
         setEmergencyName(data.emergencyName || "");
         setEmergencyContact(data.emergencyContact || "");
         setEmergencyRelation(data.emergencyRelation || "");
-
       }
       setLoading(false);
     } catch (error) {
-      console.error("Load profile error:", error);
       setLoading(false);
     }
   };
 
   const saveProfile = async () => {
-    if (!nickname.trim()) {
-      showAlert("Nickname Required", "Please enter a nickname before saving.", "warning");
-      return;
-    }
-
-    if (nickname.length < 2) {
-      showAlert("Nickname Too Short", "Nickname must be at least 2 characters long.", "warning");
-      return;
-    }
-
-    if (!emergencyName.trim()) {
-      showAlert("Emergency Contact Required", "Please enter an emergency contact name.", "warning");
-      return;
-    }
-
-    if (!emergencyContact.trim()) {
-      showAlert("Emergency Contact Number Required", "Please enter an emergency contact number.", "warning");
-      return;
-    }
-
-    if (!/^\d{10}$/.test(emergencyContact)) {
-      showAlert("Invalid Contact Number", "Emergency contact number must be 10 digits.", "error");
-      return;
-    }
-
-    if (!emergencyRelation.trim()) {
-      showAlert("Relationship Required", "Please specify your relationship to the emergency contact.", "warning");
-      return;
-    }
-
+    if (!nickname.trim()) { showAlert("Nickname Required", "Please enter a nickname.", "warning"); return; }
+    if (!emergencyName.trim()) { showAlert("Required", "Emergency Name is required.", "warning"); return; }
+    if (!/^\d{10}$/.test(emergencyContact)) { showAlert("Error", "Contact must be 10 digits.", "error"); return; }
 
     setSaving(true);
     try {
       const user = auth.currentUser;
+      await setDoc(doc(db, "users", user.uid, "profile", "basic"), {
+        nickname, fullName, avatar, emergencyName, emergencyContact, emergencyRelation,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
 
-      await setDoc(
-        doc(db, "users", user.uid, "profile", "basic"),
-        {
-          nickname,
-          avatar,
-          emergencyName,
-          emergencyContact,
-          emergencyRelation,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
-
-      showAlert(
-        "Success",
-        "Your profile has been updated successfully!",
-        "success",
-        () => {
-          hideAlert();
-          navigation.replace("UserProfileScreen");
-        }
-      );
+      showAlert("Success", "Profile updated!", "success", () => {
+        hideAlert();
+        navigation.navigate("UserProfileScreen")
+      });
     } catch (error) {
-      showAlert("Error", "Failed to update profile. Please try again.", "error");
-      console.error("Save profile error:", error);
-    } finally {
-      setSaving(false);
-    }
+      showAlert("Error", "Update failed.", "error");
+    } finally { setSaving(false); }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <ActivityIndicator size="large" color="#5FA1D5" />
       </View>
     );
   }
@@ -209,439 +138,128 @@ export default function EditProfileScreen({ navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity style={styles.backButtonBox} onPress={() => navigation.navigate("UserProfileScreen")}>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={styles.backButton} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
         {/* Preview Card */}
         <View style={styles.previewCard}>
-          <Text style={styles.previewLabel}>Preview</Text>
+          <Text style={styles.sectionLabel}>PREVIEW</Text>
           <View style={styles.previewContent}>
             <View style={styles.previewAvatarContainer}>
-              <Image
-                source={avatars[avatar]}
-                style={styles.previewAvatar}
-              />
+              <Image source={avatars[avatar]} style={styles.previewAvatar} />
             </View>
             <View style={styles.previewInfo}>
-              <Text style={styles.previewNickname}>
-                {nickname || "Your Nickname"}
-              </Text>
-              <Text style={styles.previewSubtext}>This is how you'll appear</Text>
+              <Text style={styles.previewNickname}>{nickname || "John D"}</Text>
+              <Text style={styles.previewEmail}>{auth.currentUser?.email}</Text>
             </View>
           </View>
         </View>
 
-        {/* Nickname Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nickname</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              value={nickname}
-              onChangeText={setNickname}
-              placeholder="Enter a nickname"
-              placeholderTextColor="#9CA3AF"
-              style={styles.input}
-              maxLength={20}
-            />
-            <Text style={styles.characterCount}>{nickname.length}/20</Text>
+        {/* Personal Details Section */}
+        <View style={styles.sectionOutline}>
+          <Text style={styles.floatingLabel}>Personal Details</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Name</Text>
+            <TextInput value={fullName} onChangeText={setFullName} style={styles.input} />
           </View>
-          <Text style={styles.hint}>Choose a friendly name others will see</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Nickname</Text>
+            <TextInput value={nickname} onChangeText={setNickname} style={styles.input} maxLength={20} />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <TextInput value={auth.currentUser?.email} editable={false} style={[styles.input, styles.disabledInput]} />
+          </View>
         </View>
 
         {/* Emergency Contact Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Emergency Contact</Text>
-          <Text style={styles.sectionSubtitle}>
-            This will only be used for safety purposes
-          </Text>
-
-          <TextInput
-            value={emergencyName}
-            onChangeText={setEmergencyName}
-            placeholder="Emergency contact name"
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-          />
-
-          <TextInput
-            value={emergencyContact}
-            onChangeText={setEmergencyContact}
-            placeholder="Emergency contact number"
-            placeholderTextColor="#9CA3AF"
-            keyboardType="numeric"
-            maxLength={10}
-            style={[styles.input, { marginTop: 12 }]}
-          />
-
-          <TextInput
-            value={emergencyRelation}
-            onChangeText={setEmergencyRelation}
-            placeholder="Relationship (e.g. Mother, Friend)"
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, { marginTop: 12 }]}
-          />
+        <View style={styles.sectionOutline}>
+          <Text style={styles.floatingLabel}>Emergency Contact</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Name</Text>
+            <TextInput value={emergencyName} onChangeText={setEmergencyName} style={styles.input} />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Contact No</Text>
+            <TextInput value={emergencyContact} onChangeText={setEmergencyContact} keyboardType="numeric" maxLength={10} style={styles.input} />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Relationship</Text>
+            <TextInput value={emergencyRelation} onChangeText={setEmergencyRelation} style={styles.input} />
+          </View>
         </View>
 
-
         {/* Avatar Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Choose Your Avatar</Text>
-          <Text style={styles.sectionSubtitle}>Select an avatar that represents you</Text>
-
+        <View style={styles.sectionOutline}>
+          <Text style={styles.floatingLabel}>Avatar</Text>
           <View style={styles.avatarGrid}>
             {Object.keys(avatars).map((key) => (
-              <TouchableOpacity
-                key={key}
-                onPress={() => setAvatar(key)}
-                style={[
-                  styles.avatarOption,
-                  avatar === key && styles.avatarOptionSelected
-                ]}
-                activeOpacity={0.7}
-              >
-                <Image
-                  source={avatars[key]}
-                  style={styles.avatarImage}
-                />
-                {avatar === key && (
-                  <View style={styles.selectedBadge}>
-                    <Text style={styles.selectedBadgeText}>✓</Text>
-                  </View>
-                )}
+              <TouchableOpacity key={key} onPress={() => setAvatar(key)} style={[styles.avatarOption, avatar === key && styles.avatarSelected]}>
+                <Image source={avatars[key]} style={styles.avatarGridImage} />
+                {avatar === key && <View style={styles.checkCircle}><Ionicons name="checkmark" size={12} color="white" /></View>}
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         {/* Save Button */}
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={saveProfile}
-          disabled={saving}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Text>
-          {!saving && <Text style={styles.saveButtonIcon}>✓</Text>}
+        <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.7 }]} onPress={saveProfile} disabled={saving}>
+          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save"}</Text>
         </TouchableOpacity>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacer} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Custom Alert */}
-      <CustomAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        onClose={hideAlert}
-        onConfirm={alertConfig.onConfirm}
-      />
+      <CustomAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} onClose={hideAlert} onConfirm={alertConfig.onConfirm} />
     </View>
   );
 }
 
-const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  backButton: {
-    width: 60,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#3B82F6",
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  previewCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  previewLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6B7280",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 16,
-  },
-  previewContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  previewAvatarContainer: {
-    marginRight: 16,
-  },
-  previewAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: "#3B82F6",
-  },
-  previewInfo: {
-    flex: 1,
-  },
-  previewNickname: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  previewSubtext: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 16,
-  },
-  inputContainer: {
-    position: "relative",
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#111827",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  characterCount: {
-    position: "absolute",
-    right: 16,
-    top: 16,
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "500",
-  },
-  hint: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginTop: 8,
-  },
-  avatarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  avatarOption: {
-    position: "relative",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    padding: 8,
-    backgroundColor: "#FFFFFF",
-  },
-  avatarOptionSelected: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#EEF2FF",
-  },
-  avatarImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-  },
-  selectedBadge: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#3B82F6",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  selectedBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  saveButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#10B981",
-    padding: 18,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  saveButtonIcon: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  bottomSpacer: {
-    height: 40,
-  },
-};
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20 },
+  backButtonBox: { width: 40, height: 40, borderRadius: 8, backgroundColor: "#5FA1D5", justifyContent: "center", alignItems: "center" },
+  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
+  scrollContent: { padding: 20 },
+  previewCard: { borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 15, padding: 15, marginBottom: 30 },
+  sectionLabel: { fontSize: 10, color: "#9CA3AF", marginBottom: 10, fontWeight: "700" },
+  previewContent: { flexDirection: "row", alignItems: "center" },
+  previewAvatarContainer: { width: 70, height: 70, borderRadius: 35, borderWidth: 2, borderColor: "#5FA1D5", justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  previewAvatar: { width: 55, height: 55 },
+  previewInfo: { marginLeft: 15 },
+  previewNickname: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  previewEmail: { fontSize: 12, color: "#777" },
+  sectionOutline: { borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 15, padding: 15, marginBottom: 30, paddingTop: 20 },
+  floatingLabel: { position: "absolute", top: -10, left: 15, backgroundColor: "white", paddingHorizontal: 5, fontSize: 12, color: "#9CA3AF" },
+  inputGroup: { marginBottom: 15 },
+  fieldLabel: { fontSize: 11, color: "#9CA3AF", marginBottom: 4 },
+  input: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6", fontSize: 14, color: "#333", paddingVertical: 4 },
+  disabledInput: { backgroundColor: "#F3F4F6", borderRadius: 5, paddingHorizontal: 5, color: "#9CA3AF" },
+  avatarGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  avatarOption: { width: "22%", aspectRatio: 1, borderRadius: 50, marginBottom: 10, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB" },
+  avatarSelected: { borderColor: "#5FA1D5", backgroundColor: "#F0F9FF" },
+  avatarGridImage: { width: "80%", height: "80%", borderRadius: 50 },
+  checkCircle: { position: "absolute", top: 0, right: 0, backgroundColor: "#5FA1D5", borderRadius: 10, width: 16, height: 16, justifyContent: "center", alignItems: "center", borderWeight: 2, borderColor: "white" },
+  saveButton: { backgroundColor: "#5FA1D5", borderRadius: 12, paddingVertical: 15, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  saveButtonText: { color: "white", fontSize: 18, fontWeight: "bold" },
+});
 
-const alertStyles = {
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 340,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    width: "100%",
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  singleButton: {
-    width: "100%",
-  },
-  confirmButton: {
-    backgroundColor: "#3B82F6",
-  },
-  confirmButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  cancelButton: {
-    backgroundColor: "#F3F4F6",
-  },
-  cancelButtonText: {
-    color: "#374151",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-};
+const alertStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
+  container: { backgroundColor: "white", borderRadius: 20, padding: 25, width: "80%", alignItems: "center" },
+  iconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center", marginBottom: 15 },
+  icon: { fontSize: 30, fontWeight: "bold" },
+  title: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  message: { textAlign: "center", color: "#6B7280", marginBottom: 20 },
+  buttonContainer: { width: "100%" },
+  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  confirmButtonText: { color: "white", fontWeight: "bold" },
+  singleButton: { width: "100%" },
+});

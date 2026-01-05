@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollView, View, Text, TouchableOpacity, Modal } from "react-native";
 import { DASS21_QUESTIONS } from "../../utils/dass21Questions";
 import QuestionCard from "../../components/QuestionCard";
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
@@ -79,7 +80,7 @@ export default function Dass21Screen2({ route, navigation }) {
   const { answersPart1 } = route.params;
   const questions = DASS21_QUESTIONS.slice(7, 14); // Q8-Q14
   const [answers, setAnswers] = useState({});
-  
+
   // Alert state
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
@@ -138,17 +139,20 @@ export default function Dass21Screen2({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <Text style={styles.title}>DASS-21 Assessment</Text>
           <Text style={styles.subtitle}>Part 2 of 3</Text>
         </View>
-        
+
         {/* Overall Progress Badge */}
         <View style={styles.overallProgressBadge}>
           <Text style={styles.overallProgressText}>{calculateOverallProgress()}% Complete</Text>
         </View>
-        
+
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
@@ -158,17 +162,18 @@ export default function Dass21Screen2({ route, navigation }) {
             {Object.keys(answers).length} of {questions.length} answered
           </Text>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Questions */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.continueCard}>
-          <Text style={styles.continueText}>
-            Great progress! You're now on Part 2. Continue answering the following questions.
+        <View style={styles.instructionsCard}>
+          <Text style={styles.instructionsTitle}>Instructions</Text>
+          <Text style={styles.instructionsText}>
+            Please read each statement and select a number that indicates how much the statement applied to you over the past week.
           </Text>
         </View>
 
@@ -246,12 +251,12 @@ const styles = {
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: "#ffffffff",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#ffffffff",
     fontWeight: "500",
   },
   overallProgressBadge: {
@@ -283,7 +288,7 @@ const styles = {
   },
   progressText: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "#ffffffff",
     marginTop: 8,
     fontWeight: "500",
   },
@@ -293,19 +298,24 @@ const styles = {
   scrollContent: {
     padding: 20,
   },
-  continueCard: {
-    backgroundColor: "#D1FAE5",
+  instructionsCard: {
+    backgroundColor: "#EEF2FF",
     borderLeftWidth: 4,
-    borderLeftColor: "#10B981",
+    borderLeftColor: "#3B82F6",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
-  continueText: {
+  instructionsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E40AF",
+    marginBottom: 8,
+  },
+  instructionsText: {
     fontSize: 14,
-    color: "#065F46",
+    color: "#374151",
     lineHeight: 20,
-    fontWeight: "500",
   },
   buttonContainer: {
     flexDirection: "row",
