@@ -1,8 +1,18 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import styles from "./chatbotStyles";
 
-export default function MessageList({ messages, onSelectTechnique }) {
+export default function MessageList({
+  messages,
+  onSelectTechnique,
+  isBotTyping,
+}) {
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -62,15 +72,40 @@ export default function MessageList({ messages, onSelectTechnique }) {
               {msg.from === "bot" && msg.meta && (
                 <View style={styles.metaContainer}>
                   <Text style={styles.metaText}>
-                    Emotion: {msg.meta.emotion} · Stress: {msg.meta.stressLevel}
+                    Insights from this message
                   </Text>
-                  <Text style={styles.metaText}>
-                    Academic: {msg.meta.academicStressCategory} · Risk:{" "}
-                    {msg.meta.riskLevel}
-                  </Text>
-                  <Text style={styles.metaText}>
-                    Overall: {msg.meta.overallStatus}
-                  </Text>
+                  <View style={styles.metaChipsRow}>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Emotion:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.emotion || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Stress:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.stressLevel || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Academic:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.academicStressCategory || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Risk:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.riskLevel || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Overall:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.overallStatus || "-"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               )}
 
@@ -94,6 +129,26 @@ export default function MessageList({ messages, onSelectTechnique }) {
           </View>
         );
       })}
+
+      {isBotTyping && (
+        <View style={[styles.messageRow, { justifyContent: "flex-start" }]}>
+          <View
+            style={[
+              styles.messageBubble,
+              styles.botBubble,
+              styles.typingBubble,
+            ]}
+          >
+            <Text style={styles.messageLabel}>MindPlus Bot</Text>
+            <View style={styles.typingRow}>
+              <ActivityIndicator size="small" color="#6B7280" />
+              <Text style={styles.typingText}>
+                Thinking of the best way to respond…
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
