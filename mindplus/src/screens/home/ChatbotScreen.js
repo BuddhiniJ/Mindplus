@@ -88,6 +88,7 @@ export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [botTyping, setBotTyping] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
@@ -142,6 +143,7 @@ export default function ChatbotScreen({ navigation }) {
 
     try {
       setSending(true);
+      setBotTyping(true);
       const raw = await sendChatMessage(sessionId, text);
       const reply = {
         botMessage: raw.bot_message,
@@ -166,6 +168,8 @@ export default function ChatbotScreen({ navigation }) {
           techniques: reply.techniques,
         },
       };
+      const delayMs = 7000 + Math.random() * 3000;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
       console.log("Failed to send chatbot message", err);
@@ -180,6 +184,7 @@ export default function ChatbotScreen({ navigation }) {
       ]);
     } finally {
       setSending(false);
+      setBotTyping(false);
     }
   };
 
@@ -223,6 +228,7 @@ export default function ChatbotScreen({ navigation }) {
           <View style={styles.chatArea}>
             <MessageList
               messages={messages}
+              isBotTyping={botTyping}
               onSelectTechnique={setSelectedTechnique}
             />
           </View>

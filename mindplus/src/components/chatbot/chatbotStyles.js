@@ -405,6 +405,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 4,
   },
+  typingBubble: {
+    opacity: 0.9,
+  },
+  typingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  typingText: {
+    marginLeft: 8,
+    fontSize: 13,
+    color: "#6B7280",
+  },
 });
 
 export default styles;

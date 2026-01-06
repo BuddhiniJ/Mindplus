@@ -1,8 +1,18 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import styles from "./chatbotStyles";
 
-export default function MessageList({ messages, onSelectTechnique }) {
+export default function MessageList({
+  messages,
+  onSelectTechnique,
+  isBotTyping,
+}) {
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -94,6 +104,26 @@ export default function MessageList({ messages, onSelectTechnique }) {
           </View>
         );
       })}
+
+      {isBotTyping && (
+        <View style={[styles.messageRow, { justifyContent: "flex-start" }]}>
+          <View
+            style={[
+              styles.messageBubble,
+              styles.botBubble,
+              styles.typingBubble,
+            ]}
+          >
+            <Text style={styles.messageLabel}>MindPlus Bot</Text>
+            <View style={styles.typingRow}>
+              <ActivityIndicator size="small" color="#6B7280" />
+              <Text style={styles.typingText}>
+                Thinking of the best way to respond…
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
