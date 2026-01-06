@@ -351,7 +351,7 @@ def _build_followup_question(turns: int, risk: str, academic_stress: str) -> str
         )
 
     if turns <= 1:
-        return " What part of this feels the heaviest right now?"
+        return "I think You can Follow One of this Tecniques to feel better."
 
     if academic_stress in ("academic_stress_high", "burnout"):
         return " Of everything you've shared, which study-related pressure feels most urgent to ease, even a little?"
