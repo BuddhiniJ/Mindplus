@@ -1,7 +1,7 @@
 // Base URL for the FastAPI backend.
 // You can override this with EXPO_PUBLIC_API_URL in .env if needed.
 const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.214.21:8000";
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.183.21:8000";
 
 const REQUEST_TIMEOUT = 25_000; // AI inference can be slow
 
@@ -29,7 +29,7 @@ async function fetchWithTimeout(url, options, timeout = REQUEST_TIMEOUT) {
 }
 
 export async function startChatSession() {
-  const res = await fetchWithTimeout(`${BASE_URL}/chat/start`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/chatbot/chat/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
@@ -39,7 +39,7 @@ export async function startChatSession() {
 }
 
 export async function sendChatMessage(sessionId, text) {
-  const res = await fetchWithTimeout(`${BASE_URL}/chat/message`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/chatbot/chat/message`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, text }),
