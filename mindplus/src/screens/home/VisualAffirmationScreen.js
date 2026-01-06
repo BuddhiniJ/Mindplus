@@ -18,6 +18,8 @@ import GroundingCard from "../../components/GroundingCard";
 import { fetchCopingStrategy } from "../../services/api";
 
 const SESSION_SECONDS = 60;
+// Temporary override: show Box Breathing for all emotions/confidence.
+const FORCE_BOX_BREATHING = true;
 
 function normalizeEmotionKey(emotion) {
   if (!emotion) return "unknown";
@@ -65,6 +67,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     () => getConfidenceBand(confidence),
     [confidence]
   );
+
+  const showBreathing = FORCE_BOX_BREATHING || isAnxiety;
 
   const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
   const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
@@ -128,6 +132,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   // Redirect back if anxiety level is too low for this screen
   useEffect(() => {
+    if (FORCE_BOX_BREATHING) return;
     if (!isAnxiety || anxietyBand !== "low") return;
     navigation.goBack();
   }, [anxietyBand, isAnxiety, navigation]);
@@ -153,7 +158,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   // Countdown timer for anxiety breathing exercises
   useEffect(() => {
-    if (!isAnxiety) return;
+    if (!showBreathing) return;
     let mounted = true;
     const interval = setInterval(() => {
       if (!mounted || !started) return;
@@ -163,11 +168,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       mounted = false;
       clearInterval(interval);
     };
-  }, [isAnxiety, started]);
+  }, [showBreathing, started]);
 
   // Update timer progress bar as countdown progresses
   useEffect(() => {
-    if (!isAnxiety) return;
+    if (!showBreathing) return;
     const fraction =
       SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
     Animated.timing(timerProgressAnim, {
@@ -175,7 +180,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       duration: 220,
       useNativeDriver: false,
     }).start();
-  }, [isAnxiety, secondsRemaining, timerProgressAnim]);
+  }, [showBreathing, secondsRemaining, timerProgressAnim]);
 
   // Start or restart the calm session
   const handleStart = () => {
@@ -220,6 +225,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   const headerTitle = "Calm Session";
 
   const anxietyExercise = useMemo(() => {
+    if (FORCE_BOX_BREATHING) return "box";
     if (!isAnxiety) return null;
     if (anxietyBand === "low") return "blocked";
     if (anxietyBand === "medium") return "box";
@@ -227,7 +233,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   }, [anxietyBand, isAnxiety]);
 
   // Do not show this screen if anxiety is very low
-  if (isAnxiety && anxietyBand === "low") {
+  if (!FORCE_BOX_BREATHING && isAnxiety && anxietyBand === "low") {
     return null;
   }
 
