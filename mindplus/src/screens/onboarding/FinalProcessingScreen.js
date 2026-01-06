@@ -5,7 +5,7 @@ import { doc, setDoc } from "firebase/firestore";
 // Import the Gradient component
 import { LinearGradient } from 'expo-linear-gradient';
 
-const ML_API_URL = "http://192.168.1.2:8000/predict";
+const ML_API_URL = "http://192.168.114.78:8000/predict";
 
 export default function FinalProcessingScreen({ route, navigation }) {
   const { allAnswers, scores } = route.params;
@@ -89,9 +89,9 @@ export default function FinalProcessingScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🟢 Updated Header Section with LinearGradient */}
+      {/* Updated Header Section with LinearGradient */}
       <LinearGradient
-        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        colors={['#b3c6ddff', '#4895D0']}
         style={styles.headerGradient}
       >
         <View style={styles.iconContainer}>
@@ -111,7 +111,7 @@ export default function FinalProcessingScreen({ route, navigation }) {
         </View>
       </LinearGradient>
 
-      {/* Main Content (Steps) */}
+      {/* Main Content */}
       <View style={styles.content}>
         <View style={styles.stepsCard}>
           {steps.map((step) => (
@@ -167,11 +167,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "rgba(255, 255, 255, 0.3)", // Glass effect
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     justifyContent: "center",
     alignItems: "center",
   },
-  mainIcon: { fontSize: 40, color: '#FFF' },
+  mainIcon: { 
+    fontSize: 40, 
+    color: '#FFF' 
+  },
   title: {
     fontSize: 26,
     fontWeight: "bold",
@@ -195,12 +198,12 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#6366F1", // Indigo fill
+    backgroundColor: "#6366F1",
   },
   content: {
     flex: 1,
     paddingHorizontal: 25,
-    marginTop: 30, // Pulls the card up slightly
+    marginTop: 30, 
   },
   stepsCard: {
     backgroundColor: "#FFFFFF",
@@ -217,8 +220,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     opacity: 0.3,
   },
-  stepItemActive: { opacity: 1 },
-  stepItemComplete: { opacity: 0.8 },
+  stepItemActive: { 
+    opacity: 1 
+  },
+  stepItemComplete: { 
+    opacity: 0.8 
+  },
   stepIconCircle: {
     width: 45,
     height: 45,
@@ -228,9 +235,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
   },
-  circleActive: { backgroundColor: "#EEF2FF" },
-  circleComplete: { backgroundColor: "#D1FAE5" },
-  stepCheckmark: { color: "#10B981", fontSize: 20, fontWeight: "bold" },
-  stepLabel: { fontSize: 16, color: "#6B7280" },
-  stepLabelActive: { color: "#111827", fontWeight: "600" },
+  circleActive: { 
+    backgroundColor: "#EEF2FF" 
+  },
+  circleComplete: { 
+    backgroundColor: "#D1FAE5" 
+  },
+  stepCheckmark: { 
+    color: "#10B981", 
+    fontSize: 20, 
+    fontWeight: "bold" 
+  },
+  stepLabel: { 
+    fontSize: 16, 
+    color: "#6B7280" 
+  },
+  stepLabelActive: { 
+    color: "#111827", 
+    fontWeight: "600" 
+  },
 });

@@ -87,18 +87,60 @@ export default function RegisterScreen({ navigation }) {
 
   const registerUser = async () => {
     // ... logic stays exactly the same as your provided code ...
-    if (!email.trim()) { showAlert("Email Required", "Please enter your email address.", "warning"); return; }
-    if (!password) { showAlert("Password Required", "Please enter your password.", "warning"); return; }
-    if (!confirmPassword) { showAlert("Confirm Password", "Please confirm your password.", "warning"); return; }
+    if (!email.trim()) {
+      showAlert("Email Required", "Please enter your email address.", "warning");
+      return;
+    }
+    if (!password) {
+      showAlert("Password Required", "Please enter your password.", "warning");
+      return;
+    }
+    if (!confirmPassword) {
+      showAlert("Confirm Password", "Please confirm your password.", "warning");
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) { showAlert("Invalid Email", "Please enter a valid email address.", "error"); return; }
-    if (password.length < 6) { showAlert("Weak Password", "Password must be at least 6 characters long.", "warning"); return; }
-    if (password !== confirmPassword) { showAlert("Passwords Don't Match", "Please make sure both passwords are identical.", "error"); return; }
-    if (!fullName.trim()) { showAlert("Full Name Required", "Please enter your full name.", "warning"); return; }
-    if (!emergencyName.trim()) { showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning"); return; }
-    if (!emergencyContact.trim()) { showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning"); return; }
-    if (!/^\d{10}$/.test(emergencyContact)) { showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error"); return; }
-    if (!emergencyRelation.trim()) { showAlert("Relationship Required", "Please enter the relationship.", "warning"); return; }
+
+    if (!emailRegex.test(email)) {
+      showAlert("Invalid Email", "Please enter a valid email address.", "error");
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert("Weak Password", "Password must be at least 6 characters long.", "warning");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showAlert("Passwords Don't Match", "Please make sure both passwords are identical.", "error");
+      return;
+    }
+
+    if (!fullName.trim()) {
+      showAlert("Full Name Required", "Please enter your full name.", "warning");
+      return;
+    }
+
+    if (!emergencyName.trim()) {
+      showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning");
+      return;
+    }
+
+    if (!emergencyContact.trim()) {
+      showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(emergencyContact)) {
+      showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error");
+      return;
+    }
+
+    if (!emergencyRelation.trim()) {
+      showAlert("Relationship Required", "Please enter the relationship.", "warning");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -108,7 +150,9 @@ export default function RegisterScreen({ navigation }) {
         fullName, nickname, avatar: selectedAvatar, emergencyName, emergencyContact, emergencyRelation,
         createdAt: Date.now(), updatedAt: Date.now(),
       });
-      showAlert("Success", "Account created successfully!", "success", () => { hideAlert(); navigation.navigate("Login"); });
+      showAlert("Success", "Account created successfully!", "success", () => {
+        hideAlert(); navigation.navigate("Login");
+      });
     } catch (error) {
       showAlert("Registration Failed", error.message, "error");
     } finally { setLoading(false); }
@@ -117,11 +161,11 @@ export default function RegisterScreen({ navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" bounces={false}>
-        
+
         {/* Header Section */}
-        <LinearGradient colors={['#8BD0BF', '#4895D0']} style={styles.topSection}>
+        <LinearGradient colors={['#b3c6ddff', '#4895D0']} style={styles.topSection}>
           <View style={styles.logoCircle}>
-            <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
+            <Image source={require('../../../assets/Logo2.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
         </LinearGradient>
 
@@ -132,9 +176,9 @@ export default function RegisterScreen({ navigation }) {
           {/* Personal Details Section */}
           <View style={styles.sectionOutline}>
             <View style={styles.sectionLabelContainer}>
-               <Text style={styles.sectionLabelText}>Personal Details</Text>
+              <Text style={styles.sectionLabelText}>Personal Details</Text>
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Name</Text>
               <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
@@ -164,9 +208,9 @@ export default function RegisterScreen({ navigation }) {
           {/* Emergency Contact Section */}
           <View style={styles.sectionOutline}>
             <View style={styles.sectionLabelContainer}>
-               <Text style={styles.sectionLabelText}>Emergency Contact</Text>
+              <Text style={styles.sectionLabelText}>Emergency Contact</Text>
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Name</Text>
               <TextInput style={styles.input} value={emergencyName} onChangeText={setEmergencyName} />
@@ -186,7 +230,7 @@ export default function RegisterScreen({ navigation }) {
           {/* Avatar Selection Grid */}
           <View style={styles.sectionOutline}>
             <View style={styles.sectionLabelContainer}>
-               <Text style={styles.sectionLabelText}>Choose an Avatar</Text>
+              <Text style={styles.sectionLabelText}>Choose an Avatar</Text>
             </View>
             <View style={styles.avatarGrid}>
               {Object.keys(avatars).map((key) => (
@@ -222,61 +266,186 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF" },
-  scrollContainer: { flexGrow: 1 },
-  topSection: { height: 200, justifyContent: 'center', alignItems: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF"
+  },
+  scrollContainer: {
+    flexGrow: 1
+  },
+  topSection: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   logoCircle: {
-    width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFF',
-    justifyContent: 'center', alignItems: 'center', elevation: 5,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
   },
-  logoImage: { width: 70, height: 70 },
+  logoImage: {
+    width: 125,
+    height: 125,
+    marginTop: -5
+  },
   formCard: {
-    flex: 1, backgroundColor: "#FFF", marginTop: -40, borderTopLeftRadius: 40, borderTopRightRadius: 40,
-    paddingHorizontal: 20, paddingTop: 30, paddingBottom: 40,
+    flex: 1,
+    backgroundColor: "#FFF",
+    marginTop: -40,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 40,
   },
-  mainTitle: { fontSize: 32, fontWeight: "bold", textAlign: 'center', color: "#000", marginBottom: 25 },
-  
-  // Section Outlines
+  mainTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    textAlign: 'center',
+    color: "#000",
+    marginBottom: 25
+  },
   sectionOutline: {
-    borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 15, padding: 15, marginBottom: 25,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 25,
   },
   sectionLabelContainer: {
-    position: 'absolute', top: -10, left: 15, backgroundColor: '#FFF', paddingHorizontal: 5,
+    position: 'absolute',
+    top: -10,
+    left: 15,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 5,
   },
-  sectionLabelText: { fontSize: 12, color: '#000000ff' },
-
-  // Inputs
-  inputGroup: { marginBottom: 15 },
-  fieldLabel: { fontSize: 12, color: '#000000ff', marginBottom: 5, marginLeft: 5 },
+  sectionLabelText: {
+    fontSize: 12,
+    color: '#000000ff'
+  },
+  inputGroup: {
+    marginBottom: 15
+  },
+  fieldLabel: {
+    fontSize: 12,
+    color: '#000000ff',
+    marginBottom: 5,
+    marginLeft: 5
+  },
   input: {
-    backgroundColor: "#FFF", borderWidth: 1, borderColor: "#F3F4F6", borderRadius: 10,
-    padding: 12, fontSize: 14, color: "#111827", elevation: 1,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: "#111827",
+    elevation: 1,
   },
-
-  // Avatar Grid
-  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
-  avatarWrapper: { padding: 5, borderRadius: 40, borderWidth: 2, borderColor: 'transparent' },
-  selectedAvatar: { borderColor: '#3B82F6' },
-  avatarImg: { width: 55, height: 55, borderRadius: 27.5 },
-
-  // Buttons
-  submitBtn: { backgroundColor: "#63A1D6", borderRadius: 12, paddingVertical: 15, marginTop: 10, alignItems: 'center' },
-  submitBtnText: { color: "#FFF", fontSize: 18, fontWeight: "700" },
-  footerLinkContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 15 },
-  footerText: { color: "#9CA3AF", fontSize: 13 },
-  loginLink: { color: "#9CA3AF", fontWeight: "600", fontSize: 13 },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10
+  },
+  avatarWrapper: {
+    padding: 5,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: 'transparent'
+  },
+  selectedAvatar: {
+    borderColor: '#3B82F6'
+  },
+  avatarImg: {
+    width: 55,
+    height: 55,
+    borderRadius: 27.5
+  },
+  submitBtn: {
+    backgroundColor: "#63A1D6",
+    borderRadius: 12,
+    paddingVertical: 15,
+    marginTop: 10,
+    alignItems: 'center'
+  },
+  submitBtnText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700"
+  },
+  footerLinkContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 15
+  },
+  footerText: {
+    color: "#9CA3AF",
+    fontSize: 13
+  },
+  loginLink: {
+    color: "#9CA3AF",
+    fontWeight: "600",
+    fontSize: 13
+  },
 });
 
-// alertStyles remain the same as your previous definition
+// alert Styles
 const alertStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)", justifyContent: "center", alignItems: "center" },
-  container: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, width: "80%", alignItems: "center" },
-  iconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center", marginBottom: 15 },
-  icon: { fontSize: 28, fontWeight: "bold" },
-  title: { fontSize: 18, fontWeight: "bold", color: "#111827", marginBottom: 8 },
-  message: { fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 20 },
-  buttonContainer: { width: '100%' },
-  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
-  confirmButtonText: { color: "#FFFFFF", fontWeight: "600" },
-  singleButton: { width: '100%' },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  container: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 24,
+    width: "80%",
+    alignItems: "center"
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 15
+  },
+  icon: {
+    fontSize: 28,
+    fontWeight: "bold"
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 8
+  },
+  message: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 20
+  },
+  buttonContainer: {
+    width: '100%'
+  },
+  button: {
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center"
+  },
+  confirmButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600"
+  },
+  singleButton: {
+    width: '100%'
+  },
 });

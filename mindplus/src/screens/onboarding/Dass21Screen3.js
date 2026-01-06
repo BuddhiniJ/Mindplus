@@ -143,7 +143,7 @@ export default function Dass21Screen3({ route, navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+        colors={['#b3c6ddff', '#4895D0']}
         style={styles.header}
       >
         <View style={styles.headerContent}>

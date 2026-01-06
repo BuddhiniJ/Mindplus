@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Image, ScrollView, Sty
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import { Ionicons } from '@expo/vector-icons'; // Assuming Expo, otherwise use react-native-vector-icons
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -52,64 +53,74 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.navigate("HomeDashboardScreen")}
-        >
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <View style={{ width: 40 }} /> 
-      </View>
+      <LinearGradient
+        colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
+        style={styles.gradientBackground}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate("HomeDashboardScreen")}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Avatar Section */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={avatars[profile?.avatar || "avatar1"]}
-              style={styles.avatar}
-            />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Avatar Section */}
+          <View style={styles.avatarSection}>
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={avatars[profile?.avatar || "avatar1"]}
+                style={styles.avatar}
+              />
+            </View>
+            <Text style={styles.nickname}>{profile?.nickname || "User"}</Text>
+            <Text style={styles.email}>{user?.email ?? "N/A"}</Text>
           </View>
-          <Text style={styles.nickname}>{profile?.nickname || "User"}</Text>
-          <Text style={styles.email}>{user?.email ?? "N/A"}</Text>
-        </View>
 
-        {/* Menu Items */}
-        <View style={styles.menuSection}>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("EditProfileScreen")}
+          {/* Menu Items */}
+          <View style={styles.menuSection}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate("EditProfileScreen")}
+            >
+              <Ionicons name="person-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+              <Text style={styles.menuText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate("Dass21Screen1")}
+            >
+              <Ionicons name="document-text-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+              <Text style={styles.menuText}>Retake Assessment</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
           >
-            <Ionicons name="person-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
-            <Text style={styles.menuText}>Edit Profile</Text>
+            <Ionicons name="exit-outline" size={24} color="#A52A2A" style={styles.menuIcon} />
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("Dass21Screen1")}
-          >
-            <Ionicons name="document-text-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
-            <Text style={styles.menuText}>Retake Assessment</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Logout Button */}
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout}
-        >
-          <Ionicons name="exit-outline" size={24} color="#A52A2A" style={styles.menuIcon} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientBackground: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -189,7 +200,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    // Elevation for Android
     elevation: 2,
   },
   menuIcon: {

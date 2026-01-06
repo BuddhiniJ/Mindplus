@@ -3,9 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Modal, Acti
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import { Ionicons } from '@expo/vector-icons'; // Assuming Expo environment
+import { Ionicons } from '@expo/vector-icons';
 
-// Custom Alert Component (Retained as requested)
+// Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
   const getIconColor = () => {
     switch (type) {
@@ -105,9 +105,18 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const saveProfile = async () => {
-    if (!nickname.trim()) { showAlert("Nickname Required", "Please enter a nickname.", "warning"); return; }
-    if (!emergencyName.trim()) { showAlert("Required", "Emergency Name is required.", "warning"); return; }
-    if (!/^\d{10}$/.test(emergencyContact)) { showAlert("Error", "Contact must be 10 digits.", "error"); return; }
+    if (!nickname.trim()) {
+      showAlert("Nickname Required", "Please enter a nickname.", "warning");
+      return;
+    }
+    if (!emergencyName.trim()) {
+      showAlert("Required", "Emergency Name is required.", "warning");
+      return;
+    }
+    if (!/^\d{10}$/.test(emergencyContact)) {
+      showAlert("Error", "Contact must be 10 digits.", "error");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -222,44 +231,228 @@ export default function EditProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20 },
-  backButtonBox: { width: 40, height: 40, borderRadius: 8, backgroundColor: "#5FA1D5", justifyContent: "center", alignItems: "center" },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
-  scrollContent: { padding: 20 },
-  previewCard: { borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 15, padding: 15, marginBottom: 30 },
-  sectionLabel: { fontSize: 10, color: "#9CA3AF", marginBottom: 10, fontWeight: "700" },
-  previewContent: { flexDirection: "row", alignItems: "center" },
-  previewAvatarContainer: { width: 70, height: 70, borderRadius: 35, borderWidth: 2, borderColor: "#5FA1D5", justifyContent: "center", alignItems: "center", overflow: "hidden" },
-  previewAvatar: { width: 55, height: 55 },
-  previewInfo: { marginLeft: 15 },
-  previewNickname: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  previewEmail: { fontSize: 12, color: "#777" },
-  sectionOutline: { borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 15, padding: 15, marginBottom: 30, paddingTop: 20 },
-  floatingLabel: { position: "absolute", top: -10, left: 15, backgroundColor: "white", paddingHorizontal: 5, fontSize: 12, color: "#9CA3AF" },
-  inputGroup: { marginBottom: 15 },
-  fieldLabel: { fontSize: 11, color: "#9CA3AF", marginBottom: 4 },
-  input: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6", fontSize: 14, color: "#333", paddingVertical: 4 },
-  disabledInput: { backgroundColor: "#F3F4F6", borderRadius: 5, paddingHorizontal: 5, color: "#9CA3AF" },
-  avatarGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  avatarOption: { width: "22%", aspectRatio: 1, borderRadius: 50, marginBottom: 10, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB" },
-  avatarSelected: { borderColor: "#5FA1D5", backgroundColor: "#F0F9FF" },
-  avatarGridImage: { width: "80%", height: "80%", borderRadius: 50 },
-  checkCircle: { position: "absolute", top: 0, right: 0, backgroundColor: "#5FA1D5", borderRadius: 10, width: 16, height: 16, justifyContent: "center", alignItems: "center", borderWeight: 2, borderColor: "white" },
-  saveButton: { backgroundColor: "#5FA1D5", borderRadius: 12, paddingVertical: 15, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  saveButtonText: { color: "white", fontSize: 18, fontWeight: "bold" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF"
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20
+  },
+  backButtonBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#5FA1D5",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333"
+  },
+  scrollContent: {
+    padding: 20
+  },
+  previewCard: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 30
+  },
+  sectionLabel: {
+    fontSize: 10,
+    color: "#9CA3AF",
+    marginBottom: 10,
+    fontWeight: "700"
+  },
+  previewContent: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  previewAvatarContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: "#5FA1D5",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden"
+  },
+  previewAvatar: {
+    width: 55,
+    height: 55,
+    borderRadius: 35,
+  },
+  previewInfo: {
+    marginLeft: 15
+  },
+  previewNickname: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333"
+  },
+  previewEmail: {
+    fontSize: 12,
+    color: "#777"
+  },
+  sectionOutline: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 30,
+    paddingTop: 20
+  },
+  floatingLabel: {
+    position: "absolute",
+    top: -10,
+    left: 15,
+    backgroundColor: "white",
+    paddingHorizontal: 5,
+    fontSize: 12,
+    color: "#9CA3AF"
+  },
+  inputGroup: {
+    marginBottom: 15
+  },
+  fieldLabel: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginBottom: 4
+  },
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+    fontSize: 14,
+    color: "#333",
+    paddingVertical: 4
+  },
+  disabledInput: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    color: "#9CA3AF"
+  },
+  avatarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between"
+  },
+  avatarOption: {
+    width: "22%",
+    aspectRatio: 1,
+    borderRadius: 50,
+    marginBottom: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB"
+  },
+  avatarSelected: {
+    borderColor: "#5FA1D5",
+    backgroundColor: "#F0F9FF"
+  },
+  avatarGridImage: {
+    width: "80%",
+    height: "80%",
+    borderRadius: 50
+  },
+  checkCircle: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#5FA1D5",
+    borderRadius: 10,
+    width: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWeight: 2,
+    borderColor: "white"
+  },
+  saveButton: {
+    backgroundColor: "#5FA1D5",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold"
+  },
 });
 
 const alertStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
-  container: { backgroundColor: "white", borderRadius: 20, padding: 25, width: "80%", alignItems: "center" },
-  iconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center", marginBottom: 15 },
-  icon: { fontSize: 30, fontWeight: "bold" },
-  title: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  message: { textAlign: "center", color: "#6B7280", marginBottom: 20 },
-  buttonContainer: { width: "100%" },
-  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
-  confirmButtonText: { color: "white", fontWeight: "bold" },
-  singleButton: { width: "100%" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  container: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 25,
+    width: "80%",
+    alignItems: "center"
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 15
+  },
+  icon: {
+    fontSize: 30,
+    fontWeight: "bold"
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10
+  },
+  message: {
+    textAlign: "center",
+    color: "#6B7280",
+    marginBottom: 20
+  },
+  buttonContainer: {
+    width: "100%"
+  },
+  button: {
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center"
+  },
+  confirmButtonText: {
+    color: "white",
+    fontWeight: "bold"
+  },
+  singleButton: {
+    width: "100%"
+  },
 });
