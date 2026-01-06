@@ -2,8 +2,6 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Modal, Image, StyleSheet } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebaseConfig";
-
-// New Imports
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -100,12 +98,12 @@ export default function LoginScreen({ navigation }) {
 
         {/* Header with Gradient */}
         <LinearGradient
-          colors={['#8BD0BF', '#4895D0']} // Teal to Blue gradient
+          colors={['#b3c6ddff', '#4895D0']}
           style={styles.topSection}
         >
           <View style={styles.logoCircle}>
             <Image
-              source={require('../../../assets/logo.png')}
+              source={require('../../../assets/Logo2.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -140,7 +138,9 @@ export default function LoginScreen({ navigation }) {
                   onChangeText={setPassword}
                   secureTextEntry={!isPasswordVisible}
                 />
-                <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
+                <TouchableOpacity
+                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                  style={styles.eyeIcon}>
                   <Ionicons
                     name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
                     size={20}
@@ -156,7 +156,11 @@ export default function LoginScreen({ navigation }) {
               onPress={loginUser}
               disabled={loading}
             >
-              <Text style={styles.primaryButtonText}>{loading ? "Signing in..." : "Sign In"}</Text>
+              <Text
+                style={styles.primaryButtonText}
+              >
+                {loading ? "Signing in..." : "Sign In"}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -181,8 +185,13 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF" },
-  scrollContainer: { flexGrow: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF"
+  },
+  scrollContainer: {
+    flexGrow: 1
+  },
   topSection: {
     height: 300,
     justifyContent: 'center',
@@ -200,7 +209,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
-  logoImage: { width: 100, height: 100 },
+  logoImage: {
+    width: 180,
+    height: 180,
+    marginTop: -5
+  },
   formCard: {
     flex: 1,
     backgroundColor: "#FFF",
@@ -211,11 +224,28 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     alignItems: 'center'
   },
-  title: { fontSize: 32, fontWeight: "bold", color: "#000" },
-  subtitle: { fontSize: 16, color: "#9CA3AF", marginTop: 8, marginBottom: 30 },
-  form: { width: "100%" },
-  inputContainer: { marginBottom: 20 },
-  label: { fontSize: 13, color: "#000000ff", marginBottom: 8 },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#000"
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#9CA3AF",
+    marginTop: 8,
+    marginBottom: 30
+  },
+  form: {
+    width: "100%"
+  },
+  inputContainer: {
+    marginBottom: 20
+  },
+  label: {
+    fontSize: 13,
+    color: "#000000ff",
+    marginBottom: 8
+  },
   input: {
     borderWidth: 1,
     borderColor: "#F3F4F6",
@@ -230,27 +260,95 @@ const styles = StyleSheet.create({
     borderColor: "#F3F4F6",
     borderRadius: 12,
   },
-  passwordInput: { flex: 1, padding: 16, fontSize: 16 },
-  eyeIcon: { paddingRight: 15 },
-  button: { borderRadius: 12, paddingVertical: 18, marginTop: 10 },
-  primaryButton: { backgroundColor: "#5FA1D5" },
-  primaryButtonText: { color: "#FFF", fontSize: 20, fontWeight: "700", textAlign: 'center' },
-  buttonDisabled: { opacity: 0.7 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25 },
-  footerText: { color: "#9CA3AF" },
-  signUpLink: { color: "#9CA3AF" },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16
+  },
+  eyeIcon: {
+    paddingRight: 15
+  },
+  button: {
+    borderRadius: 12,
+    paddingVertical: 18,
+    marginTop: 10
+  },
+  primaryButton: {
+    backgroundColor: "#5FA1D5"
+  },
+  primaryButtonText: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: 'center'
+  },
+  buttonDisabled: {
+    opacity: 0.7
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 25
+  },
+  footerText: {
+    color: "#9CA3AF"
+  },
+  signUpLink: {
+    color: "#9CA3AF"
+  },
 });
 
-// (alertStyles same as previous)
+// alert styles
 const alertStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
-  container: { backgroundColor: "#FFF", borderRadius: 20, padding: 24, width: "85%", alignItems: "center" },
-  iconContainer: { width: 64, height: 64, borderRadius: 32, justifyContent: "center", alignItems: "center", marginBottom: 16 },
-  icon: { fontSize: 32, fontWeight: "bold" },
-  title: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
-  message: { fontSize: 15, color: "#6B7280", textAlign: "center", marginBottom: 24 },
-  buttonContainer: { width: "100%" },
-  button: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
-  singleButton: { width: "100%" },
-  confirmButtonText: { color: "#FFF", fontWeight: "600" },
+  overlay: { 
+    flex: 1, 
+    backgroundColor: "rgba(0,0,0,0.5)", 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
+  container: { 
+    backgroundColor: "#FFF", 
+    borderRadius: 20, 
+    padding: 24, 
+    width: "85%", 
+    alignItems: "center" 
+  },
+  iconContainer: { 
+    width: 64, 
+    height: 64, 
+    borderRadius: 32, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginBottom: 16 
+  },
+  icon: { 
+    fontSize: 32, 
+    fontWeight: "bold" 
+  },
+  title: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    marginBottom: 8 
+  },
+  message: { 
+    fontSize: 15, 
+    color: "#6B7280", 
+    textAlign: "center", 
+    marginBottom: 24 
+  },
+  buttonContainer: { 
+    width: "100%" 
+  },
+  button: { 
+    paddingVertical: 12, 
+    borderRadius: 10, 
+    alignItems: "center" 
+  },
+  singleButton: { 
+    width: "100%" 
+  },
+  confirmButtonText: { 
+    color: "#FFF", 
+    fontWeight: "600" 
+  },
 });

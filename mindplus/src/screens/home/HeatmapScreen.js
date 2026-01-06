@@ -5,12 +5,8 @@ import DayDetailModal from "../../components/DayDetailModal";
 import { getDaysInMonth } from "../../utils/heatmapUtils";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { collection, addDoc, query, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import {
-  STRESS_COLORS,
-  generateMockPredictions,
-  calculateStressLevel, getStressLevel, getTodayMessage,
-} from "../../utils/heatmapUtils";
-import { Ionicons } from '@expo/vector-icons'; // Assuming Expo, otherwise use react-native-vector-icons
+import { STRESS_COLORS, generateMockPredictions, calculateStressLevel, getStressLevel, getTodayMessage } from "../../utils/heatmapUtils";
+import { Ionicons } from '@expo/vector-icons';
 
 const saveEvent = async (event) => {
   const user = auth.currentUser;
@@ -148,7 +144,6 @@ export default function HeatmapScreen({ navigation }) {
 
   // Mocked base stress (from onboarding / DASS-21 cluster)
   const BASE_STRESS = 2;
-
   const todayStressLevel = getStressLevel(BASE_STRESS, todayEventCount);
   const todayMessage = getTodayMessage(todayStressLevel, todayEventCount);
 
@@ -232,7 +227,7 @@ export default function HeatmapScreen({ navigation }) {
               const today = new Date();
               const cellDate = new Date(year, month, day);
 
-              let stressColor = null; // Use null for no color instead of "transparent" string
+              let stressColor = null;
 
               // Past & today 
               if (cellDate <= today) {
@@ -254,7 +249,7 @@ export default function HeatmapScreen({ navigation }) {
                   day={day}
                   isToday={isToday(day)}
                   hasEvents={eventCount > 0}
-                  stressColor={stressColor} // Component now handles null as transparent
+                  stressColor={stressColor} 
                   onPress={() => openDay(day)}
                 />
               );

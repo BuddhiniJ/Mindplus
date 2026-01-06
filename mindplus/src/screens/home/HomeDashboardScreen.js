@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import BottomActionButton from "../../navigation/BottomActionButton";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function HomeDashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -67,50 +60,6 @@ export default function HomeDashboardScreen({ navigation }) {
     }
   };
 
-  const getClusterInfo = (label) => {
-    const clusterMap = {
-      stress_dominant: {
-        emoji: "⏰",
-        title: "Stress Dominant",
-        description: "You respond strongly to time pressures",
-        color: "#F59E0B",
-      },
-      anxiety_reactive: {
-        emoji: "👥",
-        title: "Anxiety Reactive",
-        description: "You're sensitive to social interactions",
-        color: "#8B5CF6",
-      },
-      depression_prone: {
-        emoji: "🎯",
-        title: "Depression Prone",
-        description: "You set high standards for yourself",
-        color: "#3B82F6",
-      },
-      balanced_low_stress: {
-        emoji: "🎯",
-        title: "Balanced Low Stress",
-        description: "You set high standards for yourself",
-        color: "#3B82F6",
-      },
-      processing: {
-        emoji: "🔄",
-        title: "Processing",
-        description: "Your profile is being analyzed",
-        color: "#6B7280",
-      },
-    };
-
-    return (
-      clusterMap[label] || {
-        emoji: "📊",
-        title: label || "Unknown",
-        description: "Your unique stress profile",
-        color: "#6B7280",
-      }
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -124,313 +73,262 @@ export default function HomeDashboardScreen({ navigation }) {
 
   const nickname = profile?.nickname || "User";
   const avatarKey = profile?.avatar || "avatar1";
-  const clusterInfo = fingerprint ? getClusterInfo(fingerprint.label) : null;
 
   return (
     <View style={styles.container}>
       {/* Header Background */}
-      <View style={styles.headerBackground} />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <LinearGradient
+        colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
+        style={styles.gradientBackground}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        {/* Header Section */}
-        <View style={styles.header}>
-          <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <Image source={avatars[avatarKey]} style={styles.avatar} />
-              <View style={styles.avatarBadge}>
-                <Text style={styles.avatarBadgeText}>✓</Text>
-              </View>
-            </View>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Hi, {nickname}! 👋</Text>
-              <Text style={styles.subGreeting}>
-                Welcome back to your dashboard
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Stress Profile Card */}
-        {/* <View style={styles.mainCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Your Stress Profile</Text>
-            {fingerprint && (
-              <View style={styles.confidenceBadge}>
-                <Text style={styles.confidenceText}>
-                  {(fingerprint.confidence * 100).toFixed(0)}% Match
-                </Text>
-              </View>
-            )}
-          </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
-          {fingerprint && clusterInfo ? (
-            <View style={styles.profileContent}>
-              <View style={[styles.clusterCard, { borderLeftColor: clusterInfo.color }]}>
-                <Text style={styles.clusterEmoji}>{clusterInfo.emoji}</Text>
-                <View style={styles.clusterTextContainer}>
-                  <Text style={styles.clusterTitle}>{clusterInfo.title}</Text>
-                  <Text style={styles.clusterDescription}>{clusterInfo.description}</Text>
-                </View>
+          
+          {/* Header Section */}
+          <View style={styles.header}>
+            <View style={styles.profileSection}>
+              <View style={styles.avatarContainer}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("UserProfileScreen")}
+                  activeOpacity={0.8}
+                >
+                  <Image source={avatars[avatarKey]} style={styles.avatar} />
+                  <View style={styles.avatarBadge}>
+                    <Text style={styles.avatarBadgeText}>✓</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
-
-              <View style={styles.updateInfo}>
-                <Text style={styles.updateIcon}>🕐</Text>
-                <Text style={styles.updateText}>
-                  Last Updated {new Date(fingerprint.createdAt).toLocaleDateString()}
+              <View style={styles.greetingContainer}>
+                <Text style={styles.greeting}>Hi, {nickname}! 👋</Text>
+                <Text style={styles.subGreeting}>
+                  Welcome back to your dashboard
                 </Text>
               </View>
             </View>
-          ) : (
-            <View style={styles.noDataContainer}>
-              <Text style={styles.noDataIcon}>📊</Text>
-              <Text style={styles.noDataTitle}>No Stress Profile Yet</Text>
-              <Text style={styles.noDataText}>
-                Complete the DASS-21 assessment to generate your personalized stress profile.
-              </Text>
-            </View>
-          )}
-        </View> */}
+          </View>
 
-        {/* Quick Actions */}
-        <View style={styles.actionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("HeatmapScreen")}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#EEF2FF" },
-              ]}
+          {/* Quick Actions */}
+          <View style={styles.actionsSection}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+
+            {/*Today's Emotion*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleViewTodayEmotion}
+              activeOpacity={0.8}
             >
-              <Text style={styles.actionIcon}>🗺️</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>View Heatmap</Text>
-              <Text style={styles.actionDescription}>
-                Explore your stress patterns
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("UserProfileScreen")}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#D1FAE5" },
-              ]}
-            >
-              <Text style={styles.actionIcon}>👤</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>View Profile</Text>
-              <Text style={styles.actionDescription}>
-                Manage your account settings
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleViewTodayEmotion}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#FCE7F3" },
-              ]}
-            >
-              <Text style={styles.actionIcon}>💭</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>View Today's Emotion</Text>
-              <Text style={styles.actionDescription}>
-                See your overall emotional analysis
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("ChatbotScreen")}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#FEF3C7" },
-              ]}
-            >
-              <Text style={styles.actionIcon}>💬</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Call Chatbot</Text>
-              <Text style={styles.actionDescription}>
-                Chat with your AI companion
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={async () => {
-              try {
-                const user = auth.currentUser;
-                if (!user) return;
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#FCE7F3" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>💭</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>View Today's Emotion</Text>
+                <Text style={styles.actionDescription}>
+                  See your overall emotional analysis
+                </Text>
+              </View>
 
-                const todayKey = new Date().toISOString().slice(0, 10);
-                const checkInRef = doc(
-                  db,
-                  "users",
-                  user.uid,
-                  "dailyCheckIns",
-                  todayKey
-                );
-                const checkInSnap = await getDoc(checkInRef);
+            </TouchableOpacity>
 
-                if (checkInSnap.exists() && checkInSnap.data().answers) {
-                  const answers = checkInSnap.data().answers;
+            {/*Coping Stratergy*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={async () => {
+                try {
+                  const user = auth.currentUser;
+                  if (!user) return;
 
-                  // Calculate overall emotion
-                  const emotionScores = {};
-                  let totalConfidence = 0;
-
-                  answers.forEach((answer) => {
-                    const emotion = answer.emotion?.toLowerCase() || "unknown";
-                    const confidence = answer.confidence || 0;
-
-                    if (!emotionScores[emotion]) {
-                      emotionScores[emotion] = { count: 0, totalConfidence: 0 };
-                    }
-                    emotionScores[emotion].count += 1;
-                    emotionScores[emotion].totalConfidence += confidence;
-                    totalConfidence += confidence;
-                  });
-
-                  let dominantEmotion = "unknown";
-                  let maxCount = 0;
-
-                  Object.entries(emotionScores).forEach(([emotion, scores]) => {
-                    if (scores.count > maxCount) {
-                      maxCount = scores.count;
-                      dominantEmotion = emotion;
-                    }
-                  });
-
-                  const overallConfidence =
-                    totalConfidence > 0 ? totalConfidence / answers.length : 0;
-
-                  navigation.navigate("CopingStrategyScreen", {
-                    emotion: dominantEmotion,
-                    confidence: overallConfidence,
-                  });
-                } else {
-                  alert(
-                    "No check-in data found for today. Please complete the daily check-in first."
+                  const todayKey = new Date().toISOString().slice(0, 10);
+                  const checkInRef = doc(
+                    db,
+                    "users",
+                    user.uid,
+                    "dailyCheckIns",
+                    todayKey
                   );
+                  const checkInSnap = await getDoc(checkInRef);
+
+                  if (checkInSnap.exists() && checkInSnap.data().answers) {
+                    const answers = checkInSnap.data().answers;
+
+                    // Calculate overall emotion
+                    const emotionScores = {};
+                    let totalConfidence = 0;
+
+                    answers.forEach((answer) => {
+                      const emotion = answer.emotion?.toLowerCase() || "unknown";
+                      const confidence = answer.confidence || 0;
+
+                      if (!emotionScores[emotion]) {
+                        emotionScores[emotion] = { count: 0, totalConfidence: 0 };
+                      }
+                      emotionScores[emotion].count += 1;
+                      emotionScores[emotion].totalConfidence += confidence;
+                      totalConfidence += confidence;
+                    });
+
+                    let dominantEmotion = "unknown";
+                    let maxCount = 0;
+
+                    Object.entries(emotionScores).forEach(([emotion, scores]) => {
+                      if (scores.count > maxCount) {
+                        maxCount = scores.count;
+                        dominantEmotion = emotion;
+                      }
+                    });
+
+                    const overallConfidence =
+                      totalConfidence > 0 ? totalConfidence / answers.length : 0;
+
+                    navigation.navigate("CopingStrategyScreen", {
+                      emotion: dominantEmotion,
+                      confidence: overallConfidence,
+                    });
+                  } else {
+                    alert(
+                      "No check-in data found for today. Please complete the daily check-in first."
+                    );
+                  }
+                } catch (error) {
+                  console.error("Error fetching coping strategy:", error);
+                  alert("Unable to load coping strategy. Please try again.");
                 }
-              } catch (error) {
-                console.error("Error fetching coping strategy:", error);
-                alert("Unable to load coping strategy. Please try again.");
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#DDD6FE" },
-              ]}
+              }}
+              activeOpacity={0.8}
             >
-              <Text style={styles.actionIcon}>💡</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Coping Strategy</Text>
-              <Text style={styles.actionDescription}>
-                Get personalized emotional guidance
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("SoundscapeScreen")}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#E0F2FE" },
-              ]}
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#DDD6FE" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>💡</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>Coping Strategy</Text>
+                <Text style={styles.actionDescription}>
+                  Get personalized emotional guidance
+                </Text>
+              </View>
+
+            </TouchableOpacity>
+
+            {/*Voice*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("VoiceRecorderScreen")}
+              activeOpacity={0.8}
             >
-              <Text style={styles.actionIcon}>🎧</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Soundscape</Text>
-              <Text style={styles.actionDescription}>
-                Relax with calming sounds
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-          // Voice Recorder Action //voice
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#89a0072a" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>💆🏽‍♀️</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>Tell Your Story</Text>
+                <Text style={styles.actionDescription}>
+                  Let your thoughts settle
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("VoiceRecorderScreen")}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: "#89a0072a" },
-              ]}
+            {/*Heatmap*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("HeatmapScreen")}
+              activeOpacity={0.8}
             >
-              <Text style={styles.actionIcon}>💆🏽‍♀️</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Tell Your Story</Text>
-              <Text style={styles.actionDescription}>
-                Let your thoughts settle
-              </Text>
-            </View>
-            <Text style={styles.actionArrow}> → </Text>
-          </TouchableOpacity>
-          //voice end
-        </View>
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#EEF2FF" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>📅</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>Calander Heatmap</Text>
+                <Text style={styles.actionDescription}>
+                  Explore your stress patterns
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+            {/*Chatbot*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("ChatbotScreen")}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#FEF3C7" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>💬</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>Call Chatbot</Text>
+                <Text style={styles.actionDescription}>
+                  Chat with your AI companion
+                </Text>
+              </View>
 
-      {/* Bottom Navigation */}
+            </TouchableOpacity>
 
-      {/* <BottomActionButton
-        label="Home"
-        onPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "MenuScreen" }],
-          })
-        }
-      /> */}
-      {/* Bottom Navigation */}
+            {/*Soundscape*/}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("SoundscapeScreen")}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: "#E0F2FE" },
+                ]}
+              >
+                <Text style={styles.actionIcon}>🎧</Text>
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>Soundscape</Text>
+                <Text style={styles.actionDescription}>
+                  Relax with calming sounds
+                </Text>
+              </View>
+
+            </TouchableOpacity>
+
+
+          </View>
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = {
+  gradientBackground: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
@@ -455,8 +353,7 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    height: 200,
-    backgroundColor: "#EEF2FF",
+    height: 1000,
   },
   scrollView: {
     flex: 1,
