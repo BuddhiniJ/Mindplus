@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import numpy as np
@@ -25,6 +26,14 @@ from services.chatbot_service import (
 
 app = FastAPI(title="MindPlus Backend API", version="1.0")
 
+# Enable CORS for development (frontend runs on Metro at localhost:8081)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # You can restrict this to ["http://localhost:8081"] if you prefer
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load model at startup
 model = joblib.load("models/model.pkl")
