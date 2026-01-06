@@ -131,12 +131,64 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   metaContainer: {
+    marginTop: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    paddingHorizontal: 2,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(229,231,235,0.8)",
+  },
+
+  metaText: {
+    fontSize: 12,
+    color: "#64748B",
+    letterSpacing: 0.3,
+    fontWeight: "500",
+  },
+
+  metaChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginTop: 8,
   },
-  metaText: {
-    fontSize: 11,
-    color: "#6B7280",
+
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginRight: 8,
+    marginBottom: 6,
+    backgroundColor: "#128fe3ff",
+
+    // Soft elevation
+    shadowColor: "#0284C7",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+
+    // Border for crisp look
+    borderWidth: 1,
+    borderColor: "rgba(2,132,199,0.25)",
   },
+
+  metaChipLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#020202ff",
+    marginRight: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+
+  metaChipValue: {
+    fontSize: 12,
+    color: "#ffffffff",
+    fontWeight: "600",
+  },
+
   techniquesRow: {
     flexDirection: "row",
     flexWrap: "wrap",

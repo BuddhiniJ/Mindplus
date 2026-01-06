@@ -72,15 +72,40 @@ export default function MessageList({
               {msg.from === "bot" && msg.meta && (
                 <View style={styles.metaContainer}>
                   <Text style={styles.metaText}>
-                    Emotion: {msg.meta.emotion} · Stress: {msg.meta.stressLevel}
+                    Insights from this message
                   </Text>
-                  <Text style={styles.metaText}>
-                    Academic: {msg.meta.academicStressCategory} · Risk:{" "}
-                    {msg.meta.riskLevel}
-                  </Text>
-                  <Text style={styles.metaText}>
-                    Overall: {msg.meta.overallStatus}
-                  </Text>
+                  <View style={styles.metaChipsRow}>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Emotion:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.emotion || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Stress:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.stressLevel || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Academic:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.academicStressCategory || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Risk:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.riskLevel || "-"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaChip}>
+                      <Text style={styles.metaChipLabel}>Overall:</Text>
+                      <Text style={styles.metaChipValue}>
+                        {msg.meta.overallStatus || "-"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               )}
 
