@@ -205,16 +205,16 @@ export default function CommunityScreen({ route, navigation }) {
                     : '🌍 All Communities'}
                 </Text>
               </View>
-              <View style={styles.headerIcon}>
+              {/* <View style={styles.headerIcon}>
                 <Text style={styles.headerIconText}>💬</Text>
-              </View>
+              </View> */}
             </View>
           </View>
 
           {/* Info Card */}
           <View style={styles.infoCard}>
             <LinearGradient
-              colors={['#7CB9E8', '#5777AD']}
+              colors={['#91cbf5ff', '#afc9f7ff']}
               style={styles.infoGradient}
             >
               <Text style={styles.infoEmoji}>🤝</Text>

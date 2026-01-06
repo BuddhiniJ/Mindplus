@@ -312,11 +312,11 @@ export default function StressAnalysisScreen({ route, navigation }) {
               onPress={() => navigation.navigate('CommunityScreen', { stressType: dominant_type })}
             >
               <LinearGradient
-                colors={['#5777AD', '#7CB9E8']}
+                colors={['#bbd3fcff', '#a1cceeff']}
                 style={styles.communityGradient}
               >
                 <Text style={styles.communityButtonText}>
-                  💬 Join Support Community
+                  Join Support Community
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -325,7 +325,7 @@ export default function StressAnalysisScreen({ route, navigation }) {
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backButtonText}>← Back to History</Text>
+              <Text style={styles.backButtonText}> Back to History</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
