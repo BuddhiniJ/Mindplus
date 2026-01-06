@@ -6,7 +6,7 @@ import { db } from '../firebase/firebaseConfig';
 const DAILY_CHECK_INS_COLLECTION = 'dailyCheckIns';
 
 // Replace with your backend base URL; use LAN IP for devices/emulators
-const RAW_EMOTION_SERVICE_URL = 'http://192.168.1.2:8000';
+const RAW_EMOTION_SERVICE_URL = 'http://172.28.10.74:8000';
 
 function normalizeEmotionServiceUrl(url) {
   if (!url) return '';

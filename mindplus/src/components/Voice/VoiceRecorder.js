@@ -359,7 +359,7 @@ export default function VoiceRecorder({ navigation }) {
           
           <View style={styles.card}>
             <View style={styles.headerContainer}>
-              <Text style={styles.emoji}>🕊️</Text>
+              {/* <Text style={styles.emoji}>🕊️</Text> */}
               <Text style={styles.title}>Tell Your Story</Text>
               <Text style={styles.subtitle}>Let your thoughts settle</Text>
             </View>

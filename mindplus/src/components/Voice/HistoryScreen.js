@@ -269,9 +269,9 @@ export default function HistoryScreen({ navigation }) {
                   {history.length} moment{history.length !== 1 ? 's' : ''} of reflection
                 </Text>
               </View>
-              <View style={styles.headerIcon}>
-                <Text style={styles.headerIconText}>🌿</Text>
-              </View>
+              {/* <View style={styles.headerIcon}> */}
+                {/* <Text style={styles.headerIconText}>🌿</Text> */}
+              {/* </View> */}
             </View>
           </View>
 
@@ -292,7 +292,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#5777AD', '#7CB9E8']}
+                      colors={['#a0bef3ff', '#7CB9E8']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.totalRecordings}</Text>
@@ -302,11 +302,11 @@ export default function HistoryScreen({ navigation }) {
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#ef4444', '#f87171']}
+                      colors={['#f5acacff', '#fcc0c0ff']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Academic}</Text>
-                      <Text style={styles.statBoxLabel}>📚 Academic</Text>
+                      <Text style={styles.statBoxLabel}>Academic</Text>
                     </LinearGradient>
                   </View>
                 </View>
@@ -314,17 +314,17 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#f59e0b', '#fbbf24']}
+                      colors={['#f5c978ff', '#f1d386ff']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Financial}</Text>
-                      <Text style={styles.statBoxLabel}>💰 Financial</Text>
+                      <Text style={styles.statBoxLabel}>Financial</Text>
                     </LinearGradient>
                   </View>
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#3b82f6', '#60a5fa']}
+                      colors={['#9fc1f7ff', '#60a5fa']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Social}</Text>
@@ -336,11 +336,11 @@ export default function HistoryScreen({ navigation }) {
                 <View style={[styles.statsGrid, { marginBottom: 0 }]}>
                   <View style={[styles.statBox, { flex: 1 }]}>
                     <LinearGradient
-                      colors={['#8b5cf6', '#a78bfa']}
+                      colors={['#c4b0f3ff', '#b29febff']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Emotional}</Text>
-                      <Text style={styles.statBoxLabel}>💭 Emotional</Text>
+                      <Text style={styles.statBoxLabel}> Emotional</Text>
                     </LinearGradient>
                   </View>
                 </View>
@@ -417,7 +417,7 @@ export default function HistoryScreen({ navigation }) {
                       }}
                     >
                       <LinearGradient
-                        colors={playingAudio === item.id ? ['#9DB4C0', '#B8D8E8'] : ['#7CB9E8', '#B8D8E8']}
+                        colors={playingAudio === item.id ? ['#cdebfcff', '#B8D8E8'] : ['#b9d6ecff', '#B8D8E8']}
                         style={styles.actionButtonGradient}
                       >
                         <Text style={styles.actionButtonIcon}>
@@ -435,10 +435,10 @@ export default function HistoryScreen({ navigation }) {
                     onPress={() => handleViewAnalysis(item)}
                   >
                     <LinearGradient
-                      colors={['#5777AD', '#7CB9E8']}
+                      colors={['#b4cbf3ff', '#99c9eeff']}
                       style={styles.actionButtonGradient}
                     >
-                      <Text style={styles.actionButtonIcon}>✨</Text>
+                      {/* <Text style={styles.actionButtonIcon}>✨</Text> */}
                       <Text style={styles.actionButtonText}>View Analysis</Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   deleteButtonInner: {
-    backgroundColor: '#ffebee',
+    backgroundColor: '#d3e9f0ff',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
