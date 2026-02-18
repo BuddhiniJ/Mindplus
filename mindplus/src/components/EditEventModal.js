@@ -10,12 +10,14 @@ export default function EditEventModal({
   const [title, setTitle] = useState("");
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
+  const [importance, setImportance] = useState();
 
   useEffect(() => {
     if (event) {
       setTitle(event.title || "");
       setType(event.type || "");
       setDescription(event.description || "");
+      setImportance(event.importance || 5);
     }
   }, [event]);
 
@@ -26,6 +28,7 @@ export default function EditEventModal({
       title,
       type,
       description,
+      importance
     });
   };
 
@@ -65,6 +68,23 @@ export default function EditEventModal({
             style={[inputStyle, { height: 80 }]}
             multiline
           />
+
+          <View style={{ flexDirection: "row", marginVertical: 10 }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => setImportance(num)}
+                style={{
+                  padding: 8,
+                  margin: 4,
+                  borderRadius: 6,
+                  backgroundColor: importance === num ? "#4A90E2" : "#ccc"
+                }}
+              >
+                <Text style={{ color: "white" }}>{num}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <TouchableOpacity onPress={handleSave} style={primaryBtn}>
             <Text style={btnText}>Save Changes</Text>
