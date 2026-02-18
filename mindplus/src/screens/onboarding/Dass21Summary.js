@@ -21,7 +21,16 @@ export default function Dass21Summary({ route, navigation }) {
     const anxiety = sumFor(anxietyItems) * 2;
     const stress = sumFor(stressItems) * 2;
 
-    setScores({ depression, anxiety, stress });
+    setScores({
+      depression,
+      anxiety,
+      stress,
+      severity: {
+        depression: getSeverityLevel(depression, "depression").label,
+        anxiety: getSeverityLevel(anxiety, "anxiety").label,
+        stress: getSeverityLevel(stress, "stress").label,
+      }
+    });
   };
 
   const getSeverityLevel = (score, type) => {
@@ -54,14 +63,14 @@ export default function Dass21Summary({ route, navigation }) {
 
   const ScoreCard = ({ title, score, type, icon }) => {
     const severity = getSeverityLevel(score, type);
-    
+
     return (
       <View style={styles.scoreCard}>
         <View style={styles.scoreCardHeader}>
           <Text style={styles.scoreIcon}>{icon}</Text>
           <Text style={styles.scoreTitle}>{title}</Text>
         </View>
-        
+
         <View style={styles.scoreContent}>
           <Text style={styles.scoreNumber}>{score}</Text>
           <View style={[styles.severityBadge, { backgroundColor: severity.color + "20" }]}>
@@ -74,14 +83,14 @@ export default function Dass21Summary({ route, navigation }) {
         {/* Progress Bar */}
         <View style={styles.scoreBarContainer}>
           <View style={styles.scoreBar}>
-            <View 
+            <View
               style={[
-                styles.scoreBarFill, 
-                { 
+                styles.scoreBarFill,
+                {
                   width: `${Math.min((score / 42) * 100, 100)}%`,
-                  backgroundColor: severity.color 
+                  backgroundColor: severity.color
                 }
-              ]} 
+              ]}
             />
           </View>
         </View>
@@ -111,7 +120,7 @@ export default function Dass21Summary({ route, navigation }) {
         <Text style={styles.title}>Assessment Complete</Text>
       </LinearGradient>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -129,9 +138,9 @@ export default function Dass21Summary({ route, navigation }) {
         <TouchableOpacity
           style={styles.continueButton}
           onPress={() =>
-            navigation.navigate("FinalProcessingScreen", { 
+            navigation.navigate("FinalProcessingScreen", {
               allAnswers,
-              scores 
+              scores
             })
           }
           activeOpacity={0.8}

@@ -5,6 +5,7 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState("exam");
   const [description, setDescription] = useState("");
+  const [importance, setImportance] = useState(5);
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -14,6 +15,7 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
       title,
       type,
       description,
+      importance
     });
 
     setTitle("");
@@ -25,7 +27,7 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
     <Modal visible={visible} transparent animationType="slide">
       <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}>
         <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
-          
+
           <Text style={{ fontSize: 20, fontWeight: "700" }}>
             Add Event ({date})
           </Text>
@@ -51,6 +53,23 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
             style={[inputStyle, { height: 80 }]}
             multiline
           />
+
+          <View style={{ flexDirection: "row", marginVertical: 10 }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => setImportance(num)}
+                style={{
+                  padding: 8,
+                  margin: 4,
+                  borderRadius: 6,
+                  backgroundColor: importance === num ? "#4A90E2" : "#ccc"
+                }}
+              >
+                <Text style={{ color: "white" }}>{num}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <TouchableOpacity onPress={handleSave} style={primaryBtn}>
             <Text style={btnText}>Save Event</Text>
