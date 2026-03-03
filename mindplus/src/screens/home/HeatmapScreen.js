@@ -26,11 +26,11 @@ import {
 import {
   STRESS_COLORS,
   calculateStressLevel,
-  getStressLevel,
   getTodayMessage,
 } from "../../utils/heatmapUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from "../../config/api.js";
 
 export default function HeatmapScreen({ navigation }) {
   // Month names for display
@@ -273,7 +273,7 @@ export default function HeatmapScreen({ navigation }) {
         upcoming_events: upcomingEventsArray
       };
 
-      const response = await fetch("http://192.168.252.78:8000/api/fingerprint/evolve", {
+      const response = await fetch( `${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -365,6 +365,8 @@ export default function HeatmapScreen({ navigation }) {
               >
                 <Ionicons name="arrow-back" size={24} color="white" />
               </TouchableOpacity>
+            </View>
+            <View style={styles.header}>
 
               <TouchableOpacity onPress={goToPreviousMonth}>
                 <Text style={styles.monthNav}>{"<"}</Text>
@@ -382,7 +384,13 @@ export default function HeatmapScreen({ navigation }) {
             {/* Weekday names row */}
             <View style={styles.weekdaysRow}>
               {WEEKDAY_NAMES.map((wd) => (
-                <Text key={wd} style={styles.weekdayText}>{wd}</Text>
+                <Text key={wd} style={{
+                  width: "14.28%",
+                  textAlign: 'center',
+                  fontWeight: '600',
+                  color: '#6366F1',
+                  fontSize: 15,
+                }}>{wd}</Text>
               ))}
             </View>
 
@@ -431,8 +439,9 @@ export default function HeatmapScreen({ navigation }) {
                 const isWithinForecastWindow = diffDays > 0 && diffDays <= 5;
 
                 if ((hasPrediction && (isPastOrToday || isWithinForecastWindow))) {
-                  const stressValue =
-                    (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
+                  // const stressValue =
+                  //   (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
+                  const stressValue = predictions[dateKey] || 0;
 
                   const level = calculateStressLevel(stressValue, 0);
                   stressColor = STRESS_COLORS[level];
@@ -499,7 +508,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   weekdayText: {
-    width: 44,
     textAlign: 'center',
     fontWeight: '600',
     color: '#6366F1',
@@ -511,12 +519,14 @@ const styles = StyleSheet.create({
     color: '#6366F1',
     fontWeight: 'bold',
     marginHorizontal: 8,
+    marginTop: 20,
   },
   gradientBackground: {
     flex: 1,
   },
   container: {
     flex: 1,
+    paddingTop: 20,
   },
   content: {
     padding: 20,
