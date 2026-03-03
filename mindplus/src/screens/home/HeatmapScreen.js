@@ -26,11 +26,11 @@ import {
 import {
   STRESS_COLORS,
   calculateStressLevel,
-  getStressLevel,
   getTodayMessage,
 } from "../../utils/heatmapUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from "../../config/api.js";
 
 export default function HeatmapScreen({ navigation }) {
   // Month names for display
@@ -273,7 +273,7 @@ export default function HeatmapScreen({ navigation }) {
         upcoming_events: upcomingEventsArray
       };
 
-      const response = await fetch("http://192.168.252.78:8000/api/fingerprint/evolve", {
+      const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -365,6 +365,8 @@ export default function HeatmapScreen({ navigation }) {
               >
                 <Ionicons name="arrow-back" size={24} color="white" />
               </TouchableOpacity>
+            </View>
+            <View style={styles.header}>
 
               <TouchableOpacity onPress={goToPreviousMonth}>
                 <Text style={styles.monthNav}>{"<"}</Text>
@@ -382,7 +384,13 @@ export default function HeatmapScreen({ navigation }) {
             {/* Weekday names row */}
             <View style={styles.weekdaysRow}>
               {WEEKDAY_NAMES.map((wd) => (
-                <Text key={wd} style={styles.weekdayText}>{wd}</Text>
+                <Text key={wd} style={{
+                  width: "14.28%",
+                  textAlign: 'center',
+                  fontWeight: '600',
+                  color: '#6366F1',
+                  fontSize: 15,
+                }}>{wd}</Text>
               ))}
             </View>
 
@@ -405,6 +413,14 @@ export default function HeatmapScreen({ navigation }) {
                 const day = index + 1;
                 const dateKey = formatDate(year, month, day);
 
+                const isToday =
+                  dateKey ===
+                  formatDate(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate()
+                  );
+
                 const events = eventsByDate[dateKey] || [];
                 const totalWeight = events.reduce(
                   (sum, e) => sum + (e.importance || 1),
@@ -416,7 +432,7 @@ export default function HeatmapScreen({ navigation }) {
                 const hasPrediction = predictions[dateKey] !== undefined;
                 const hasEvent = totalWeight > 0;
 
-                const today = new Date();
+                // const today = new Date();
                 const currentDateObj = new Date(year, month, day);
 
                 const diffDays = Math.ceil(
@@ -431,12 +447,34 @@ export default function HeatmapScreen({ navigation }) {
                 const isWithinForecastWindow = diffDays > 0 && diffDays <= 5;
 
                 if ((hasPrediction && (isPastOrToday || isWithinForecastWindow))) {
-                  const stressValue =
-                    (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
+                  // const stressValue =
+                  //   (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
+                  const stressValue = predictions[dateKey] || 0;
 
                   const level = calculateStressLevel(stressValue, 0);
                   stressColor = STRESS_COLORS[level];
                 }
+
+                // return (
+                //   <View
+                //     key={day}
+                //     style={{
+                //       width: "14.28%",
+                //       aspectRatio: 1,
+                //       justifyContent: "center",
+                //       alignItems: "center",
+                //     }}
+                //   >
+                //     <CalendarDay
+                //       key={day}
+                //       day={day}
+                //       stressColor={stressColor}
+                //       hasEvents={events.length > 0}
+                //       onPress={() => openDay(day)}
+                //     />
+                //   </View>
+
+                // );
 
                 return (
                   <View
@@ -448,16 +486,22 @@ export default function HeatmapScreen({ navigation }) {
                       alignItems: "center",
                     }}
                   >
-                    <CalendarDay
-                      key={day}
-                      day={day}
-                      stressColor={stressColor}
-                      hasEvents={events.length > 0}
-                      onPress={() => openDay(day)}
-                    />
+                    <View
+                      style={[
+                        styles.dayWrapper,
+                        isToday && styles.todayBorder
+                      ]}
+                    >
+                      <CalendarDay
+                        day={day}
+                        stressColor={stressColor}
+                        hasEvents={events.length > 0}
+                        onPress={() => openDay(day)}
+                      />
+                    </View>
                   </View>
-
                 );
+
               })}
             </View>
 
@@ -499,7 +543,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   weekdayText: {
-    width: 44,
     textAlign: 'center',
     fontWeight: '600',
     color: '#6366F1',
@@ -511,12 +554,14 @@ const styles = StyleSheet.create({
     color: '#6366F1',
     fontWeight: 'bold',
     marginHorizontal: 8,
+    marginTop: 20,
   },
   gradientBackground: {
     flex: 1,
   },
   container: {
     flex: 1,
+    paddingTop: 20,
   },
   content: {
     padding: 20,
@@ -587,5 +632,16 @@ const styles = StyleSheet.create({
     color: '#22223B',
     marginTop: 0,
     fontWeight: '500',
+  },
+  dayWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  todayBorder: {
+    borderWidth: 3,
+    borderColor: "#6366F1", // matches your theme
+    borderRadius: 50,
+    // padding: 2,
   },
 });

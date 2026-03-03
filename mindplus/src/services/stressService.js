@@ -1,4 +1,7 @@
-const BACKEND_URL = 'http:// 192.168.1.2:8000'; // Replace with your backend URL
+import { API_BASE_URL } from "../config/api.js";
+
+
+const BACKEND_URL =  `${API_BASE_URL}`; // Replace with your backend URL
 
 /**
  * Analyze stress using backend API
