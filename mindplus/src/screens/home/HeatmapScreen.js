@@ -273,7 +273,7 @@ export default function HeatmapScreen({ navigation }) {
         upcoming_events: upcomingEventsArray
       };
 
-      const response = await fetch( `${API_BASE_URL}/api/fingerprint/evolve`, {
+      const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -413,6 +413,14 @@ export default function HeatmapScreen({ navigation }) {
                 const day = index + 1;
                 const dateKey = formatDate(year, month, day);
 
+                const isToday =
+                  dateKey ===
+                  formatDate(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate()
+                  );
+
                 const events = eventsByDate[dateKey] || [];
                 const totalWeight = events.reduce(
                   (sum, e) => sum + (e.importance || 1),
@@ -424,7 +432,7 @@ export default function HeatmapScreen({ navigation }) {
                 const hasPrediction = predictions[dateKey] !== undefined;
                 const hasEvent = totalWeight > 0;
 
-                const today = new Date();
+                // const today = new Date();
                 const currentDateObj = new Date(year, month, day);
 
                 const diffDays = Math.ceil(
@@ -447,6 +455,27 @@ export default function HeatmapScreen({ navigation }) {
                   stressColor = STRESS_COLORS[level];
                 }
 
+                // return (
+                //   <View
+                //     key={day}
+                //     style={{
+                //       width: "14.28%",
+                //       aspectRatio: 1,
+                //       justifyContent: "center",
+                //       alignItems: "center",
+                //     }}
+                //   >
+                //     <CalendarDay
+                //       key={day}
+                //       day={day}
+                //       stressColor={stressColor}
+                //       hasEvents={events.length > 0}
+                //       onPress={() => openDay(day)}
+                //     />
+                //   </View>
+
+                // );
+
                 return (
                   <View
                     key={day}
@@ -457,16 +486,22 @@ export default function HeatmapScreen({ navigation }) {
                       alignItems: "center",
                     }}
                   >
-                    <CalendarDay
-                      key={day}
-                      day={day}
-                      stressColor={stressColor}
-                      hasEvents={events.length > 0}
-                      onPress={() => openDay(day)}
-                    />
+                    <View
+                      style={[
+                        styles.dayWrapper,
+                        isToday && styles.todayBorder
+                      ]}
+                    >
+                      <CalendarDay
+                        day={day}
+                        stressColor={stressColor}
+                        hasEvents={events.length > 0}
+                        onPress={() => openDay(day)}
+                      />
+                    </View>
                   </View>
-
                 );
+
               })}
             </View>
 
@@ -597,5 +632,16 @@ const styles = StyleSheet.create({
     color: '#22223B',
     marginTop: 0,
     fontWeight: '500',
+  },
+  dayWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  todayBorder: {
+    borderWidth: 3,
+    borderColor: "#6366F1", // matches your theme
+    borderRadius: 50,
+    // padding: 2,
   },
 });
