@@ -12,6 +12,7 @@ import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { calculateDerivedFlags } from "../../utils/dailyCheckinUtils";
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from "../../config/api.js";
 
 // Custom Alert Component
 const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
@@ -207,6 +208,17 @@ export default function DailyLogsScreen({ navigation }) {
         };
       });
 
+      if (recentLogs.length < 3) {
+        showAlert(
+          "Building Your Pattern",
+          "We need a few more daily check-ins before generating predictions. Keep going 💪",
+          "info"
+        );
+
+        // Still save today's log, but skip backend call
+        return;
+      }
+
       // 4️⃣ Fetch previous fingerprint (for true drift)
       const fingerprintSnap = await getDoc(
         doc(db, "users", uid, "fingerprint", "current")
@@ -230,7 +242,7 @@ export default function DailyLogsScreen({ navigation }) {
 
       // 5️⃣ Send to backend
       const response = await fetch(
-        "http://192.168.252.78:8000/api/fingerprint/evolve",
+        `${API_BASE_URL}/api/fingerprint/evolve`,
         {
           method: "POST",
           headers: {

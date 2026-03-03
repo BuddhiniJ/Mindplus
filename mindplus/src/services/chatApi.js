@@ -1,7 +1,9 @@
+import { API_BASE_URL } from "../config/api.js";
+
 // Base URL for the FastAPI backend.
 // You can override this with EXPO_PUBLIC_API_URL in .env if needed.
 const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.183.21:8000";
+  process.env.EXPO_PUBLIC_API_URL ||  `${API_BASE_URL}`;
 
 const REQUEST_TIMEOUT = 25_000; // AI inference can be slow
 
