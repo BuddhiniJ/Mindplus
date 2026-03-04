@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,25 +22,25 @@ import { detectEmotion } from "../../services/api";
 // Default questions for the daily check-in - personalized with user's name
 const QUESTION_BLUEPRINTS = [
   {
-    id: "Mood-Check",
-    text: (name) =>
-      `Hi ${name}, If you could describe your mood today in one sentence, what would it be?`,
-    placeholder: "I feel...",
+    id: "Today-Feeling",
+    text: (name) => `Hi ${name}, how are you feeling right now?`,
+    placeholder: "E.g., calm, stressed, happy, overwhelmed...",
   },
   {
-    id: "Academic-Stress",
-    text: () => "How do you feel about your academic workload right now?",
-    placeholder: "Share any specific stressors or challenges.",
+    id: "Campus-Day",
+    text: () => "How did your day at university work today?",
+    placeholder: "E.g., good, tiring, stressful, exciting — and why.",
   },
   {
-    id: "Motivation",
-    text: () => "Did you feel productive today? Why or why not?",
-    placeholder: "Reflect on what influenced your motivation.",
+    id: "Main-Emotion",
+    text: () => "How rested did you feel today, and how was your sleep?",
+    placeholder: "E.g., woke up tired, felt well-rested after a nap...",
   },
   {
-    id: "Sleep",
-    text: () => "How rested does your mind feel today?",
-    placeholder: "Consider your sleep quality and duration.",
+    id: "Support-Need",
+    text: () => "What would help you feel better or more supported right now?",
+    placeholder:
+      "E.g., rest, talking to someone, planning tasks, taking a break...",
   },
 ];
 
@@ -54,6 +56,9 @@ export default function DailyCheckInScreen() {
   const [loadingExisting, setLoadingExisting] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [skipRedirectAfterSave, setSkipRedirectAfterSave] = useState(false);
+  const [questionLayouts, setQuestionLayouts] = useState({});
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [focusedQuestionId, setFocusedQuestionId] = useState(null);
   const todayKey = useMemo(() => formatDateKey(new Date()), []);
   // User's first name for personalization
   const friendlyName = useMemo(
@@ -146,6 +151,26 @@ export default function DailyCheckInScreen() {
     setResponses((prev) => ({ ...prev, [id]: value }));
   }, []);
 
+  useEffect(() => {
+    const count = questions.filter((q) => responses[q.id]?.trim()).length;
+    setAnsweredCount(count);
+  }, [questions, responses]);
+
+  const handleInputFocus = useCallback(
+    (questionId) => {
+      const targetY = questionLayouts[questionId] ?? 0;
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          y: Math.max(targetY - 140, 0),
+          animated: true,
+        });
+      }
+    },
+    [questionLayouts]
+  );
+
+  const scrollRef = React.useRef(null);
+
   const handleSubmit = useCallback(async () => {
     if (!user?.uid) {
       Alert.alert(
@@ -230,20 +255,58 @@ export default function DailyCheckInScreen() {
   }
 
   return (
-    <View style={styles.fullContainer}>
+    <KeyboardAvoidingView
+      style={styles.fullContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
+    >
       {/* Header background decoration */}
       <View style={styles.headerBackground} />
+      <View pointerEvents="none" style={styles.headerOrnaments}>
+        <View style={styles.orbOne} />
+        <View style={styles.orbTwo} />
+        <View style={styles.orbThree} />
+      </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {/* Header Section */}
-        <View style={styles.headerSection}>
-          <Text style={styles.heading}>Daily Check-In</Text>
-          <Text style={styles.subheading}>Share how you feel today</Text>
-          <Text style={styles.dateText}>📅 {todayKey}</Text>
+        <View style={styles.heroCard}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTitleBlock}>
+              <Text style={styles.heading}>Daily Check-In</Text>
+              <Text style={styles.subheading}>Share how you feel today</Text>
+            </View>
+            <View style={styles.datePill}>
+              <Text style={styles.datePillText}>📅 {todayKey}</Text>
+            </View>
+          </View>
+          <Text style={styles.heroHint}>
+            A few honest lines can reveal patterns over time.
+          </Text>
         </View>
+
+        {!loadingExisting && !hasCompletedToday && (
+          <View style={styles.progressCard}>
+            <View style={styles.progressHeaderRow}>
+              <Text style={styles.progressTitle}>Today's Progress</Text>
+              <Text style={styles.progressCount}>{answeredCount}/4</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${(answeredCount / questions.length) * 100}%` },
+                ]}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Description Card */}
         <View style={styles.descriptionCard}>
@@ -255,28 +318,66 @@ export default function DailyCheckInScreen() {
 
         {loadingExisting ? (
           <View style={styles.loadingBlock}>
-            <ActivityIndicator size="large" color="#3B82F6" />
+            <ActivityIndicator size="large" color="#4F46E5" />
             <Text style={styles.loadingText}>Loading today's check-in...</Text>
           </View>
         ) : !hasCompletedToday ? (
           <>
             {questions.map((question, index) => (
-              <View key={question.id}>
-                <View style={styles.questionCard}>
-                  <View style={styles.questionNumberBadge}>
-                    <Text style={styles.questionNumber}>{index + 1}</Text>
-                  </View>
-                  <Text style={styles.questionPrompt}>{question.prompt}</Text>
-                  <TextInput
-                    style={styles.input}
-                    multiline
-                    textAlignVertical="top"
-                    placeholder={question.placeholder}
-                    placeholderTextColor="#9CA3AF"
-                    value={responses[question.id] ?? ""}
-                    onChangeText={(value) => handleChange(question.id, value)}
-                  />
-                </View>
+              // Each question is measured to support keyboard-safe scrolling.
+              <View
+                key={question.id}
+                onLayout={(event) => {
+                  const { y } = event.nativeEvent.layout;
+                  setQuestionLayouts((prev) => ({ ...prev, [question.id]: y }));
+                }}
+              >
+                {(() => {
+                  const hasAnswer = Boolean(responses[question.id]?.trim());
+                  const isFocused = focusedQuestionId === question.id;
+                  return (
+                    <View style={styles.questionCard}>
+                      <View
+                        style={[
+                          styles.questionNumberBadge,
+                          hasAnswer && styles.questionNumberBadgeDone,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.questionNumber,
+                            hasAnswer && styles.questionNumberDone,
+                          ]}
+                        >
+                          {hasAnswer ? "✓" : index + 1}
+                        </Text>
+                      </View>
+                      <Text style={styles.questionPrompt}>
+                        {question.prompt}
+                      </Text>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          isFocused && styles.inputFocused,
+                          hasAnswer && !isFocused && styles.inputDone,
+                        ]}
+                        multiline
+                        textAlignVertical="top"
+                        placeholder={question.placeholder}
+                        placeholderTextColor="#9CA3AF"
+                        value={responses[question.id] ?? ""}
+                        onChangeText={(value) =>
+                          handleChange(question.id, value)
+                        }
+                        onFocus={() => {
+                          setFocusedQuestionId(question.id);
+                          handleInputFocus(question.id);
+                        }}
+                        onBlur={() => setFocusedQuestionId(null)}
+                      />
+                    </View>
+                  );
+                })()}
               </View>
             ))}
             <TouchableOpacity
@@ -288,7 +389,7 @@ export default function DailyCheckInScreen() {
               {submitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.submitText}>Save Answers</Text>
+                <Text style={styles.submitText}>Save Today’s Check-In</Text>
               )}
             </TouchableOpacity>
             <View style={styles.bottomSpacer} />
@@ -296,23 +397,37 @@ export default function DailyCheckInScreen() {
         ) : (
           // Show completion message if already done today
           <View style={styles.completedBanner}>
+            <View style={styles.completedGlowOne} />
+            <View style={styles.completedGlowTwo} />
+
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedBadgeText}>TODAY DONE ✨</Text>
+            </View>
+
             <Text style={styles.completedEmoji}>✅</Text>
-            <Text style={styles.completedTitle}>Already Completed</Text>
+            <Text style={styles.completedTitle}>Check-In Completed</Text>
             <Text style={styles.completedText}>
-              You've already completed today's check-in. Come back tomorrow to
-              share again!
+              Great work showing up for yourself today. Come back tomorrow to
+              continue building your emotional pattern.
             </Text>
+
+            <View style={styles.completedDateChip}>
+              <Text style={styles.completedDateText}>
+                📅 Logged on {todayKey}
+              </Text>
+            </View>
+
             <TouchableOpacity
               style={styles.dashboardButton}
               onPress={() => navigation.navigate("HomeDashboardScreen")}
               activeOpacity={0.8}
             >
-              <Text style={styles.dashboardButtonText}>View Dashboard</Text>
+              <Text style={styles.dashboardButtonText}>Go to Dashboard</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -326,14 +441,49 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    height: 260,
+    backgroundColor: "#E0E7FF",
+  },
+  headerOrnaments: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 260,
+    overflow: "hidden",
+  },
+  orbOne: {
+    position: "absolute",
+    width: 220,
     height: 220,
-    backgroundColor: "#EEF2FF",
+    borderRadius: 110,
+    backgroundColor: "rgba(79, 70, 229, 0.14)",
+    top: -70,
+    right: -70,
+  },
+  orbTwo: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(99, 102, 241, 0.16)",
+    bottom: -90,
+    left: -70,
+  },
+  orbThree: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "rgba(255, 255, 255, 0.55)",
+    top: 40,
+    left: 24,
   },
   container: {
     flexGrow: 1,
-    paddingTop: 80,
+    paddingTop: 72,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 36,
   },
   centeredContainer: {
     flex: 1,
@@ -341,13 +491,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  headerSection: {
-    marginBottom: 24,
-    paddingBottom: 16,
+  heroCard: {
+    marginBottom: 14,
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(229, 231, 235, 0.9)",
+    shadowColor: "#111827",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  heroTitleBlock: {
+    flex: 1,
+    paddingRight: 4,
   },
   heading: {
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 30,
+    fontWeight: "800",
     color: "#111827",
     marginBottom: 4,
   },
@@ -356,18 +525,69 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginBottom: 12,
   },
-  dateText: {
-    fontSize: 14,
-    color: "#9CA3AF",
+  datePill: {
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
+  },
+  datePillText: {
+    fontSize: 12,
+    color: "#374151",
+    fontWeight: "700",
+  },
+  heroHint: {
+    marginTop: 8,
+    fontSize: 13,
+    color: "#6B7280",
+    lineHeight: 18,
     fontWeight: "500",
+  },
+  progressCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  progressHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  progressTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#374151",
+  },
+  progressCount: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4F46E5",
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#4F46E5",
   },
   descriptionCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
+    padding: 16,
+    marginBottom: 18,
     borderLeftWidth: 4,
-    borderLeftColor: "#3B82F6",
+    borderLeftColor: "#4F46E5",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -381,7 +601,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   loadingBlock: {
-    paddingVertical: 60,
+    paddingVertical: 52,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -392,43 +612,94 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   completedBanner: {
+    position: "relative",
+    overflow: "hidden",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
     alignItems: "center",
     marginTop: 24,
+    borderWidth: 1.5,
+    borderColor: "#C7D2FE",
+    shadowColor: "#4338CA",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  completedGlowOne: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    top: -80,
+    right: -70,
+  },
+  completedGlowTwo: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(167, 139, 250, 0.16)",
+    bottom: -40,
+    left: -30,
+  },
+  completedBadge: {
+    backgroundColor: "#EEF2FF",
+    borderColor: "#C7D2FE",
     borderWidth: 1,
-    borderColor: "#D1FAE5",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
+  },
+  completedBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+    color: "#4338CA",
   },
   completedEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 52,
+    marginBottom: 10,
   },
   completedTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "800",
     color: "#111827",
     marginBottom: 8,
   },
   completedText: {
-    fontSize: 14,
+    fontSize: 14.5,
     color: "#6B7280",
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 21,
+    maxWidth: 290,
+  },
+  completedDateChip: {
+    marginTop: 14,
+    marginBottom: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  completedDateText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#4B5563",
   },
   dashboardButton: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#4F46E5",
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#4F46E5",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -444,7 +715,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 18,
-    marginBottom: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#EEF2FF",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -454,7 +727,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#E0E7FF",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
@@ -462,7 +735,13 @@ const styles = StyleSheet.create({
   questionNumber: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#3B82F6",
+    color: "#4F46E5",
+  },
+  questionNumberBadgeDone: {
+    backgroundColor: "rgba(79, 70, 229, 0.12)",
+  },
+  questionNumberDone: {
+    color: "#4F46E5",
   },
   questionPrompt: {
     fontSize: 16,
@@ -473,22 +752,29 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#D1D5DB",
     borderRadius: 12,
     padding: 12,
     minHeight: 100,
     fontSize: 15,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F8FAFC",
     color: "#111827",
     fontFamily: "System",
   },
+  inputFocused: {
+    borderColor: "#4F46E5",
+    backgroundColor: "#FFFFFF",
+  },
+  inputDone: {
+    borderColor: "#C7D2FE",
+  },
   submitButton: {
-    marginTop: 24,
+    marginTop: 14,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
-    backgroundColor: "#3B82F6",
-    shadowColor: "#3B82F6",
+    backgroundColor: "#4F46E5",
+    shadowColor: "#4F46E5",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -504,57 +790,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   bottomSpacer: {
-    height: 20,
+    height: 36,
   },
   bodyText: {
     fontSize: 15,
     color: "#4a4a4a",
-  },
-  loadingBlock: {
-    paddingVertical: 32,
-    alignItems: "center",
-  },
-  completeBanner: {
-    padding: 16,
-    backgroundColor: "#e4f6ef",
-    borderRadius: 12,
-  },
-  completeTitle: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  completeSubtitle: {
-    marginTop: 4,
-    color: "#3c6b59",
-  },
-  resultsCard: {
-    marginTop: 8,
-    padding: 16,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  summaryText: {
-    fontSize: 15,
-    color: "#444",
-  },
-  secondaryButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#111827",
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
   },
 });
