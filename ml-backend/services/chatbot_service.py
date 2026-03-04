@@ -343,20 +343,52 @@ def _build_reflection_sentence(text: str, emotion: str, academic_stress: str, th
     return base + context + stress_line + emotion_line
 
 
-def _build_followup_question(turns: int, risk: str, academic_stress: str) -> str:
+def _build_brief_reflection(emotion: str, academic_stress: str, theme: str) -> str:
+    """Shorter, chat-like reflection for most turns."""
+
+    if theme == "studies":
+        context = "It sounds like your studies are really on your mind. "
+    elif theme == "relationships":
+        context = "It sounds like your relationships are weighing on you. "
+    elif theme == "work":
+        context = "It sounds like work and responsibilities feel heavy. "
+    else:
+        context = "It sounds like this has been a lot to carry. "
+
+    if academic_stress in ("academic_stress_high", "burnout"):
+        stress_line = "That level of pressure would feel intense for many people. "
+    elif academic_stress == "academic_stress_medium":
+        stress_line = "It's understandable that you're feeling stressed about this. "
+    else:
+        stress_line = "Even if the stress isn't at its worst, your feelings still matter. "
+
+    if emotion in ["sadness", "fear"]:
+        emotion_line = "You're going through a hard moment, and that matters. "
+    elif emotion == "anger":
+        emotion_line = "Feeling upset or frustrated makes sense with what you're facing. "
+    else:
+        emotion_line = "Whatever you're feeling right now is valid. "
+
+    return context + stress_line + emotion_line
+
+
+def _build_followup_question(turns: int, risk: str, academic_stress: str, suggested_techniques: bool) -> str:
     if risk == "high_risk":
         return (
             " If you can, please also consider telling a trusted person how you feel, "
             "or reaching out to a professional or emergency service in your area."
         )
 
-    if turns <= 1:
-        return "I think You can Follow One of this Tecniques to feel better."
+    if turns == 0:
+        return "When you feel ready, you can share a bit more about what's been going on for you."
+
+    if suggested_techniques:
+        return "If any of those ideas seem helpful, we can think together about how to fit one small step into your day."
 
     if academic_stress in ("academic_stress_high", "burnout"):
-        return " Of everything you've shared, which study-related pressure feels most urgent to ease, even a little?"
+        return "Of everything you've shared, which study-related pressure feels most important to talk about next?"
 
-    return " What is one small change that, if it happened, would make this even slightly easier to carry?"
+    return "What feels most important for you to talk about right now?"
 
 
 def _detect_cbt_pattern(text: str) -> str | None:
@@ -433,7 +465,25 @@ def generate_therapeutic_reply(
         }
 
     turns = sum(1 for m in history if m.get("role") == "user")
+    current_turn = turns + 1  # include this new message
     theme = _classify_theme_from_history(history, text)
+
+    # Handle simple greetings with a short, friendly response
+    stripped = text.strip()
+    lower = stripped.lower()
+    greeting_words = ["hi", "hey", "hello", "good morning", "good afternoon", "good evening"]
+    is_greeting = (
+        len(stripped.split()) <= 5
+        and any(g in lower for g in greeting_words)
+        and not any(w in lower for w in ["sad", "anxious", "stressed", "depressed", "overwhelmed"])
+    )
+
+    if is_greeting:
+        friendly_greeting = (
+            "Hi, I'm MindPlus, your AI companion for stress and emotions. "
+            "It's really nice to meet you. How are you feeling today, or what's on your mind?"
+        )
+        return {"bot_message": friendly_greeting, "techniques": []}
 
     # ChatGPT-like greeting on the very first turn
     greeting = ""
@@ -442,8 +492,6 @@ def generate_therapeutic_reply(
             "Hi, I'm MindPlus, an AI companion focused on stress, emotions, and academic pressure. "
             "I can't replace a human professional, but I can help you explore what you're feeling and suggest coping ideas. "
         )
-
-    reflection = _build_reflection_sentence(text, emotion, academic_stress, theme)
 
     if stress == "high" or academic_stress in ["academic_stress_high", "burnout"]:
         tone = "Right now your nervous system is trying to cope with a lot. "
@@ -455,24 +503,43 @@ def generate_therapeutic_reply(
     # Simple CBT-style line (optional)
     cbt_line = _detect_cbt_pattern(text) or ""
 
-    # Academic-ready short explanation of the classification
     overall = overall_status_engine(emotion, stress, academic_stress, risk)
-    academic_expl = (
-        "From a stress-screening point of view, this looks like "
-        f"'{overall}' overall with '{academic_stress}' related to your studies. "
-        "This is just an automated approximation, not a diagnosis. "
-    )
 
-    techniques = suggest_techniques(emotion, academic_stress)
-    technique_line = (
-        "Here are a couple of gentle things you could try: "
-        + ", ".join(techniques)
-        + ". "
-    )
+    # Decide when to send a longer "summary + coping" reply
+    is_summary_turn = current_turn >= 3 and current_turn % 3 == 0
 
-    followup = _build_followup_question(turns, risk, academic_stress)
+    techniques: List[str] = []
 
-    bot_message = greeting + reflection + tone + academic_expl + cbt_line + technique_line + followup
+    if is_summary_turn and (
+        stress in ["high", "medium"]
+        or academic_stress in ["academic_stress_high", "academic_stress_medium", "burnout"]
+    ):
+        # Longer message: fuller reflection + brief summary + concrete techniques
+        reflection = _build_reflection_sentence(text, emotion, academic_stress, theme)
+        summary_line = (
+            "From everything you've shared so far, it seems like you're dealing with "
+            f"'{overall}' stress, with '{academic_stress}' around your studies or daily load. "
+            "To gently reduce this, it can help to focus on one realistic step at a time. "
+        )
+
+        techniques = suggest_techniques(emotion, academic_stress)
+        technique_line = ""
+        if techniques:
+            technique_line = (
+                "Here are a couple of gentle things you could try if you'd like: "
+                + ", ".join(techniques)
+                + ". "
+            )
+
+        followup = _build_followup_question(current_turn, risk, academic_stress, bool(techniques))
+        bot_message = greeting + reflection + tone + cbt_line + summary_line + technique_line + " " + followup
+        return {"bot_message": bot_message, "techniques": techniques}
+
+    # Shorter, more conversational reply on most turns
+    brief_reflection = _build_brief_reflection(emotion, academic_stress, theme)
+    followup = _build_followup_question(current_turn, risk, academic_stress, False)
+
+    bot_message = greeting + brief_reflection + tone + cbt_line + " " + followup
 
     return {"bot_message": bot_message, "techniques": techniques}
 

@@ -168,7 +168,7 @@ export default function ChatbotScreen({ navigation }) {
           techniques: reply.techniques,
         },
       };
-      const delayMs = 7000 + Math.random() * 3000;
+      const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
