@@ -33,7 +33,7 @@ export default function DayDetailModal({
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}>
                 <View style={{ backgroundColor: "#fff", padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
 
-                    <Text style={{ fontSize: 20, fontWeight: "700" }}>
+                    {/* <Text style={{ fontSize: 20, fontWeight: "700" }}>
                         {date}
                     </Text>
                     <View style={{ marginTop: 12, padding: 12, borderRadius: 10, backgroundColor: "#F9FAFB" }}>
@@ -41,7 +41,7 @@ export default function DayDetailModal({
                         <Text style={{ color: "#374151", marginTop: 4 }}>
                             {stressMessage}
                         </Text>
-                    </View>
+                    </View> */}
                     <Text style={{ fontWeight: "600", marginTop: 16 }}>Events</Text>
 
                     {events.length === 0 ? (

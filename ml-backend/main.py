@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -9,6 +14,7 @@ from services.emotion_service import (
     PredictRequest, PredictResponse, CopingStrategyRequest, CopingStrategyResponse,
     predict, coping_strategy, health, MODEL_NAME
 )
+from routes.fingerprint_routes import router as fingerprint_router
 
 # =====  Chatbot Imports =====
 from services.chatbot_service import (
@@ -63,27 +69,27 @@ async def emotion_predict(payload: PredictRequest):
 async def emotion_coping_strategy(payload: CopingStrategyRequest):
     return await coping_strategy(payload)
 
-@app.post("/predict")
-def predict_cluster(scores: UserScores):
+# @app.post("/predict")
+# def predict_cluster(scores: UserScores):
 
-    # Convert input to numpy array
-    x = np.array([[scores.stress, scores.anxiety, scores.depression]])
+#     # Convert input to numpy array
+#     x = np.array([[scores.stress, scores.anxiety, scores.depression]])
 
-    # Get cluster index
-    cluster_id = model.predict(x)[0]
+#     # Get cluster index
+#     cluster_id = model.predict(x)[0]
 
-    # Return cluster label from dictionary
-    label = LABELS.get(cluster_id, "unknown")
+#     # Return cluster label from dictionary
+#     label = LABELS.get(cluster_id, "unknown")
 
-    # Confidence: inverse distance to centroid (simple metric)
-    distances = model.transform(x)[0]
-    confidence = float(1 / (1 + distances[cluster_id]))
+#     # Confidence: inverse distance to centroid (simple metric)
+#     distances = model.transform(x)[0]
+#     confidence = float(1 / (1 + distances[cluster_id]))
 
-    return {
-        "clusterId": int(cluster_id),
-        "label": label,
-        "confidence": confidence
-    }
+#     return {
+#         "clusterId": int(cluster_id),
+#         "label": label,
+#         "confidence": confidence
+#     }
 
 # ================= CHATBOT ROUTES ====================
 
@@ -121,6 +127,7 @@ def root():
 # Include voice routes
 app.include_router(voice_routes)
 
+app.include_router(fingerprint_router, prefix="/api")
 
 # Startup event
 @app.on_event("startup")

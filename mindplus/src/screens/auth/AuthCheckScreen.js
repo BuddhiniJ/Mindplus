@@ -20,16 +20,27 @@ export default function AuthCheckScreen({ navigation }) {
 
       const uid = user.uid;
 
-      // Check if fingerprint exists
-      const fingerprintRef = doc(db, "users", uid, "fingerprint", "current");
-      const fingerprintDoc = await getDoc(fingerprintRef);
+      // 1️⃣ Check baseline
+      const baselineRef = doc(db, "users", uid, "baseline", "dass21");
+      const baselineDoc = await getDoc(baselineRef);
 
-      if (fingerprintDoc.exists()) {
-        console.log("Fingerprint found. Redirect → Dashboard");
+      if (!baselineDoc.exists()) {
+        navigation.replace("Dass21Screen1");
+        return;
+      }
+
+      // 2️⃣ Check if today's log exists
+      const today = new Date().toLocaleDateString("en-CA");
+
+      const todayLogRef = doc(db, "users", uid, "daily_logs", today);
+      const todayLogDoc = await getDoc(todayLogRef);
+
+      if (todayLogDoc.exists()) {
+        // Already submitted today → go to dashboard
         navigation.replace("DailyCheckInScreen");
       } else {
-        console.log("No fingerprint. Redirect → Onboarding (DASS-21)");
-        navigation.replace("Dass21Screen1");
+        // Not submitted yet → allow check-in
+        navigation.replace("DailyLogsScreen");
       }
 
     } catch (error) {

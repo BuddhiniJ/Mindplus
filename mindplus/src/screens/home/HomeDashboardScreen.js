@@ -12,6 +12,7 @@ export default function HomeDashboardScreen({ navigation }) {
 
   useEffect(() => {
     loadDashboardData();
+    // updateUserFingerprint(user.uid);
   }, []);
 
   const loadDashboardData = async () => {

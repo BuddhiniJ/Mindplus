@@ -34,8 +34,8 @@ export const generateMockPredictions = (year, month) => {
 export const calculateStressLevel = (base, events = 0) => {
   const score = base + events;
 
-  if (score <= 2) return "low";
-  if (score <= 4) return "medium";
+  if (score <= 3) return "low";
+  if (score <= 6) return "medium";
   return "high";
 };
 
@@ -65,12 +65,4 @@ export const getTodayMessage = (stressLevel, eventCount) => {
   return eventCount > 2
     ? "Today looks quite demanding. Consider prioritizing tasks and resting when needed ❤️"
     : "Your stress level is high today. Don’t hesitate to slow down and seek support 💙";
-};
-
-export const getStressLevel = (baseStress, eventsCount = 0) => {
-  const score = baseStress + eventsCount;
-
-  if (score <= 2) return "low";
-  if (score <= 4) return "medium";
-  return "high";
 };
