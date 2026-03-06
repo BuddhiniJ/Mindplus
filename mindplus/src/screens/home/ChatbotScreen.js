@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
+import { useGlobalAudioPlayer } from "../../context/GlobalAudioPlayerContext";
 import ChatHeader from "../../components/chatbot/ChatHeader";
 import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
 import MessageList from "../../components/chatbot/MessageList";
@@ -98,6 +99,75 @@ export default function ChatbotScreen({ navigation }) {
   const [userLabel, setUserLabel] = useState("You");
   const [emergencyContact, setEmergencyContact] = useState(null);
   const [emergencyName, setEmergencyName] = useState(null);
+
+  const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
+    useGlobalAudioPlayer();
+
+  const handleAppAction = async (appAction, meta = {}) => {
+    if (!appAction) return;
+
+    try {
+      const { action, target, sound, command, mode } = appAction;
+      const { emotion } = meta;
+
+      // Soundscape controls: play specific ambience or stop
+      if (target === "soundscape") {
+        if (action === "navigate") {
+          let trackId = null;
+          if (sound === "soft_rain") trackId = "rain";
+          else if (sound === "forest") trackId = "forest";
+          else if (sound === "fireplace") trackId = "fire";
+
+          if (trackId) {
+            await selectTrack(trackId);
+            if (!isPlaying) {
+              await togglePlay();
+            }
+          }
+
+          navigation.navigate("SoundscapeScreen");
+          return;
+        }
+
+        if (action === "control" && command === "stop") {
+          await closeMiniPlayer();
+          return;
+        }
+      }
+
+      // Breathing exercise: open guided calm/box breathing screen
+      if (action === "navigate" && target === "breathing_exercise") {
+        navigation.navigate("VisualAffirmationScreen");
+        return;
+      }
+
+      // Meditation: reuse the same calming session screen
+      if (action === "navigate" && target === "meditation") {
+        navigation.navigate("VisualAffirmationScreen");
+        return;
+      }
+
+      // Stress tips / coping techniques list
+      if (action === "navigate" && target === "stress_tips") {
+        navigation.navigate("CopingStrategyScreen", {
+          emotion: emotion || "unknown",
+          confidence: 0.7,
+        });
+        return;
+      }
+
+      // Mood tracker module
+      if (action === "navigate" && target === "mood_tracker") {
+        if (mode === "log_today") {
+          navigation.navigate("DailyCheckInScreen");
+        } else {
+          navigation.navigate("OverallEmotionScreen");
+        }
+      }
+    } catch (e) {
+      console.log("Failed to handle app action", e);
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -205,6 +275,10 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
+
+      if (raw.app_action) {
+        await handleAppAction(raw.app_action, { emotion: reply.emotion });
+      }
       const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       // After a short "thinking" delay, show a typing effect for the bot message
@@ -292,6 +366,10 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
+
+      if (raw.app_action) {
+        await handleAppAction(raw.app_action, { emotion: reply.emotion });
+      }
       const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       setBotTyping(false);
