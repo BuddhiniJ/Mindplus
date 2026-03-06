@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Linking,
+  Animated,
 } from "react-native";
 import styles from "./chatbotStyles";
 
@@ -15,14 +16,29 @@ export default function MessageList({
   isBotTyping,
   emergencyContact,
   emergencyName,
+  moodOptions,
+  showMoodOptions,
+  onSelectMood,
 }) {
   const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0));
 
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (showMoodOptions && moodOptions && moodOptions.length > 0) {
+      fadeAnim.current.setValue(0);
+      Animated.timing(fadeAnim.current, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showMoodOptions, moodOptions?.length]);
 
   return (
     <ScrollView
@@ -71,6 +87,28 @@ export default function MessageList({
               >
                 {msg.text}
               </Text>
+
+              {msg.from === "bot" &&
+                msg.isMoodPrompt &&
+                moodOptions &&
+                moodOptions.length > 0 &&
+                showMoodOptions && (
+                  <Animated.View
+                    style={[styles.promptRow, { opacity: fadeAnim.current }]}
+                  >
+                    {moodOptions.map((opt) => (
+                      <Pressable
+                        key={opt.id}
+                        onPress={() => onSelectMood && onSelectMood(opt)}
+                        style={styles.promptChip}
+                      >
+                        <Text style={styles.promptChipText}>
+                          {opt.emoji} {opt.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </Animated.View>
+                )}
 
               {msg.from === "bot" &&
                 msg.meta &&

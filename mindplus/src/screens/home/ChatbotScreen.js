@@ -93,6 +93,7 @@ export default function ChatbotScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [initialPrompt, setInitialPrompt] = useState(null);
   const [moodOptions, setMoodOptions] = useState([]);
+  const [showMoodOptions, setShowMoodOptions] = useState(false);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
   const [userLabel, setUserLabel] = useState("You");
   const [emergencyContact, setEmergencyContact] = useState(null);
@@ -126,16 +127,48 @@ export default function ChatbotScreen({ navigation }) {
         if (start.initial_message) {
           setInitialPrompt(start.initial_message);
           setMoodOptions(start.mood_options || []);
+          setShowMoodOptions(false);
 
+          const fullText = start.initial_message || "";
+          const botId = `${Date.now()}-init`;
+
+          // Add an empty bot message and progressively fill it, like other replies.
+          // Mark it as a mood prompt so the MessageList can render emoji options
+          // inside the same message bubble.
           setMessages((prev) => [
             ...prev,
             {
-              id: `${Date.now()}-init`,
+              id: botId,
               from: "bot",
-              text: start.initial_message,
+              text: "",
               label: "MindPlus Bot",
+              isMoodPrompt: true,
             },
           ]);
+
+          const typingSpeed = 18; // ms per character
+          const chars = fullText.split("");
+          chars.forEach((_, index) => {
+            setTimeout(() => {
+              const nextText = fullText.slice(0, index + 1);
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === botId
+                    ? {
+                        ...m,
+                        text: nextText,
+                      }
+                    : m
+                )
+              );
+            }, typingSpeed * index);
+          });
+
+          // After the typing effect finishes, fade in the mood options
+          const totalDuration = typingSpeed * chars.length + 150;
+          setTimeout(() => {
+            setShowMoodOptions(true);
+          }, totalDuration);
         }
       } catch (err) {
         console.log("Failed to start chatbot session", err);
@@ -259,7 +292,8 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
-
+      const delayMs = 1500 + Math.random() * 1500;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
       setBotTyping(false);
 
       const fullText = reply.botMessage || "";
@@ -273,19 +307,39 @@ export default function ChatbotScreen({ navigation }) {
         techniques: reply.techniques,
       };
 
+      // Add an empty bot message and progressively fill it character by character
       setMessages((prev) => [
         ...prev,
         {
           id: botId,
           from: "bot",
-          text: fullText,
+          text: "",
           label: "MindPlus Bot",
           meta: baseMeta,
         },
       ]);
 
+      const typingSpeed = 18; // ms per character
+      const chars = fullText.split("");
+      chars.forEach((_, index) => {
+        setTimeout(() => {
+          const nextText = fullText.slice(0, index + 1);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === botId
+                ? {
+                    ...m,
+                    text: nextText,
+                  }
+                : m
+            )
+          );
+        }, typingSpeed * index);
+      });
+
       // After the mood is selected once, hide the chips
       setMoodOptions([]);
+      setShowMoodOptions(false);
     } catch (err) {
       console.log("Failed to send mood selection", err);
     } finally {
@@ -338,23 +392,10 @@ export default function ChatbotScreen({ navigation }) {
               emergencyContact={emergencyContact}
               emergencyName={emergencyName}
               onSelectTechnique={setSelectedTechnique}
+              moodOptions={moodOptions}
+              showMoodOptions={showMoodOptions}
+              onSelectMood={handleSelectMood}
             />
-
-            {moodOptions && moodOptions.length > 0 && (
-              <View style={styles.promptRow}>
-                {moodOptions.map((opt) => (
-                  <Text
-                    key={opt.id}
-                    style={styles.promptChip}
-                    onPress={() => handleSelectMood(opt)}
-                  >
-                    <Text style={styles.promptChipText}>
-                      {opt.emoji} {opt.label}
-                    </Text>
-                  </Text>
-                ))}
-              </View>
-            )}
           </View>
 
           <PromptChips onSelectPrompt={setInput} />
