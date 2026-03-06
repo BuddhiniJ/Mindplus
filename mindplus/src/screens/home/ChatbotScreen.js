@@ -117,6 +117,8 @@ export default function ChatbotScreen({ navigation }) {
           if (sound === "soft_rain") trackId = "rain";
           else if (sound === "forest") trackId = "forest";
           else if (sound === "fireplace") trackId = "fire";
+          else if (sound === "ocean") trackId = "ocean";
+          else if (sound === "white") trackId = "white";
 
           if (trackId) {
             await selectTrack(trackId);
