@@ -72,46 +72,6 @@ export default function MessageList({
                 {msg.text}
               </Text>
 
-              {msg.from === "bot" && msg.meta && (
-                <View style={styles.metaContainer}>
-                  <Text style={styles.metaText}>
-                    Insights from this message
-                  </Text>
-                  <View style={styles.metaChipsRow}>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Emotion:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.emotion || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Stress:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.stressLevel || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Academic:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.academicStressCategory || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Risk:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.riskLevel || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Overall:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.overallStatus || "-"}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
               {msg.from === "bot" &&
                 msg.meta &&
                 msg.meta.techniques &&

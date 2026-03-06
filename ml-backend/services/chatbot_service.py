@@ -733,22 +733,8 @@ def generate_therapeutic_reply(
             "techniques": [],
         }
 
-    # Check if we previously asked for permission to share techniques
-    awaiting_consent = bool(memory.get("awaiting_technique_consent"))
-    techniques: List[str] = []
-
-    if awaiting_consent:
-        # Look for a yes / no type reply
-        affirmative = ["yes", "yeah", "sure", "please", "ok", "okay", "why not", "sounds good"]
-        negative = ["no", "not now", "maybe later", "dont want", "don't want"]
-
-        if any(lower.startswith(a) or a in lower for a in affirmative):
-            techniques = suggest_techniques(emotion, academic_stress)
-            memory["awaiting_technique_consent"] = False
-            session["memory"] = memory
-        elif any(n in lower for n in negative):
-            memory["awaiting_technique_consent"] = False
-            session["memory"] = memory
+    # Always determine techniques for this message (non-light, non-greeting, non-high-risk)
+    techniques: List[str] = suggest_techniques(emotion, academic_stress)
 
     # Core conversational pieces
     validation = _build_validation(emotion, stress, academic_stress, risk, theme, user_name)
@@ -766,15 +752,6 @@ def generate_therapeutic_reply(
             + "."
         )
         parts.append(techniques_line)
-    else:
-        # Ask for permission *if* conditions suggest techniques could help and we aren't already waiting
-        should_offer, reason = should_suggest_techniques(stress, academic_stress, risk, messages, text)
-        if should_offer and not awaiting_consent:
-            permission_q = _build_permission_question()
-            parts.append(permission_q)
-            memory["awaiting_technique_consent"] = True
-            memory["last_technique_reason"] = reason
-            session["memory"] = memory
 
     parts.append(followup)
 
