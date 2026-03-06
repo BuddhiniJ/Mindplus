@@ -39,8 +39,28 @@ class AnalysisResult(BaseModel):
     bot_response: str
 
 
+class MoodOption(BaseModel):
+    """Selectable mood option shown at chat start.
+
+    Frontend can render these as chips/buttons for the user.
+    """
+
+    id: str
+    label: str
+    emoji: str
+    value: str
+
+
 class ChatStartResponse(BaseModel):
+    """Response for starting a chat session.
+
+    session_id is required for all subsequent messages.
+    initial_message and mood_options enable the mood check‑in UX.
+    """
+
     session_id: str
+    initial_message: str
+    mood_options: List[MoodOption]
 
 
 class ChatMessageInput(BaseModel):
@@ -56,6 +76,9 @@ class ChatMessageResponse(BaseModel):
     risk_level: str
     overall_status: str
     techniques: List[str]
+    # Optional structured command so the mobile app can
+    # navigate or start modules (soundscape, breathing, etc.).
+    app_action: Optional[Dict[str, Any]] = None
 
 
 # -----------------------------------------------------------
@@ -230,41 +253,87 @@ def generate_response(overall_status: str, emotion: str, academic_stress: str, r
 # -----------------------------------------------------------
 # THERAPEUTIC TECHNIQUES
 # -----------------------------------------------------------
-def suggest_techniques(emotion: str, academic_stress: str) -> List[str]:
-    """Return a small set of concrete coping techniques.
+def suggest_techniques(emotion: str, academic_stress: str, stress: Optional[str] = None) -> List[str]:
+    """Return a small, varied set of concrete coping techniques.
 
     The names are interpreted on the frontend, where more detailed
-    instructions can be shown.
+    instructions can be shown. We intentionally keep the list short
+    (3–5 items) but richer than just one or two options.
     """
 
     techniques: List[str] = []
 
+    # Emotion‑focused tools
     if emotion in ["fear", "surprise"]:
-        techniques += ["5-4-3-2-1 grounding", "Box breathing (4-4-4-4)"]
+        techniques += [
+            "5-4-3-2-1 grounding",
+            "Box breathing (4-4-4-4)",
+            "Safe place visualization",
+        ]
 
     if emotion == "sadness":
-        techniques += ["Self-compassion check-in", "Small activation task"]
+        techniques += [
+            "Self-compassion check-in",
+            "Small activation task",
+            "Gratitude list (3 things)",
+        ]
 
     if emotion == "anger":
-        techniques += ["4-7-8 breathing", "Cognitive defusion"]
+        techniques += [
+            "4-7-8 breathing",
+            "Cognitive defusion",
+            "Take a short walk",
+        ]
 
+    # Academic stress / burnout tools
     if academic_stress == "burnout":
-        techniques += ["5-minute micro-break", "Energy audit"]
+        techniques += [
+            "5-minute micro-break",
+            "Energy audit",
+            "Mini self-care break",
+        ]
 
     if academic_stress.startswith("academic_stress_"):
-        techniques += ["Task chunking (25/5 Pomodoro)", "Two-minute small start"]
+        techniques += [
+            "Task chunking (25/5 Pomodoro)",
+            "Two-minute small start",
+            "Prioritise top 3 tasks",
+        ]
+
+    # Generic stress‑level based tools
+    if stress == "high":
+        techniques += [
+            "Box breathing (4-4-4-4)",
+            "5-minute reset break",
+            "5-4-3-2-1 grounding",
+        ]
+    elif stress == "medium":
+        techniques += [
+            "Pomodoro study technique",
+            "Short stretch break",
+            "Mindful breathing",
+        ]
+    elif stress == "low":
+        techniques += [
+            "Light check-in journaling",
+            "Plan a small reward after work",
+        ]
 
     # Fallback general tools
     if not techniques:
-        techniques = ["Mindful breathing"]
+        techniques = [
+            "Mindful breathing",
+            "5-minute reset break",
+            "Light check-in journaling",
+        ]
 
-    # Keep list short and unique
+    # Keep list short and unique (3–5 items)
     deduped: List[str] = []
     for t in techniques:
         if t not in deduped:
             deduped.append(t)
 
-    return deduped[:4]
+    return deduped[:5]
 
 
 # -----------------------------------------------------------
@@ -464,8 +533,22 @@ def detect_emotional_trend(messages: List[Dict[str, Any]]) -> Optional[str]:
     """Return a short trend description if things seem to be worsening."""
 
     if detect_stress_escalation(messages):
-        return "I notice things seem to be getting heavier compared to earlier."
+        return "I notice things seem to be getting a bit heavier than earlier in our chat."
     return None
+
+
+def track_emotion_trend(session: Dict[str, Any]) -> Optional[str]:
+    """Public helper that tracks and stores the current emotional trend.
+
+    This keeps the logic reusable and makes it easier to evolve later
+    (e.g. persisting across sessions or users).
+    """
+
+    messages = session.get("messages", [])
+    trend = detect_emotional_trend(messages)
+    memory = session.setdefault("memory", {})
+    memory["last_trend"] = trend
+    return trend
 
 
 def _user_explicitly_asks_for_help(text: str) -> bool:
@@ -496,28 +579,38 @@ def should_suggest_techniques(
     """Decide whether techniques *should* be offered (permission will be asked first).
 
     Reasons:
+    - "conversation_build_up": 2–3 user turns with medium/high stress
     - "persistent_high_stress": high stress for 2+ consecutive user turns
     - "burnout": explicit burnout pattern
     - "user_asked": user directly asked for help
     - "moderate_risk_escalation": moderate risk with rising stress
     """
 
+    # User directly asks for help
     if _user_explicitly_asks_for_help(user_text):
         return True, "user_asked"
 
+    # Burnout explicitly detected
     if academic_stress == "burnout":
         return True, "burnout"
 
+    # After 2–3 turns of medium/high stress, gently offer techniques
+    user_turns = [m for m in messages if m.get("role") == "user"]
+    if len(user_turns) >= 2 and stress in ("medium", "high"):
+        return True, "conversation_build_up"
+
+    # Ongoing high stress over recent turns
     if _has_persistent_high_stress(messages, window=2):
         return True, "persistent_high_stress"
 
+    # Moderate risk combined with escalating stress pattern
     if risk == "moderate_risk" and detect_stress_escalation(messages):
         return True, "moderate_risk_escalation"
 
     return False, None
 
 
-def _build_validation(
+def build_validation(
     emotion: str,
     stress: str,
     academic_stress: str,
@@ -525,32 +618,32 @@ def _build_validation(
     theme: str,
     user_name: Optional[str],
 ) -> str:
-    """Short, varied validation line (1 sentence)."""
+    """Short, varied validation line (1 sentence, friendly tone)."""
 
     name_prefix = f"{user_name}, " if user_name else ""
 
     high_templates = [
-        f"{name_prefix}thanks for sharing this with me, it really sounds like a lot to handle.",
-        f"{name_prefix}I'm really glad you told me what's going on, it sounds really intense.",
-        f"{name_prefix}it makes sense that this feels heavy right now, and I'm here with you in it.",
+        f"{name_prefix}thanks for opening up, it really sounds like a lot to carry.",
+        f"{name_prefix}I'm really glad you told me about this, it sounds intense.",
+        f"{name_prefix}it makes sense this feels heavy right now, and I'm here with you in it.",
     ]
 
     moderate_templates = [
         f"{name_prefix}I hear that this has been weighing on you.",
         f"{name_prefix}it sounds like things have been a bit much lately.",
-        f"{name_prefix}thank you for being honest about how you're doing.",
+        f"{name_prefix}thanks for being honest about how you're really doing.",
     ]
 
     low_templates = [
-        f"{name_prefix}it's nice that you felt safe enough to share this.",
-        f"{name_prefix}I'm glad you're talking about how things feel, even when they're not at their worst.",
-        f"{name_prefix}it's totally okay to check in even when things are mostly okay.",
+        f"{name_prefix}it's nice that you felt comfortable sharing this.",
+        f"{name_prefix}I'm glad you're checking in, even when things are mostly okay.",
+        f"{name_prefix}it's totally okay to talk things through, even on calmer days.",
     ]
 
     if risk == "high_risk":
         base = [
             f"{name_prefix}I'm really relieved you reached out and told me this.",
-            f"{name_prefix}I'm really glad you're not keeping this all inside right now.",
+            f"{name_prefix}I'm really glad you're not trying to carry this alone right now.",
         ]
         return random.choice(base)
 
@@ -575,7 +668,7 @@ def _emotion_phrase(emotion: str) -> str:
     return mapping.get(emotion, "a lot of different emotions")
 
 
-def _build_reflection(
+def build_reflection(
     text: str,
     emotion: str,
     academic_stress: str,
@@ -603,6 +696,7 @@ def _build_reflection(
     elif academic_stress == "academic_stress_medium":
         parts.append("it's completely understandable that this feels stressful.")
 
+    # Use recent messages to see if things are getting heavier over time.
     trend_line = detect_emotional_trend(messages)
     if trend_line:
         parts.append(trend_line)
@@ -616,7 +710,7 @@ def _build_reflection(
     return " ".join(parts[:3])
 
 
-def _build_followup(
+def build_followup(
     risk: str,
     academic_stress: str,
     theme: str,
@@ -667,6 +761,42 @@ def _build_permission_question() -> str:
         "I can suggest a tiny exercise that some people find calming. Want to hear it?",
     ]
     return random.choice(templates)
+
+
+def _user_accepts_technique(text: str) -> bool:
+    """Detect a simple "yes" style response to a technique offer."""
+
+    lowered = text.lower().strip()
+    yes_phrases = [
+        "yes",
+        "yeah",
+        "yep",
+        "sure",
+        "okay",
+        "ok",
+        "alright",
+        "please",
+        "that would help",
+        "i'd like that",
+    ]
+    return any(lowered == p or p in lowered for p in yes_phrases)
+
+
+def _user_declines_technique(text: str) -> bool:
+    """Detect a simple "no" style response to a technique offer."""
+
+    lowered = text.lower().strip()
+    no_phrases = [
+        "no",
+        "not now",
+        "maybe later",
+        "don't want",
+        "do not want",
+        "i'm okay",
+        "im okay",
+        "i am okay",
+    ]
+    return any(lowered == p or p in lowered for p in no_phrases)
 
 
 def generate_therapeutic_reply(
@@ -733,32 +863,171 @@ def generate_therapeutic_reply(
             "techniques": [],
         }
 
-    # Always determine techniques for this message (non-light, non-greeting, non-high-risk)
-    techniques: List[str] = suggest_techniques(emotion, academic_stress)
-
     # Core conversational pieces
-    validation = _build_validation(emotion, stress, academic_stress, risk, theme, user_name)
-    reflection = _build_reflection(text, emotion, academic_stress, theme, emotion_confidence, messages)
-    followup = _build_followup(risk, academic_stress, theme, memory)
+    validation = build_validation(emotion, stress, academic_stress, risk, theme, user_name)
+    reflection = build_reflection(text, emotion, academic_stress, theme, emotion_confidence, messages)
+    followup = build_followup(risk, academic_stress, theme, memory)
 
-    parts: List[str] = []
-    parts.append(validation)
-    parts.append(reflection)
+    parts: List[str] = [validation, reflection, followup]
 
-    if techniques:
-        techniques_line = (
-            "Here are a couple of small techniques that might help right now: "
-            + ", ".join(techniques)
-            + "."
-        )
-        parts.append(techniques_line)
+    # Decide *whether* to suggest techniques on this turn.
+    offer_techniques, reason = should_suggest_techniques(
+        stress, academic_stress, risk, messages, text
+    )
 
-    parts.append(followup)
+    memory.setdefault("awaiting_technique_consent", False)
+    if offer_techniques and not memory.get("awaiting_technique_consent"):
+        # Ask for consent first; actual techniques are sent only if
+        # the user says "yes" in a later turn.
+        permission_q = _build_permission_question()
+        parts.append(permission_q)
+        memory["awaiting_technique_consent"] = True
+        memory["last_technique_reason"] = reason
+        session["memory"] = memory
+        techniques: List[str] = []
+    else:
+        techniques = []
 
-    # Keep responses compact: 3–5 sentences
-    bot_message = " ".join(parts[:5])
+    # Keep responses compact: 2–4 sentences
+    bot_message = " ".join(parts[:4])
 
     return {"bot_message": bot_message, "techniques": techniques}
+
+
+# -----------------------------------------------------------
+# APP FEATURE AUTOMATION
+# -----------------------------------------------------------
+
+def detect_app_command(text: str) -> Optional[Dict[str, Any]]:
+    """Detect natural language commands that should control app features.
+
+    Returns a structured action the frontend can interpret.
+    Example actions:
+    {"action": "navigate", "target": "soundscape", "sound": "soft_rain"}
+    {"action": "navigate", "target": "breathing_exercise"}
+    """
+
+    lowered = text.lower()
+
+    # Soundscape controls
+    if any(phrase in lowered for phrase in [
+        "play rain",
+        "rain sounds",
+        "soft rain",
+        "relaxing rain",
+    ]):
+        return {"action": "navigate", "target": "soundscape", "sound": "soft_rain"}
+
+    if any(phrase in lowered for phrase in [
+        "forest sounds",
+        "play forest",
+        "rainforest",
+        "nature sounds",
+    ]):
+        return {"action": "navigate", "target": "soundscape", "sound": "forest"}
+
+    if any(phrase in lowered for phrase in [
+        "fireplace sounds",
+        "campfire",
+        "crackling fire",
+    ]):
+        return {"action": "navigate", "target": "soundscape", "sound": "fireplace"}
+
+    if "stop music" in lowered or "stop the music" in lowered or "stop sound" in lowered:
+        return {"action": "control", "target": "soundscape", "command": "stop"}
+
+    # Breathing / grounding exercises
+    if any(phrase in lowered for phrase in [
+        "breathing exercise",
+        "start breathing",
+        "breathing guide",
+        "relaxation breathing",
+        "box breathing",
+        "grounding exercise",
+    ]):
+        return {"action": "navigate", "target": "breathing_exercise"}
+
+    # Meditation module
+    if any(phrase in lowered for phrase in [
+        "start meditation",
+        "meditation session",
+        "meditate with",
+    ]):
+        return {"action": "navigate", "target": "meditation"}
+
+    # Stress tips / coping strategies screen
+    if any(phrase in lowered for phrase in [
+        "stress tips",
+        "coping techniques",
+        "coping strategy list",
+        "show coping",
+    ]):
+        return {"action": "navigate", "target": "stress_tips"}
+
+    # Mood tracker
+    if "mood tracker" in lowered or "track my mood" in lowered:
+        return {"action": "navigate", "target": "mood_tracker"}
+
+    if "log today's mood" in lowered or "log my mood" in lowered:
+        return {"action": "navigate", "target": "mood_tracker", "mode": "log_today"}
+
+    return None
+
+
+def _build_app_command_reply(app_action: Dict[str, Any]) -> str:
+    """Human‑friendly sentence that mirrors the detected app command."""
+
+    target = app_action.get("target")
+    sound = app_action.get("sound")
+    command = app_action.get("command")
+
+    if target == "soundscape" and sound == "soft_rain":
+        return "Sure, I'll play some soft rain sounds for you now 🌧️"
+    if target == "soundscape" and sound == "forest":
+        return "Got it, I'll start some gentle forest sounds 🌲"
+    if target == "soundscape" and sound == "fireplace":
+        return "I'll put on cozy fireplace sounds for you 🔥"
+    if target == "soundscape" and command == "stop":
+        return "Okay, I'll stop the background sounds for now."
+
+    if target == "breathing_exercise":
+        return "Sure, let's open a short breathing exercise together."
+    if target == "meditation":
+        return "Of course, I'll open a calm meditation session for you."
+    if target == "stress_tips":
+        return "I'll show you some quick stress tips you can try."
+    if target == "mood_tracker" and app_action.get("mode") == "log_today":
+        return "Let's log how you're feeling in your mood tracker today."
+    if target == "mood_tracker":
+        return "I'll open your mood tracker so you can check in."
+
+    # Generic fallback
+    return "Sure, I'll open that part of the app for you."
+
+
+def session_memory_manager(session: Dict[str, Any]) -> Dict[str, Any]:
+    """Ensure a consistent memory structure for the session.
+
+    This provides a single place to evolve memory fields like
+    mood check‑in, themes, and technique consent flags.
+    """
+
+    default_memory = {
+        "user_name": None,
+        "main_theme": "general",
+        "stress_triggers": {},
+        "awaiting_technique_consent": False,
+        "last_technique_reason": None,
+        "mood_checkin_done": False,
+        "initial_mood": None,
+        "last_trend": None,
+    }
+
+    memory = session.setdefault("memory", {})
+    for key, value in default_memory.items():
+        memory.setdefault(key, value)
+    session["memory"] = memory
+    return memory
 
 
 # -----------------------------------------------------------
@@ -825,9 +1094,48 @@ def chat_start_service() -> ChatStartResponse:
             "stress_triggers": {},
             "awaiting_technique_consent": False,
             "last_technique_reason": None,
+            "mood_checkin_done": False,
+            "initial_mood": None,
+            "last_trend": None,
         },
     }
-    return ChatStartResponse(session_id=session_id)
+
+    # Mood check‑in prompt shown at the very start of a session.
+    initial_message = "Hi 👋 Before we start, how are you feeling today?"
+
+    mood_options = [
+        MoodOption(id="happy", label="Happy", emoji="😊", value="happy"),
+        MoodOption(id="calm", label="Calm", emoji="😌", value="calm"),
+        MoodOption(id="neutral", label="Neutral", emoji="😐", value="neutral"),
+        MoodOption(id="stressed", label="Stressed", emoji="😟", value="stressed"),
+        MoodOption(id="sad", label="Sad", emoji="😢", value="sad"),
+        MoodOption(id="angry", label="Angry", emoji="😡", value="angry"),
+    ]
+
+    return ChatStartResponse(
+        session_id=session_id,
+        initial_message=initial_message,
+        mood_options=mood_options,
+    )
+
+
+def _normalize_mood_from_text(text: str) -> Optional[str]:
+    """Map a short reply or chip text back to a normalized mood label."""
+
+    lowered = text.lower()
+    if "happy" in lowered or "😊" in lowered:
+        return "happy"
+    if "calm" in lowered or "😌" in lowered:
+        return "calm"
+    if "neutral" in lowered or "😐" in lowered or "okay" in lowered or "ok" == lowered:
+        return "neutral"
+    if "stressed" in lowered or "stress" in lowered or "😟" in lowered:
+        return "stressed"
+    if "sad" in lowered or "😢" in lowered:
+        return "sad"
+    if "angry" in lowered or "mad" in lowered or "😡" in lowered:
+        return "angry"
+    return None
 
 
 def chat_message_service(input: ChatMessageInput) -> ChatMessageResponse:
@@ -866,8 +1174,55 @@ def chat_message_service(input: ChatMessageInput) -> ChatMessageResponse:
                     "stress_triggers": {},
                     "awaiting_technique_consent": False,
                     "last_technique_reason": None,
+                    "mood_checkin_done": False,
+                    "initial_mood": None,
+                    "last_trend": None,
                 },
             }
+
+        # Always normalise memory through the session_memory_manager
+        memory = session_memory_manager(session)
+
+        # Mood check‑in: if not done yet, treat this turn as mood selection
+        user_turns_before = [m for m in session.get("messages", []) if m.get("role") == "user"]
+        if not memory.get("mood_checkin_done") and len(user_turns_before) == 0:
+            mood = _normalize_mood_from_text(text)
+            if mood:
+                memory["mood_checkin_done"] = True
+                memory["initial_mood"] = mood
+                session["memory"] = memory
+
+                session.setdefault("messages", []).append(
+                    {
+                        "role": "user",
+                        "text": text,
+                        "emotion": emotion,
+                        "stress": stress,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
+
+                bot_message = "Thanks for sharing. Do you want to tell me what made you feel this way today?"
+                session.setdefault("messages", []).append(
+                    {
+                        "role": "bot",
+                        "text": bot_message,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
+
+                Sessions[session_id] = session
+
+                return ChatMessageResponse(
+                    bot_message=bot_message,
+                    emotion=emotion,
+                    stress_level=stress,
+                    academic_stress_category=academic_stress,
+                    risk_level=risk,
+                    overall_status=overall,
+                    techniques=[],
+                    app_action=None,
+                )
 
         # Append current user message with emotional metadata for trend tracking
         session.setdefault("messages", []).append(
@@ -880,17 +1235,58 @@ def chat_message_service(input: ChatMessageInput) -> ChatMessageResponse:
             }
         )
 
-        reply = generate_therapeutic_reply(
-            text,
-            emotion,
-            stress,
-            academic_stress,
-            risk,
-            session,
-            emotion_confidence,
-        )
-        bot_message = reply["bot_message"]
-        techniques = reply["techniques"]
+        # If we're waiting for a yes/no about techniques, handle that first
+        techniques: List[str] = []
+        if memory.get("awaiting_technique_consent"):
+            if _user_accepts_technique(text):
+                techniques = suggest_techniques(emotion, academic_stress, stress)
+                bot_message = (
+                    "Okay, here are a few quick techniques you could try: "
+                    + ", ".join(techniques)
+                    + ". Which one sounds doable right now?"
+                )
+                memory["awaiting_technique_consent"] = False
+            elif _user_declines_technique(text):
+                bot_message = "That's completely okay, we don't have to use a technique. What would you like to talk about instead?"
+                memory["awaiting_technique_consent"] = False
+            else:
+                # Ambiguous response – fall back to a regular therapeutic reply
+                reply = generate_therapeutic_reply(
+                    text,
+                    emotion,
+                    stress,
+                    academic_stress,
+                    risk,
+                    session,
+                    emotion_confidence,
+                )
+                bot_message = reply["bot_message"]
+                techniques = reply["techniques"]
+        else:
+            reply = generate_therapeutic_reply(
+                text,
+                emotion,
+                stress,
+                academic_stress,
+                risk,
+                session,
+                emotion_confidence,
+            )
+            bot_message = reply["bot_message"]
+            techniques = reply["techniques"]
+
+        # Detect natural language app commands for automation
+        app_action = detect_app_command(text)
+        if app_action:
+            # Blend command acknowledgement into the response while keeping it short
+            command_line = _build_app_command_reply(app_action)
+            if command_line not in bot_message:
+                # Ensure we don't exceed ~4 sentences
+                sentences = bot_message.split(".")
+                sentences = [s for s in sentences if s.strip()]
+                if len(sentences) >= 3:
+                    sentences = sentences[:3]
+                bot_message = ". ".join(sentences + [command_line]).strip()
 
         session.setdefault("messages", []).append(
             {
@@ -910,6 +1306,7 @@ def chat_message_service(input: ChatMessageInput) -> ChatMessageResponse:
             risk_level=risk,
             overall_status=overall,
             techniques=techniques,
+            app_action=app_action,
         )
 
     except HTTPException:

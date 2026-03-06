@@ -2,8 +2,7 @@ import { API_BASE_URL } from "../config/api.js";
 
 // Base URL for the FastAPI backend.
 // You can override this with EXPO_PUBLIC_API_URL in .env if needed.
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||  `${API_BASE_URL}`;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || `${API_BASE_URL}`;
 
 const REQUEST_TIMEOUT = 25_000; // AI inference can be slow
 
@@ -37,7 +36,9 @@ export async function startChatSession() {
   });
 
   const data = await handleResponse(res);
-  return data.session_id;
+  // Return the full payload so the UI can
+  // show the initial mood check-in message and options.
+  return data;
 }
 
 export async function sendChatMessage(sessionId, text) {

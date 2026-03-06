@@ -91,6 +91,8 @@ export default function ChatbotScreen({ navigation }) {
   const [botTyping, setBotTyping] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
+  const [initialPrompt, setInitialPrompt] = useState(null);
+  const [moodOptions, setMoodOptions] = useState([]);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
   const [userLabel, setUserLabel] = useState("You");
   const [emergencyContact, setEmergencyContact] = useState(null);
@@ -117,8 +119,24 @@ export default function ChatbotScreen({ navigation }) {
           setUserLabel(nickname || user.displayName || "You");
         }
 
-        const id = await startChatSession();
-        setSessionId(id);
+        const start = await startChatSession();
+        setSessionId(start.session_id);
+
+        // Seed the conversation with the mood check-in prompt
+        if (start.initial_message) {
+          setInitialPrompt(start.initial_message);
+          setMoodOptions(start.mood_options || []);
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-init`,
+              from: "bot",
+              text: start.initial_message,
+              label: "MindPlus Bot",
+            },
+          ]);
+        }
       } catch (err) {
         console.log("Failed to start chatbot session", err);
       } finally {
@@ -216,6 +234,66 @@ export default function ChatbotScreen({ navigation }) {
     }
   };
 
+  const handleSelectMood = async (option) => {
+    if (!sessionId || sending) return;
+    const text = `${option.emoji} ${option.label}`;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      from: "user",
+      text,
+      label: userLabel,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      setSending(true);
+      setBotTyping(true);
+      const raw = await sendChatMessage(sessionId, text);
+      const reply = {
+        botMessage: raw.bot_message,
+        emotion: raw.emotion,
+        stressLevel: raw.stress_level,
+        academicStressCategory: raw.academic_stress_category,
+        riskLevel: raw.risk_level,
+        overallStatus: raw.overall_status,
+        techniques: raw.techniques || [],
+      };
+
+      setBotTyping(false);
+
+      const fullText = reply.botMessage || "";
+      const botId = `${Date.now()}-bot`;
+      const baseMeta = {
+        emotion: reply.emotion,
+        stressLevel: reply.stressLevel,
+        academicStressCategory: reply.academicStressCategory,
+        riskLevel: reply.riskLevel,
+        overallStatus: reply.overallStatus,
+        techniques: reply.techniques,
+      };
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botId,
+          from: "bot",
+          text: fullText,
+          label: "MindPlus Bot",
+          meta: baseMeta,
+        },
+      ]);
+
+      // After the mood is selected once, hide the chips
+      setMoodOptions([]);
+    } catch (err) {
+      console.log("Failed to send mood selection", err);
+    } finally {
+      setSending(false);
+      setBotTyping(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -261,6 +339,22 @@ export default function ChatbotScreen({ navigation }) {
               emergencyName={emergencyName}
               onSelectTechnique={setSelectedTechnique}
             />
+
+            {moodOptions && moodOptions.length > 0 && (
+              <View style={styles.promptRow}>
+                {moodOptions.map((opt) => (
+                  <Text
+                    key={opt.id}
+                    style={styles.promptChip}
+                    onPress={() => handleSelectMood(opt)}
+                  >
+                    <Text style={styles.promptChipText}>
+                      {opt.emoji} {opt.label}
+                    </Text>
+                  </Text>
+                ))}
+              </View>
+            )}
           </View>
 
           <PromptChips onSelectPrompt={setInput} />
