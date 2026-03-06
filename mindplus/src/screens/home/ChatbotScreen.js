@@ -154,23 +154,51 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
-      const botMessage = {
-        id: `${Date.now()}-bot`,
-        from: "bot",
-        text: reply.botMessage,
-        label: "MindPlus Bot",
-        meta: {
-          emotion: reply.emotion,
-          stressLevel: reply.stressLevel,
-          academicStressCategory: reply.academicStressCategory,
-          riskLevel: reply.riskLevel,
-          overallStatus: reply.overallStatus,
-          techniques: reply.techniques,
-        },
-      };
-      const delayMs = 7000 + Math.random() * 3000;
+      const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
-      setMessages((prev) => [...prev, botMessage]);
+      // After a short "thinking" delay, show a typing effect for the bot message
+      setBotTyping(false);
+
+      const fullText = reply.botMessage || "";
+      const botId = `${Date.now()}-bot`;
+      const baseMeta = {
+        emotion: reply.emotion,
+        stressLevel: reply.stressLevel,
+        academicStressCategory: reply.academicStressCategory,
+        riskLevel: reply.riskLevel,
+        overallStatus: reply.overallStatus,
+        techniques: reply.techniques,
+      };
+
+      // Add an empty bot message and progressively fill it character by character
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botId,
+          from: "bot",
+          text: "",
+          label: "MindPlus Bot",
+          meta: baseMeta,
+        },
+      ]);
+
+      const typingSpeed = 18; // ms per character
+      const chars = fullText.split("");
+      chars.forEach((_, index) => {
+        setTimeout(() => {
+          const nextText = fullText.slice(0, index + 1);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === botId
+                ? {
+                    ...m,
+                    text: nextText,
+                  }
+                : m
+            )
+          );
+        }, typingSpeed * index);
+      });
     } catch (err) {
       console.log("Failed to send chatbot message", err);
       setMessages((prev) => [
@@ -229,6 +257,8 @@ export default function ChatbotScreen({ navigation }) {
             <MessageList
               messages={messages}
               isBotTyping={botTyping}
+              emergencyContact={emergencyContact}
+              emergencyName={emergencyName}
               onSelectTechnique={setSelectedTechnique}
             />
           </View>

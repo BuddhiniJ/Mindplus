@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import styles from "./chatbotStyles";
 
@@ -12,6 +13,8 @@ export default function MessageList({
   messages,
   onSelectTechnique,
   isBotTyping,
+  emergencyContact,
+  emergencyName,
 }) {
   const scrollViewRef = useRef(null);
 
@@ -123,6 +126,38 @@ export default function MessageList({
                         <Text style={styles.techChipText}>{t}</Text>
                       </Pressable>
                     ))}
+                  </View>
+                )}
+
+              {msg.from === "bot" &&
+                isCritical &&
+                (emergencyContact || emergencyName) && (
+                  <View style={styles.emergencyContainer}>
+                    <Text style={styles.emergencyTitle}>
+                      If you can, please reach out to someone you trust.
+                    </Text>
+                    {emergencyName && (
+                      <Text style={styles.emergencyText}>
+                        Suggested contact: {emergencyName}
+                      </Text>
+                    )}
+                    {emergencyContact && (
+                      <Text style={styles.emergencyText}>
+                        Phone: {emergencyContact}
+                      </Text>
+                    )}
+                    {emergencyContact && (
+                      <Pressable
+                        style={styles.emergencyCallButton}
+                        onPress={() =>
+                          Linking.openURL(`tel:${emergencyContact}`)
+                        }
+                      >
+                        <Text style={styles.emergencyCallButtonText}>
+                          Call {emergencyName || "now"}
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
                 )}
             </View>
