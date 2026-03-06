@@ -277,10 +277,6 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
-
-      if (raw.app_action) {
-        await handleAppAction(raw.app_action, { emotion: reply.emotion });
-      }
       const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       // After a short "thinking" delay, show a typing effect for the bot message
@@ -326,6 +322,14 @@ export default function ChatbotScreen({ navigation }) {
           );
         }, typingSpeed * index);
       });
+
+      // Trigger any app action after the bot message has finished typing
+      if (raw.app_action) {
+        const totalTypingDuration = typingSpeed * chars.length;
+        setTimeout(() => {
+          handleAppAction(raw.app_action, { emotion: reply.emotion });
+        }, totalTypingDuration + 1500);
+      }
     } catch (err) {
       console.log("Failed to send chatbot message", err);
       setMessages((prev) => [
@@ -368,10 +372,6 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
-
-      if (raw.app_action) {
-        await handleAppAction(raw.app_action, { emotion: reply.emotion });
-      }
       const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       setBotTyping(false);
@@ -416,6 +416,14 @@ export default function ChatbotScreen({ navigation }) {
           );
         }, typingSpeed * index);
       });
+
+      // Trigger any app action after the bot message has finished typing
+      if (raw.app_action) {
+        const totalTypingDuration = typingSpeed * chars.length;
+        setTimeout(() => {
+          handleAppAction(raw.app_action, { emotion: reply.emotion });
+        }, totalTypingDuration + 1500);
+      }
 
       // After the mood is selected once, hide the chips
       setMoodOptions([]);
