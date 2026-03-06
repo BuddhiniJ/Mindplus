@@ -910,6 +910,7 @@ def detect_app_command(text: str) -> Optional[Dict[str, Any]]:
     lowered = text.lower()
 
     # Soundscape controls
+    # Rain / relaxing rain
     if any(phrase in lowered for phrase in [
         "play rain",
         "rain sounds",
@@ -918,21 +919,45 @@ def detect_app_command(text: str) -> Optional[Dict[str, Any]]:
     ]):
         return {"action": "navigate", "target": "soundscape", "sound": "soft_rain"}
 
+    # Forest / nature ambience
     if any(phrase in lowered for phrase in [
         "forest sounds",
         "play forest",
         "rainforest",
         "nature sounds",
+        "forest ambience",
     ]):
         return {"action": "navigate", "target": "soundscape", "sound": "forest"}
 
+    # Fireplace / campfire
     if any(phrase in lowered for phrase in [
         "fireplace sounds",
         "campfire",
         "crackling fire",
+        "fire sounds",
     ]):
         return {"action": "navigate", "target": "soundscape", "sound": "fireplace"}
 
+    # Ocean / waves
+    if any(phrase in lowered for phrase in [
+        "ocean sounds",
+        "ocean waves",
+        "sea sounds",
+        "beach waves",
+        "wave sounds",
+    ]):
+        return {"action": "navigate", "target": "soundscape", "sound": "ocean"}
+
+    # White noise / focus noise
+    if any(phrase in lowered for phrase in [
+        "white noise",
+        "focus noise",
+        "background noise",
+        "study noise",
+    ]):
+        return {"action": "navigate", "target": "soundscape", "sound": "white"}
+
+    # Generic stop music
     if "stop music" in lowered or "stop the music" in lowered or "stop sound" in lowered:
         return {"action": "control", "target": "soundscape", "command": "stop"}
 
