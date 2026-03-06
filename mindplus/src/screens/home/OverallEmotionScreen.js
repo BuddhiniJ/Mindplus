@@ -180,8 +180,15 @@ export default function OverallEmotionScreen({ route, navigation }) {
           <Text style={styles.emotionLabel}>{emotionInfo.label}</Text>
 
           <View style={styles.confidenceContainer}>
-            <Text style={styles.confidenceValue}>{confidencePercentage}%</Text>
-            <Text style={styles.confidenceLabel}>Confidence</Text>
+            <Text
+              style={[
+                styles.confidenceValue,
+                { color: overallEmotion.colorCode },
+              ]}
+            >
+              {confidencePercentage}%
+            </Text>
+            <Text style={styles.confidenceLabel}>Pattern Clarity</Text>
           </View>
 
           {/* Confidence Bar */}
@@ -203,12 +210,12 @@ export default function OverallEmotionScreen({ route, navigation }) {
           <View style={styles.qualityDescription}>
             <Text style={styles.qualityText}>
               {confidencePercentage >= 80
-                ? "Very Strong - Clearly defined emotional state"
+                ? "Very clear emotional pattern today"
                 : confidencePercentage >= 60
-                ? "Strong - Consistent emotional indicators"
+                ? "Mostly clear emotional pattern"
                 : confidencePercentage >= 40
-                ? "Moderate - Mixed emotional signals"
-                : "Low - Varied emotional responses"}
+                ? "A balanced mix of emotional signals"
+                : "A gentle mix of different emotions"}
             </Text>
           </View>
         </Animated.View>
@@ -263,7 +270,7 @@ export default function OverallEmotionScreen({ route, navigation }) {
                         />
                       </View>
                       <Text style={styles.breakdownConfidence}>
-                        {Math.round(avgConfidence)}% conf.
+                        {Math.round(avgConfidence)}% match
                       </Text>
                     </View>
                   </View>
@@ -281,16 +288,16 @@ export default function OverallEmotionScreen({ route, navigation }) {
             <Text style={{ fontWeight: "700" }}>
               {emotionInfo.label.toLowerCase()}
             </Text>{" "}
-            emotional state with{" "}
+            emotional pattern with{" "}
             <Text style={{ fontWeight: "700" }}>
-              {confidencePercentage}% confidence
+              {confidencePercentage}% clarity
             </Text>
-            . This means your emotional responses are{" "}
+            . This suggests your answers are{" "}
             {confidencePercentage >= 80
               ? "very consistent across all questions"
               : confidencePercentage >= 60
-              ? "mostly consistent with some variation"
-              : "quite varied across different questions"}
+              ? "mostly consistent with a little variation"
+              : "naturally varied across different moments"}
             .
           </Text>
         </View>
