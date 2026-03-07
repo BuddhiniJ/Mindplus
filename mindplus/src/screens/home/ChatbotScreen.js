@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Modal,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
@@ -62,6 +64,86 @@ const STATUS_THEME = {
     border: "#52525B", // darker gray border
   },
 };
+
+const QUICK_COMMANDS = [
+  {
+    id: "soft_rain",
+    label: "Play soft rain",
+    description: "Open Soundscapes and start soft rain ambience.",
+    appAction: {
+      action: "navigate",
+      target: "soundscape",
+      sound: "soft_rain",
+    },
+  },
+  {
+    id: "forest_sounds",
+    label: "Play forest sounds",
+    description: "Open Soundscapes and play forest ambience.",
+    appAction: {
+      action: "navigate",
+      target: "soundscape",
+      sound: "forest",
+    },
+  },
+  {
+    id: "stop_soundscape",
+    label: "Stop soundscape",
+    description: "Stop any currently playing soundscape.",
+    appAction: {
+      action: "control",
+      target: "soundscape",
+      command: "stop",
+    },
+  },
+  {
+    id: "breathing_exercise",
+    label: "Start breathing exercise",
+    description: "Go to a guided breathing / calming exercise.",
+    appAction: {
+      action: "navigate",
+      target: "breathing_exercise",
+    },
+  },
+  {
+    id: "meditation",
+    label: "Start meditation",
+    description: "Open the guided meditation screen.",
+    appAction: {
+      action: "navigate",
+      target: "meditation",
+    },
+  },
+  {
+    id: "coping_tips",
+    label: "Show coping strategies",
+    description: "Open tips and strategies for managing stress.",
+    appAction: {
+      action: "navigate",
+      target: "stress_tips",
+    },
+  },
+  {
+    id: "log_mood",
+    label: "Log today's mood",
+    description: "Jump to the daily check-in screen.",
+    appAction: {
+      action: "navigate",
+      target: "mood_tracker",
+      mode: "log_today",
+    },
+  },
+  {
+    id: "mood_history",
+    label: "View mood history",
+    description: "See your overall emotion history.",
+    appAction: {
+      action: "navigate",
+      target: "mood_tracker",
+      mode: "history",
+    },
+  },
+];
 
 function formatOverallStatus(status) {
   switch (status) {
@@ -123,6 +205,7 @@ export default function ChatbotScreen({ navigation }) {
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
   const [alarmSound, setAlarmSound] = useState(null);
   const [autoContactTriggered, setAutoContactTriggered] = useState(false);
+  const [showCommands, setShowCommands] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -752,6 +835,17 @@ export default function ChatbotScreen({ navigation }) {
           stressPercent={stressPercent}
         />
 
+        <View style={styles.commandsRow}>
+          <TouchableOpacity
+            style={styles.commandsButton}
+            onPress={() => setShowCommands(true)}
+          >
+            <Text style={styles.commandsButtonText}>
+              View available commands
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {dailyQuote && (
           <View style={styles.dailyQuoteCard}>
             <Text style={styles.dailyQuoteLabel}>Today’s reminder</Text>
@@ -761,6 +855,49 @@ export default function ChatbotScreen({ navigation }) {
             ) : null}
           </View>
         )}
+
+        <Modal
+          visible={showCommands}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowCommands(false)}
+        >
+          <View style={styles.commandsModalOverlay}>
+            <View style={styles.commandsModalCard}>
+              <Text style={styles.commandsModalTitle}>Quick commands</Text>
+              <Text style={styles.commandsModalSubtitle}>
+                Tap a command to open the related feature.
+              </Text>
+
+              <ScrollView style={styles.commandsList}>
+                {QUICK_COMMANDS.map((cmd) => (
+                  <TouchableOpacity
+                    key={cmd.id}
+                    style={styles.commandItem}
+                    onPress={async () => {
+                      setShowCommands(false);
+                      await handleAppAction(cmd.appAction);
+                    }}
+                  >
+                    <Text style={styles.commandItemTitle}>{cmd.label}</Text>
+                    {cmd.description ? (
+                      <Text style={styles.commandItemDescription}>
+                        {cmd.description}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.commandsCloseButton}
+                onPress={() => setShowCommands(false)}
+              >
+                <Text style={styles.commandsCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {criticalAlert && (
           <View style={styles.criticalAlertCard}>
