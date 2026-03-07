@@ -15,9 +15,13 @@ import {
 import VisualAffirmation from "../../components/VisualAffirmation";
 import BoxBreathingCard from "../../components/BoxBreathingCard";
 import GroundingCard from "../../components/GroundingCard";
+import MovementBreakCard from "../../components/MovementBreakCard";
+import SelfCompassionCard from "../../components/SelfCompassionCard";
 import { fetchCopingStrategy } from "../../services/api";
 
-const SESSION_SECONDS = 60;
+const DEFAULT_SESSION_SECONDS = 60;
+const MOVEMENT_BREAK_SECONDS = 300;
+const SELF_COMPASSION_SECONDS = 60;
 // Temporary override: show Box Breathing for all emotions/confidence.
 const FORCE_BOX_BREATHING = true;
 
@@ -44,6 +48,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     severity = "medium",
     confidence,
     strategy: strategyFromRoute,
+    technique: techniqueFromRoute,
+    duration_seconds: durationFromRoute,
   } = route?.params || {};
 
   const [started, setStarted] = useState(false);
@@ -72,7 +78,9 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const showBreathing = FORCE_BOX_BREATHING || isAnxiety;
 
-  const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
+  const [secondsRemaining, setSecondsRemaining] = useState(
+    DEFAULT_SESSION_SECONDS
+  );
   const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
   // Progress animation for timer bar
   const timerProgressAnim = useMemo(() => new Animated.Value(1), []);
@@ -83,6 +91,42 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   );
   const [copingLoading, setCopingLoading] = useState(false);
   const [copingError, setCopingError] = useState(null);
+  const [recommendedTechnique, setRecommendedTechnique] = useState(
+    typeof techniqueFromRoute === "string" ? techniqueFromRoute : null
+  );
+  const [recommendedDuration, setRecommendedDuration] = useState(
+    Number.isFinite(Number(durationFromRoute))
+      ? Number(durationFromRoute)
+      : null
+  );
+
+  const mapTechniqueKey = (rawTechnique) => {
+    const key = String(rawTechnique || "")
+      .trim()
+      .toLowerCase();
+    if (key === "movement_break") return "movement";
+    if (key === "box_breathing") return "box";
+    if (key === "grounding") return "grounding";
+    if (key === "self_compassion") return "self_compassion";
+    if (key === "calmtimer") return "affirmation";
+    return null;
+  };
+
+  const activeSessionSeconds = useMemo(() => {
+    if (selectedTechnique === "movement") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : MOVEMENT_BREAK_SECONDS;
+    }
+    if (selectedTechnique === "self_compassion") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : SELF_COMPASSION_SECONDS;
+    }
+    return DEFAULT_SESSION_SECONDS;
+  }, [recommendedDuration, selectedTechnique]);
 
   // Fetch or resolve coping strategy based on emotion and confidence
   useEffect(() => {
@@ -112,6 +156,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           const result = await fetchCopingStrategy(emotion, numericConfidence);
           if (!active) return;
           setCopingStrategy(result?.strategy || null);
+          setRecommendedTechnique(result?.technique || null);
+          setRecommendedDuration(result?.duration_seconds ?? null);
         } catch (e) {
           if (!active) return;
           setCopingError(
@@ -176,19 +222,24 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   useEffect(() => {
     if (!showBreathing) return;
     const fraction =
-      SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
+      activeSessionSeconds > 0 ? secondsRemaining / activeSessionSeconds : 0;
     Animated.timing(timerProgressAnim, {
       toValue: fraction,
       duration: 220,
       useNativeDriver: false,
     }).start();
-  }, [showBreathing, secondsRemaining, timerProgressAnim]);
+  }, [
+    activeSessionSeconds,
+    showBreathing,
+    secondsRemaining,
+    timerProgressAnim,
+  ]);
 
   // Start or restart the calm session
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
     setStarted(true);
-    setSecondsRemaining(SESSION_SECONDS);
+    setSecondsRemaining(activeSessionSeconds);
     bounceAnim.setValue(0);
     Animated.spring(bounceAnim, {
       toValue: 1,
@@ -230,6 +281,14 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const headerTitle = "Calm Session";
 
+  const headerTechniqueLabel = useMemo(() => {
+    if (selectedTechnique === "self_compassion") return "Self Compassion";
+    if (selectedTechnique === "movement") return "Movement Break";
+    if (selectedTechnique === "grounding") return "Grounding";
+    if (selectedTechnique === "box") return "Box Breathing";
+    return "Calm Timer";
+  }, [selectedTechnique]);
+
   const anxietyExercise = useMemo(() => {
     if (FORCE_BOX_BREATHING) return "box";
     if (!isAnxiety) return null;
@@ -239,6 +298,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   }, [anxietyBand, isAnxiety]);
 
   useEffect(() => {
+    const mapped = mapTechniqueKey(recommendedTechnique);
+    if (mapped) {
+      setSelectedTechnique(mapped);
+      return;
+    }
+
     if (anxietyExercise === "grounding") {
       setSelectedTechnique("grounding");
       return;
@@ -248,7 +313,15 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       return;
     }
     setSelectedTechnique("affirmation");
-  }, [anxietyExercise]);
+  }, [anxietyExercise, recommendedTechnique]);
+
+  useEffect(() => {
+    if (!started) {
+      setSecondsRemaining(activeSessionSeconds);
+    } else {
+      setSecondsRemaining((prev) => Math.min(prev, activeSessionSeconds));
+    }
+  }, [activeSessionSeconds, started]);
 
   const techniqueOptions = useMemo(
     () => [
@@ -270,6 +343,18 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         icon: "🌿",
         caption: "Anchor with your senses",
       },
+      {
+        key: "self_compassion",
+        label: "Self Compassion",
+        icon: "💗",
+        caption: "Pause, speak kindly, and repeat slowly",
+      },
+      {
+        key: "movement",
+        label: "Movement Break",
+        icon: "🚶",
+        caption: "Stand, stretch, and walk for 5 minutes",
+      },
     ],
     []
   );
@@ -283,16 +368,29 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     <View style={styles.screen}>
       <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
         {/* Header with navigation and title */}
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
-          <View style={{ width: 64 }} />
+        <View style={styles.headerShell}>
+          <View style={styles.headerAuraOne} />
+          <View style={styles.headerAuraTwo} />
+
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backArrow}>←</Text>
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerKicker}>GUIDED RESET</Text>
+              <Text style={styles.headerTitle}>{headerTitle}</Text>
+            </View>
+
+            <View style={styles.headerMeta}>
+              <Text style={styles.headerMetaText}>{headerTechniqueLabel}</Text>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -338,14 +436,28 @@ export default function VisualAffirmationScreen({ route, navigation }) {
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
           />
         ) : selectedTechnique === "grounding" ? (
           <GroundingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "movement" ? (
+          <MovementBreakCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "self_compassion" ? (
+          <SelfCompassionCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
           />
         ) : (
           <Animated.View
@@ -486,28 +598,103 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerShell: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    overflow: "hidden",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  headerAuraOne: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#DBEAFE",
+    top: -46,
+    right: -24,
+    opacity: 0.72,
+  },
+  headerAuraTwo: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#E0E7FF",
+    bottom: -34,
+    left: -14,
+    opacity: 0.66,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
-    paddingTop: 6,
+    gap: 10,
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFFAA",
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    minWidth: 76,
+  },
+  backArrow: {
+    fontSize: 14,
+    color: "#1E3A8A",
+    fontWeight: "900",
+    marginRight: 4,
   },
   backText: {
     fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "700",
+    color: "#1E3A8A",
+    fontWeight: "800",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerKicker: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: "#2563EB",
+    fontWeight: "900",
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
     color: "#0F172A",
+  },
+  headerMeta: {
+    minWidth: 76,
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  headerMetaText: {
+    fontSize: 10,
+    color: "#3730A3",
+    fontWeight: "900",
+    textAlign: "center",
   },
   hero: {
     marginBottom: 18,

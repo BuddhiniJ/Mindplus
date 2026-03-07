@@ -388,6 +388,8 @@ export default function CopingStrategyScreen({ route, navigation }) {
                   severity: copingData.severity,
                   confidence: copingData.confidence,
                   strategy: copingData.strategy,
+                  technique: copingData.technique,
+                  duration_seconds: copingData.duration_seconds,
                 })
               }
               activeOpacity={0.85}
