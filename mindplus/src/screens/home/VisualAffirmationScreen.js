@@ -16,10 +16,12 @@ import VisualAffirmation from "../../components/VisualAffirmation";
 import BoxBreathingCard from "../../components/BoxBreathingCard";
 import GroundingCard from "../../components/GroundingCard";
 import MovementBreakCard from "../../components/MovementBreakCard";
+import SelfCompassionCard from "../../components/SelfCompassionCard";
 import { fetchCopingStrategy } from "../../services/api";
 
 const DEFAULT_SESSION_SECONDS = 60;
 const MOVEMENT_BREAK_SECONDS = 300;
+const SELF_COMPASSION_SECONDS = 60;
 // Temporary override: show Box Breathing for all emotions/confidence.
 const FORCE_BOX_BREATHING = true;
 
@@ -105,7 +107,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     if (key === "movement_break") return "movement";
     if (key === "box_breathing") return "box";
     if (key === "grounding") return "grounding";
-    if (key === "calmtimer" || key === "self_compassion") return "affirmation";
+    if (key === "self_compassion") return "self_compassion";
+    if (key === "calmtimer") return "affirmation";
     return null;
   };
 
@@ -115,6 +118,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         Number(recommendedDuration) > 0
         ? Number(recommendedDuration)
         : MOVEMENT_BREAK_SECONDS;
+    }
+    if (selectedTechnique === "self_compassion") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : SELF_COMPASSION_SECONDS;
     }
     return DEFAULT_SESSION_SECONDS;
   }, [recommendedDuration, selectedTechnique]);
@@ -327,6 +336,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         caption: "Anchor with your senses",
       },
       {
+        key: "self_compassion",
+        label: "Self Compassion",
+        icon: "💗",
+        caption: "Pause, speak kindly, and repeat slowly",
+      },
+      {
         key: "movement",
         label: "Movement Break",
         icon: "🚶",
@@ -411,6 +426,13 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           />
         ) : selectedTechnique === "movement" ? (
           <MovementBreakCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "self_compassion" ? (
+          <SelfCompassionCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
