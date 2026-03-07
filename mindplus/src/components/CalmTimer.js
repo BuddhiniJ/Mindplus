@@ -10,7 +10,7 @@ export default function CalmTimer({
   progressAnim, // Animated.Value between 0 (done) and 1 (full)
   pulseAnim,
   remainingLabel,
-  note = "1-minute calm focus",
+  note = "",
   ringColor = "#A5B4FC",
   textColor = "#0F172A",
 }) {

@@ -49,6 +49,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   const [started, setStarted] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
   const [selectedTechnique, setSelectedTechnique] = useState("box");
+  const [affirmationDuration, setAffirmationDuration] = useState(60);
   const bounceAnim = useMemo(() => new Animated.Value(0), []);
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
@@ -253,7 +254,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     () => [
       {
         key: "affirmation",
-        label: "Visual Affirmation",
+        label: "Calm Timer",
         icon: "🌟",
         caption: "Gentle positive guidance",
       },
@@ -365,7 +366,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
               severity={severity}
               start={started}
               autoStart={false}
-              durationSeconds={60}
+              durationSeconds={affirmationDuration}
+              onDurationChange={setAffirmationDuration}
             />
           </Animated.View>
         )}
@@ -376,9 +378,9 @@ export default function VisualAffirmationScreen({ route, navigation }) {
             <Text style={styles.sessionStatusText}>
               {started ? "Session Active" : "Session Ready"}
             </Text>
-            <Text style={styles.sessionStatusTime}>
+            {/* <Text style={styles.sessionStatusTime}>
               {secondsRemaining}s left
-            </Text>
+            </Text> */}
           </View>
 
           <View style={styles.ctaRow}>
@@ -388,7 +390,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
               onPress={handleStart}
             >
               <Text style={styles.startButtonText}>
-                {started ? "↻ Restart 1:00" : "▶ Start 1:00 Calm"}
+                {started ? "↻ Restart" : "▶ Start Calm"}
               </Text>
             </TouchableOpacity>
 

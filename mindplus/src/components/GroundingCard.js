@@ -37,8 +37,22 @@ export default function GroundingCard({
   // Display grounding steps list, progress indicator, and countdown timer
   return (
     <View style={styles.card}>
+      <View style={styles.glowOrb} />
+
+      <View style={styles.topRow}>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>Sensory Reset</Text>
+        </View>
+        <Text style={styles.miniTimer}>{formatTime(secondsRemaining)}</Text>
+      </View>
+
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{`Progress ${grounding.step}/5`}</Text>
+
+      <View style={styles.progressCard}>
+        <Text style={styles.progressLabel}>Progress</Text>
+        <Text style={styles.subtitle}>{`${grounding.step}/5`}</Text>
+      </View>
+
       <Text style={styles.helper}>
         Helpful for anxiety: name items out loud if you can.
       </Text>
@@ -75,51 +89,112 @@ export default function GroundingCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 22,
+    padding: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
+    position: "relative",
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  glowOrb: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: "#E0F2FE",
+    top: -78,
+    right: -58,
+    opacity: 0.75,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  tag: {
+    backgroundColor: "#F0F9FF",
+    borderWidth: 1,
+    borderColor: "#7DD3FC",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  tagText: {
+    color: "#0369A1",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  miniTimer: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#0C4A6E",
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "900",
     color: "#0F172A",
+    marginBottom: 10,
+  },
+  progressCard: {
+    backgroundColor: "#F0F9FF",
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 24,
+  progressLabel: {
+    fontSize: 11,
     fontWeight: "800",
-    color: "#111827",
-    marginBottom: 6,
+    color: "#0369A1",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#0C4A6E",
   },
   helper: {
-    fontSize: 13,
-    color: "#6B7280",
-    lineHeight: 18,
+    fontSize: 14,
+    color: "#475569",
+    lineHeight: 20,
     fontWeight: "600",
     marginBottom: 10,
   },
   list: {
-    gap: 8,
+    gap: 9,
     marginBottom: 12,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E2E8F0",
   },
   rowActive: {
-    backgroundColor: "#E0F2FE",
-    borderColor: "#7DD3FC",
+    backgroundColor: "#ECFEFF",
+    borderColor: "#38BDF8",
+    shadowColor: "#38BDF8",
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   index: {
     width: 26,
@@ -127,22 +202,22 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     textAlign: "center",
     textAlignVertical: "center",
-    backgroundColor: "#E5E7EB",
-    color: "#111827",
+    backgroundColor: "#E2E8F0",
+    color: "#0F172A",
     fontWeight: "900",
     marginRight: 10,
   },
   indexActive: {
-    backgroundColor: "#38BDF8",
+    backgroundColor: "#0EA5E9",
     color: "#FFFFFF",
   },
   rowText: {
     flex: 1,
     fontSize: 14,
-    color: "#111827",
+    color: "#1E293B",
     fontWeight: "700",
   },
   rowTextActive: {
-    color: "#0B1E34",
+    color: "#0C4A6E",
   },
 });
