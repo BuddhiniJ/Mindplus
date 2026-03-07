@@ -24,6 +24,7 @@ import PromptChips from "../../components/chatbot/PromptChips";
 import TechniqueDetailCard from "../../components/chatbot/TechniqueDetailCard";
 import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
+import { getTodayQuote } from "../../utils/dailyMotivation";
 
 const STATUS_THEME = {
   critical: {
@@ -107,6 +108,7 @@ export default function ChatbotScreen({ navigation }) {
   const [emergencyName, setEmergencyName] = useState(null);
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [autoVoiceEnabled, setAutoVoiceEnabled] = useState(false);
+  const [dailyQuote, setDailyQuote] = useState(null);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -257,6 +259,17 @@ export default function ChatbotScreen({ navigation }) {
       }
     };
     init();
+
+    // Load or generate today's motivational quote once per mount.
+    const loadQuote = async () => {
+      try {
+        const quote = await getTodayQuote();
+        setDailyQuote(quote);
+      } catch (error) {
+        console.log("Failed to load daily quote", error);
+      }
+    };
+    loadQuote();
 
     // Clean up any TTS listeners when leaving the chatbot screen
     return () => {
@@ -540,6 +553,16 @@ export default function ChatbotScreen({ navigation }) {
           overallLabel={overallLabel}
           stressPercent={stressPercent}
         />
+
+        {dailyQuote && (
+          <View style={styles.dailyQuoteCard}>
+            <Text style={styles.dailyQuoteLabel}>Today’s reminder</Text>
+            <Text style={styles.dailyQuoteText}>“{dailyQuote.text}”</Text>
+            {dailyQuote.author ? (
+              <Text style={styles.dailyQuoteAuthor}>— {dailyQuote.author}</Text>
+            ) : null}
+          </View>
+        )}
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}
