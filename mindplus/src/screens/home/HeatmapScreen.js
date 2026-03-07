@@ -91,6 +91,8 @@ export default function HeatmapScreen({ navigation }) {
     const user = auth.currentUser;
     if (!user) return;
 
+    console.log("function called");
+
     const docRef = doc(db, "users", user.uid, "stressData", monthKey);
     const snapshot = await getDoc(docRef);
 
@@ -107,7 +109,7 @@ export default function HeatmapScreen({ navigation }) {
     if (!user) return;
 
     const snapshot = await getDocs(
-      collection(db, "users", user.uid, "daily_logs")
+      collection(db, "users", user.uid, "dailyCheckIns")
     );
 
     const historical = {};
@@ -115,8 +117,28 @@ export default function HeatmapScreen({ navigation }) {
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const key = docSnap.id; // assuming doc id = YYYY-MM-DD
-      // console.log("Daily log doc:", docSnap.id, data);
-      historical[key] = data.stress_today;
+      // Try to extract stress value from answers array
+      let stressValue = 5; // Default
+      if (data.answers && Array.isArray(data.answers)) {
+        const stressAnswer = data.answers.find(
+          a => a.questionId === "Today-Feeling" || a.question?.toLowerCase().includes("stress")
+        );
+        if (stressAnswer && stressAnswer.response) {
+          const resp = stressAnswer.response.toLowerCase();
+          if (resp.match(/very\s*stressed|extremely\s*stressed|overwhelmed|anxious|panic|tense|worried/)) {
+            stressValue = 9;
+          } else if (resp.match(/stressed|pressure|nervous|uneasy/)) {
+            stressValue = 8;
+          } else if (resp.match(/not\s*stressed|fine|okay|neutral/)) {
+            stressValue = 5;
+          } else if (resp.match(/calm|relaxed|happy|peaceful|good|content/)) {
+            stressValue = 2;
+          } else if (resp.match(/tired|exhausted/)) {
+            stressValue = 4;
+          }
+        }
+      }
+      historical[key] = stressValue;
     });
 
     setPredictions((prev) => ({
@@ -192,6 +214,40 @@ export default function HeatmapScreen({ navigation }) {
     fetchEvents();
   };
 
+  const convertToScore = (questionId, response) => {
+    if (!response) return null;
+
+    const text = response.toLowerCase();
+
+    if (questionId === "Mood-Check") {
+      if (text.includes("very")) return 8;
+      if (text.includes("stressed")) return 7;
+      if (text.includes("okay")) return 5;
+      return 4;
+    }
+
+    if (questionId === "Academic-Stress") {
+      if (text.includes("very")) return 8;
+      if (text.includes("high")) return 7;
+      if (text.includes("moderate")) return 5;
+      return 3;
+    }
+
+    if (questionId === "Motivation") {
+      if (text.includes("high")) return 8;
+      if (text.includes("medium")) return 5;
+      if (text.includes("low")) return 3;
+      return 4;
+    }
+
+    if (questionId === "Sleep") {
+      const match = text.match(/\d+/);
+      return match ? parseInt(match[0]) : 6;
+    }
+
+    return null;
+  };
+
   const recalculateStress = async (dateString) => {
     // console.log("function called");
     const user = auth.currentUser;
@@ -212,20 +268,43 @@ export default function HeatmapScreen({ navigation }) {
 
 
       const logsQuery = query(
-        collection(db, "users", user.uid, "daily_logs"),
+        collection(db, "users", user.uid, "dailyCheckIns"),
         orderBy("timestamp", "desc"),
         limit(7)
       );
 
       const logsSnapshot = await getDocs(logsQuery);
-      const recentLogs = logsSnapshot.docs.map(doc => {
+      // const recentLogs = logsSnapshot.docs.map(doc => {
+      //   const data = doc.data();
+      //   return {
+      //     stress_today: data.stress_today,
+      //     energy_level: data.energy_level,
+      //     sleep_hours: data.sleep_hours,
+      //     workload_intensity: data.workload_intensity
+      //   };
+      // });
+
+      const recentLogs = logsSnapshot.docs.map((doc) => {
         const data = doc.data();
-        return {
-          stress_today: data.stress_today,
-          energy_level: data.energy_level,
-          sleep_hours: data.sleep_hours,
-          workload_intensity: data.workload_intensity
+        const answers = data.answers || [];
+
+        const log = {
+          stress_today: null,
+          energy_level: null,
+          sleep_hours: null,
+          workload_intensity: null
         };
+
+        answers.forEach((a) => {
+          const score = convertToScore(a.questionId, a.response);
+
+          if (a.questionId === "Mood-Check") log.stress_today = score;
+          if (a.questionId === "Motivation") log.energy_level = score;
+          if (a.questionId === "Sleep") log.sleep_hours = score;
+          if (a.questionId === "Academic-Stress") log.workload_intensity = score;
+        });
+
+        return log;
       });
 
 
@@ -266,22 +345,43 @@ export default function HeatmapScreen({ navigation }) {
       }
 
 
+      // const payload = {
+      //   baseline: baselineData,
+      //   recent_logs: recentLogs,
+      //   previous_fingerprint: previousFingerprint,
+      //   upcoming_events: upcomingEventsArray
+      // };
+
       const payload = {
-        baseline: baselineData,
-        recent_logs: recentLogs,
-        previous_fingerprint: previousFingerprint,
+        baseline: baselineData || null,
+        recent_logs: recentLogs.filter(log => log.stress_today !== null),
+        previous_fingerprint: previousFingerprint || null,
         upcoming_events: upcomingEventsArray
       };
 
+      // const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(payload),
+      // });
+
+      // console.log(payload);
+
+      // const data = await response.json();
+
+      console.log("Sending payload:", JSON.stringify(payload, null, 2));
+
       const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
       });
 
-      console.log(payload);
-
       const data = await response.json();
+
+      console.log("Backend response:", data);
 
       if (data.status === "success" && data.data.future_5_days) {
 
@@ -309,6 +409,7 @@ export default function HeatmapScreen({ navigation }) {
       }
     } catch (err) {
       console.log("Recalculation failed:", err);
+      console.log("Full error:", JSON.stringify(err));
     }
   };
 
