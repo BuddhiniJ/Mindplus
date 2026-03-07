@@ -122,6 +122,7 @@ export default function ChatbotScreen({ navigation }) {
   const [criticalAlert, setCriticalAlert] = useState(null);
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
   const [alarmSound, setAlarmSound] = useState(null);
+  const [autoContactTriggered, setAutoContactTriggered] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -348,6 +349,31 @@ export default function ChatbotScreen({ navigation }) {
         console.log("Failed to log critical alert", logErr);
       }
 
+      // Automatically attempt to contact the user's emergency number (or 1926)
+      try {
+        if (!autoContactTriggered) {
+          setAutoContactTriggered(true);
+
+          const targetNumber = emergencyContact || "1926";
+          if (targetNumber) {
+            // Open the phone dialer immediately
+            handleCallNumber(targetNumber);
+
+            // If a personal emergency contact exists, also prepare an SMS to them
+            if (emergencyContact) {
+              setTimeout(() => {
+                handleSmsNumber(
+                  emergencyContact,
+                  condition || "critical"
+                );
+              }, 2000);
+            }
+          }
+        }
+      } catch (autoErr) {
+        console.log("Failed to auto contact emergency number", autoErr);
+      }
+
       Alert.alert(
         "⚠️ Critical Alert",
         "Your message indicates a serious concern. Help is available immediately.",
@@ -390,6 +416,7 @@ export default function ChatbotScreen({ navigation }) {
     // Mark this alert as acknowledged and hide the critical alert card
     setAlertAcknowledged(true);
     setCriticalAlert(null);
+    setAutoContactTriggered(false);
 
     // Stop alarm sound if it's still playing
     try {
