@@ -286,9 +286,17 @@ export default function ChatbotScreen({ navigation }) {
     });
   };
 
-  const handleSend = async () => {
-    if (!sessionId || !input.trim() || sending) return;
-    const text = input.trim();
+  // Send either the current typed input or an override text (e.g. from voice).
+  const handleSend = async (overrideText) => {
+    const sourceText =
+      typeof overrideText === "string" && overrideText.length > 0
+        ? overrideText
+        : input;
+
+    if (!sessionId || !sourceText.trim() || sending) return;
+
+    const text = sourceText.trim();
+    // Clear the input after sending (for both typed and voice messages).
     setInput("");
 
     const userMessage = {
