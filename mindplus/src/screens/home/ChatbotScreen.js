@@ -6,10 +6,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  TouchableOpacity,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
 import {
   playBotMessageVoice,
@@ -25,6 +34,7 @@ import TechniqueDetailCard from "../../components/chatbot/TechniqueDetailCard";
 import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 import { getTodayQuote } from "../../utils/dailyMotivation";
+import { Audio } from "expo-av";
 
 const STATUS_THEME = {
   critical: {
@@ -109,6 +119,9 @@ export default function ChatbotScreen({ navigation }) {
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [autoVoiceEnabled, setAutoVoiceEnabled] = useState(false);
   const [dailyQuote, setDailyQuote] = useState(null);
+  const [criticalAlert, setCriticalAlert] = useState(null);
+  const [alertAcknowledged, setAlertAcknowledged] = useState(false);
+  const [alarmSound, setAlarmSound] = useState(null);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -271,11 +284,149 @@ export default function ChatbotScreen({ navigation }) {
     };
     loadQuote();
 
+    // Preload a short alarm sound for critical alerts (bundled asset).
+    const loadAlarm = async () => {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          require("../../../assets/soundscapes/alarm-tone.mp3"),
+          {
+            shouldPlay: false,
+            isLooping: false,
+            volume: 1.0,
+          }
+        );
+        setAlarmSound(sound);
+      } catch (e) {
+        console.log("Failed to load alarm sound", e);
+      }
+    };
+    loadAlarm();
+
     // Clean up any TTS listeners when leaving the chatbot screen
     return () => {
       cleanupTTS();
+      if (alarmSound) {
+        alarmSound.unloadAsync().catch(() => {});
+      }
     };
   }, []);
+
+  const triggerCriticalAlertFlow = async ({ condition, sourceText }) => {
+    try {
+      const createdAt = new Date().toISOString();
+      setCriticalAlert({ condition, sourceText, createdAt });
+      setAlertAcknowledged(false);
+
+      // Play an audible alert using the existing TTS pipeline
+      playBotMessageVoice(
+        "Critical alert. Your message indicates a serious concern. Help is available immediately.",
+        {}
+      );
+
+      // Play an additional alarm tone to grab attention (if loaded)
+      try {
+        if (alarmSound) {
+          await alarmSound.replayAsync();
+        }
+      } catch (soundErr) {
+        console.log("Failed to play alarm sound", soundErr);
+      }
+
+      // Log alert for monitoring / research purposes
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const alertsRef = collection(db, "users", user.uid, "alerts");
+          await addDoc(alertsRef, {
+            type: "chat_critical_risk",
+            condition: condition || "critical",
+            source_text: sourceText,
+            created_at: serverTimestamp(),
+          });
+        }
+      } catch (logErr) {
+        console.log("Failed to log critical alert", logErr);
+      }
+
+      Alert.alert(
+        "⚠️ Critical Alert",
+        "Your message indicates a serious concern. Help is available immediately.",
+        [{ text: "OK" }]
+      );
+    } catch (e) {
+      console.log("Failed to trigger critical alert flow", e);
+    }
+  };
+
+  const handleCallNumber = (number) => {
+    if (!number) return;
+    Linking.openURL(`tel:${number}`).catch((err) => {
+      console.log("Failed to start phone call", err);
+    });
+  };
+
+  const buildEmergencySmsBody = (condition) => {
+    const now = new Date().toISOString();
+    const name = userLabel || "User";
+    const label = condition || "critical concern";
+    return (
+      `This is an automatic safety message from MindPlus.\n\n` +
+      `User: ${name}\n` +
+      `Detected condition: ${label}\n` +
+      `Time: ${now}`
+    );
+  };
+
+  const handleSmsNumber = (number, condition) => {
+    if (!number) return;
+    const body = encodeURIComponent(buildEmergencySmsBody(condition));
+    const url = `sms:${number}?body=${body}`;
+    Linking.openURL(url).catch((err) => {
+      console.log("Failed to start SMS", err);
+    });
+  };
+
+  const handleAcknowledgeAlert = async () => {
+    // Mark this alert as acknowledged and hide the critical alert card
+    setAlertAcknowledged(true);
+    setCriticalAlert(null);
+
+    // Stop alarm sound if it's still playing
+    try {
+      if (alarmSound) {
+        await alarmSound.stopAsync();
+      }
+    } catch (e) {
+      console.log("Failed to stop alarm sound", e);
+    }
+
+    // Add a supportive bot response so the user feels heard
+    const botId = `${Date.now()}-ack`;
+    const text =
+      "Thank you for letting me know you're here. I'm still with you. If at any moment you feel unsafe, please call 1926 or your emergency contact immediately.";
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: botId,
+        from: "bot",
+        text,
+        label: "MindPlus Bot",
+      },
+    ]);
+
+    // Optionally speak this reassurance if auto voice is on
+    if (autoVoiceEnabled) {
+      setSpeakingMessageId(botId);
+      playBotMessageVoice(text, {
+        onFinish: () => {
+          setSpeakingMessageId((currentId) =>
+            currentId === botId ? null : currentId
+          );
+        },
+      });
+    }
+  };
 
   // Handle play/stop for a specific bot message
   const handleToggleVoice = (message) => {
@@ -333,6 +484,16 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
+
+      if (
+        reply.riskLevel === "critical" ||
+        reply.overallStatus === "critical"
+      ) {
+        triggerCriticalAlertFlow({
+          condition: reply.riskLevel,
+          sourceText: text,
+        });
+      }
       const delayMs = 1500 + Math.random() * 1500;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       // After a short "thinking" delay, show a typing effect for the bot message
@@ -511,6 +672,16 @@ export default function ChatbotScreen({ navigation }) {
         }, totalTypingDuration + 1500);
       }
 
+      if (
+        reply.riskLevel === "critical" ||
+        reply.overallStatus === "critical"
+      ) {
+        triggerCriticalAlertFlow({
+          condition: reply.riskLevel,
+          sourceText: text,
+        });
+      }
+
       // After the mood is selected once, hide the chips
       setMoodOptions([]);
       setShowMoodOptions(false);
@@ -561,6 +732,106 @@ export default function ChatbotScreen({ navigation }) {
             {dailyQuote.author ? (
               <Text style={styles.dailyQuoteAuthor}>— {dailyQuote.author}</Text>
             ) : null}
+          </View>
+        )}
+
+        {criticalAlert && (
+          <View style={styles.criticalAlertCard}>
+            <Text style={styles.criticalAlertTitle}>
+              ⚠️ Critical Alert: Your message indicates a serious concern. Help
+              is available immediately.
+            </Text>
+            <Text style={styles.criticalAlertBody}>
+              You are not alone. You can reach the official helpline or someone
+              you trust right now.
+            </Text>
+
+            <View style={styles.criticalContactSection}>
+              <Text style={styles.criticalContactLabel}>
+                Official emergency line
+              </Text>
+              <Text style={styles.criticalContactValue}>1926</Text>
+              <View style={styles.criticalButtonsRow}>
+                <TouchableOpacity
+                  style={styles.criticalButtonPrimary}
+                  onPress={() => handleCallNumber("1926")}
+                >
+                  <Text style={styles.criticalButtonPrimaryText}>Call Now</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {emergencyContact && (
+              <View style={styles.criticalContactSection}>
+                <Text style={styles.criticalContactLabel}>
+                  Personal emergency contact
+                </Text>
+                <Text style={styles.criticalContactValue}>
+                  {emergencyName
+                    ? `${emergencyName} — ${emergencyContact}`
+                    : emergencyContact}
+                </Text>
+                <View style={styles.criticalButtonsRow}>
+                  <TouchableOpacity
+                    style={styles.criticalButtonSecondary}
+                    onPress={() => handleCallNumber(emergencyContact)}
+                  >
+                    <Text style={styles.criticalButtonSecondaryText}>
+                      Call Now
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.criticalButtonSecondary}
+                    onPress={() =>
+                      handleSmsNumber(
+                        emergencyContact,
+                        criticalAlert?.condition || "critical"
+                      )
+                    }
+                  >
+                    <Text style={styles.criticalButtonSecondaryText}>
+                      Send Message
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.criticalCopingRow}>
+              <Text style={styles.criticalCopingLabel}>You can also:</Text>
+              <View style={styles.criticalCopingButtons}>
+                <TouchableOpacity
+                  style={styles.criticalCopingChip}
+                  onPress={() => navigation.navigate("VisualAffirmationScreen")}
+                >
+                  <Text style={styles.criticalCopingChipText}>
+                    Breathing exercise
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.criticalCopingChip}
+                  onPress={() =>
+                    navigation.navigate("CopingStrategyScreen", {
+                      emotion: "anxious",
+                      confidence: 0.9,
+                    })
+                  }
+                >
+                  <Text style={styles.criticalCopingChipText}>Coping tips</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {!alertAcknowledged && (
+              <TouchableOpacity
+                style={styles.criticalAcknowledgeButton}
+                onPress={handleAcknowledgeAlert}
+              >
+                <Text style={styles.criticalAcknowledgeText}>
+                  I’m here and I understand
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
