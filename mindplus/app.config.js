@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 export default {
   expo: {
@@ -31,6 +31,17 @@ export default {
     web: {
       favicon: "./assets/Logo.jpeg",
     },
+    plugins: [
+      [
+        "@react-native-voice/voice",
+        {
+          microphonePermission:
+            "Allow Mindplus to access the microphone for voice messages",
+          speechRecognitionPermission:
+            "Allow Mindplus to convert your speech to text for the chatbot",
+        },
+      ],
+    ],
     extra: {
       API_BASE_URL: process.env.API_BASE_URL,
     },
