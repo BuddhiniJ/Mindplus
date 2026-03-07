@@ -5,6 +5,8 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Linking,
+  Animated,
 } from "react-native";
 import styles from "./chatbotStyles";
 
@@ -12,14 +14,31 @@ export default function MessageList({
   messages,
   onSelectTechnique,
   isBotTyping,
+  emergencyContact,
+  emergencyName,
+  moodOptions,
+  showMoodOptions,
+  onSelectMood,
 }) {
   const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0));
 
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (showMoodOptions && moodOptions && moodOptions.length > 0) {
+      fadeAnim.current.setValue(0);
+      Animated.timing(fadeAnim.current, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showMoodOptions, moodOptions?.length]);
 
   return (
     <ScrollView
@@ -69,45 +88,27 @@ export default function MessageList({
                 {msg.text}
               </Text>
 
-              {msg.from === "bot" && msg.meta && (
-                <View style={styles.metaContainer}>
-                  <Text style={styles.metaText}>
-                    Insights from this message
-                  </Text>
-                  <View style={styles.metaChipsRow}>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Emotion:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.emotion || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Stress:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.stressLevel || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Academic:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.academicStressCategory || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Risk:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.riskLevel || "-"}
-                      </Text>
-                    </View>
-                    <View style={styles.metaChip}>
-                      <Text style={styles.metaChipLabel}>Overall:</Text>
-                      <Text style={styles.metaChipValue}>
-                        {msg.meta.overallStatus || "-"}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
+              {msg.from === "bot" &&
+                msg.isMoodPrompt &&
+                moodOptions &&
+                moodOptions.length > 0 &&
+                showMoodOptions && (
+                  <Animated.View
+                    style={[styles.promptRow, { opacity: fadeAnim.current }]}
+                  >
+                    {moodOptions.map((opt) => (
+                      <Pressable
+                        key={opt.id}
+                        onPress={() => onSelectMood && onSelectMood(opt)}
+                        style={styles.promptChip}
+                      >
+                        <Text style={styles.promptChipText}>
+                          {opt.emoji} {opt.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </Animated.View>
+                )}
 
               {msg.from === "bot" &&
                 msg.meta &&
@@ -123,6 +124,38 @@ export default function MessageList({
                         <Text style={styles.techChipText}>{t}</Text>
                       </Pressable>
                     ))}
+                  </View>
+                )}
+
+              {msg.from === "bot" &&
+                isCritical &&
+                (emergencyContact || emergencyName) && (
+                  <View style={styles.emergencyContainer}>
+                    <Text style={styles.emergencyTitle}>
+                      If you can, please reach out to someone you trust.
+                    </Text>
+                    {emergencyName && (
+                      <Text style={styles.emergencyText}>
+                        Suggested contact: {emergencyName}
+                      </Text>
+                    )}
+                    {emergencyContact && (
+                      <Text style={styles.emergencyText}>
+                        Phone: {emergencyContact}
+                      </Text>
+                    )}
+                    {emergencyContact && (
+                      <Pressable
+                        style={styles.emergencyCallButton}
+                        onPress={() =>
+                          Linking.openURL(`tel:${emergencyContact}`)
+                        }
+                      >
+                        <Text style={styles.emergencyCallButtonText}>
+                          Call {emergencyName || "now"}
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
                 )}
             </View>

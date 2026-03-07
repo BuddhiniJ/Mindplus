@@ -1,6 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React from "react";
 import {
-  Animated,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -10,131 +9,31 @@ import {
   View,
   Platform,
 } from "react-native";
+import {
+  SOUNDSCAPE_LIBRARY,
+  useGlobalAudioPlayer,
+} from "../../context/GlobalAudioPlayerContext";
 
-// Soundscape screen (design-only): a calming “sound player” UI for stress release.
-// No backend and no actual audio sources are included here.
 export default function SoundscapeScreen({ navigation }) {
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
 
-  const soundscapes = useMemo(
-    () => [
-      {
-        id: "rain",
-        emoji: "🌧️",
-        title: "Soft Rain",
-        subtitle: "Steady and cozy",
-        accent: "#EEF2FF",
-      },
-      {
-        id: "forest",
-        emoji: "🌲",
-        title: "Forest Breeze",
-        subtitle: "Light wind + leaves",
-        accent: "#D1FAE5",
-      },
-      {
-        id: "ocean",
-        emoji: "🌊",
-        title: "Ocean Waves",
-        subtitle: "Slow rhythmic tide",
-        accent: "#E0F2FE",
-      },
-      {
-        id: "fire",
-        emoji: "🔥",
-        title: "Fireplace",
-        subtitle: "Warm crackle",
-        accent: "#FEF3C7",
-      },
-      {
-        id: "white",
-        emoji: "🎧",
-        title: "White Noise",
-        subtitle: "Smooth blanket sound",
-        accent: "#DDD6FE",
-      },
-    ],
-    []
-  );
+  const {
+    selectedTrack,
+    selectedId,
+    isPlaying,
+    minutes,
+    progress,
+    togglePlay,
+    stopAndReset,
+    resetPlayback,
+    selectTrack,
+    setSessionMinutes,
+  } = useGlobalAudioPlayer();
 
-  const [selectedId, setSelectedId] = useState(soundscapes[0]?.id);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [minutes, setMinutes] = useState(10);
-
-  const totalSeconds = minutes * 60;
-
-  // UI-only progress bar (0..1) that “plays” when user starts.
-  const progress = useRef(new Animated.Value(0)).current;
-  const playStartedAt = useRef(null);
-
-  const selected = useMemo(
-    () => soundscapes.find((s) => s.id === selectedId) || soundscapes[0],
-    [selectedId, soundscapes]
-  );
-
-  const resetProgress = () => {
-    progress.stopAnimation();
-    progress.setValue(0);
-    playStartedAt.current = null;
-  };
-
-  const startProgress = () => {
-    progress.stopAnimation();
-    progress.setValue(0);
-    playStartedAt.current = Date.now();
-
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: totalSeconds * 1000,
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (finished) setIsPlaying(false);
-    });
-  };
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      // Design-only pause: stop the animation and keep current progress.
-      progress.stopAnimation();
-      setIsPlaying(false);
-      return;
-    }
-
-    setIsPlaying(true);
-
-    // If already progressed a bit, resume from current value.
-    progress.stopAnimation((current) => {
-      const remaining = Math.max(0, 1 - current);
-      const remainingMs = Math.max(0, Math.floor(remaining * totalSeconds * 1000));
-
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: remainingMs,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished) setIsPlaying(false);
-      });
-    });
-  };
-
-  const handleSelect = (id) => {
-    setSelectedId(id);
-    setIsPlaying(false);
-    resetProgress();
-  };
-
-  const setSessionMinutes = (value) => {
-    setMinutes(value);
-    setIsPlaying(false);
-    resetProgress();
-  };
-
-  const progressWidth = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0%", "100%"],
-    extrapolate: "clamp",
-  });
+  const soundscapes = SOUNDSCAPE_LIBRARY;
+  const selected = selectedTrack || soundscapes[0];
+  const progressWidth = `${Math.round(progress * 100)}%`;
 
   return (
     <View style={styles.screen}>
@@ -165,17 +64,22 @@ export default function SoundscapeScreen({ navigation }) {
 
         <View style={styles.nowPlayingCard}>
           <View style={styles.nowPlayingTop}>
-            <View style={[styles.nowPlayingBadge, { backgroundColor: selected.accent }]}>
-              <Text style={styles.nowPlayingEmoji}>{selected.emoji}</Text>
+            <View
+              style={[
+                styles.nowPlayingBadge,
+                { backgroundColor: selected?.accent || "#EEF2FF" },
+              ]}
+            >
+              <Text style={styles.nowPlayingEmoji}>{selected?.emoji || "🎧"}</Text>
             </View>
             <View style={styles.nowPlayingText}>
-              <Text style={styles.nowPlayingTitle}>{selected.title}</Text>
-              <Text style={styles.nowPlayingSubtitle}>{selected.subtitle}</Text>
+              <Text style={styles.nowPlayingTitle}>{selected?.title || "Track"}</Text>
+              <Text style={styles.nowPlayingSubtitle}>{selected?.subtitle || ""}</Text>
             </View>
           </View>
 
           <View style={styles.progressTrack}>
-            <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+            <View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
 
           <View style={styles.controlsRow}>
@@ -184,14 +88,21 @@ export default function SoundscapeScreen({ navigation }) {
               activeOpacity={0.9}
               style={[styles.playButton, isPlaying && styles.playButtonActive]}
             >
-              <Text style={styles.playButtonText}>{isPlaying ? "Pause" : "Play"}</Text>
+              <Text style={styles.playButtonText}>
+                {isPlaying ? "Pause" : "Play"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                setIsPlaying(false);
-                resetProgress();
-              }}
+              onPress={stopAndReset}
+              activeOpacity={0.9}
+              style={styles.secondaryButton}
+            >
+              <Text style={styles.secondaryButtonText}>Stop</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={resetPlayback}
               activeOpacity={0.9}
               style={styles.secondaryButton}
             >
@@ -211,7 +122,9 @@ export default function SoundscapeScreen({ navigation }) {
                     activeOpacity={0.9}
                     style={[styles.chip, active && styles.chipActive]}
                   >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    <Text
+                      style={[styles.chipText, active && styles.chipTextActive]}
+                    >
                       {m}m
                     </Text>
                   </TouchableOpacity>
@@ -221,7 +134,8 @@ export default function SoundscapeScreen({ navigation }) {
           </View>
 
           <Text style={styles.noteText}>
-            Design-only player UI — plug in audio sources later if needed.
+            Music keeps playing while you move through other pages. Use the top
+            mini player controls from anywhere.
           </Text>
         </View>
 
@@ -233,11 +147,13 @@ export default function SoundscapeScreen({ navigation }) {
               return (
                 <TouchableOpacity
                   key={s.id}
-                  onPress={() => handleSelect(s.id)}
+                  onPress={() => selectTrack(s.id)}
                   activeOpacity={0.9}
                   style={[styles.tile, active && styles.tileActive]}
                 >
-                  <View style={[styles.tileBadge, { backgroundColor: s.accent }]}>
+                  <View
+                    style={[styles.tileBadge, { backgroundColor: s.accent }]}
+                  >
                     <Text style={styles.tileEmoji}>{s.emoji}</Text>
                   </View>
                   <Text style={styles.tileTitle}>{s.title}</Text>

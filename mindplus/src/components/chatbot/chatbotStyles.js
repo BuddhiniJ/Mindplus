@@ -470,6 +470,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
   },
+  emergencyContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(239,68,68,0.3)",
+  },
+  emergencyTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#B91C1C",
+    marginBottom: 4,
+  },
+  emergencyText: {
+    fontSize: 12,
+    color: "#7F1D1D",
+    marginBottom: 2,
+  },
+  emergencyCallButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    alignSelf: "flex-start",
+    backgroundColor: "#DC2626",
+  },
+  emergencyCallButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });
 
 export default styles;

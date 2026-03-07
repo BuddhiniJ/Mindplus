@@ -212,7 +212,11 @@ export default function DailyLogsScreen({ navigation }) {
         showAlert(
           "Building Your Pattern",
           "We need a few more daily check-ins before generating predictions. Keep going 💪",
-          "info"
+          "info",
+          () => {
+            hideAlert();
+            navigation.replace("DailyCheckInScreen");
+          }
         );
 
         // Still save today's log, but skip backend call
