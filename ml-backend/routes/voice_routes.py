@@ -47,10 +47,60 @@ def calculate_stress_level(score: float) -> str:
     else:
         return "High"
 
+# reusable keyword lists used by several helpers
+ACADEMIC_KEYWORDS = ['exam', 'test', 'study', 'homework', 'grade', 'school', 'college',
+                     'university', 'assignment', 'academic', 'class', 'course', 'learning']
+FINANCIAL_KEYWORDS = ['money', 'debt', 'bill', 'pay', 'payment', 'payments', 'cost',
+                      'expensive', 'afford', 'budget', 'financial', 'financially',
+                      'income', 'rent', 'loan', 'credit', 'broke', 'poor']
+SOCIAL_KEYWORDS = ['lonely', 'alone', 'friend', 'friends', 'relationship',
+                   'relationships', 'social', 'isolated', 'isolation', 'people',
+                   'family', 'talk', 'connect', 'rejected']
+EMOTIONAL_KEYWORDS = ['sad', 'anxious', 'anxiety', 'worried', 'worry',
+                      'depressed', 'depression', 'overwhelm', 'overwhelmed',
+                      'cry', 'crying', 'feel', 'feeling', 'emotion', 'emotional',
+                      'upset', 'hurt', 'pain', 'stress', 'stressed']
+
+
+def count_keyword_matches(text: str) -> dict:
+    """Return raw counts for each stress category based on keyword lists."""
+    t = text.lower()
+    return {
+        "Academic": sum(1 for w in ACADEMIC_KEYWORDS if w in t),
+        "Financial": sum(1 for w in FINANCIAL_KEYWORDS if w in t),
+        "Social": sum(1 for w in SOCIAL_KEYWORDS if w in t),
+        "Emotional": sum(1 for w in EMOTIONAL_KEYWORDS if w in t),
+    }
+
+
+def scores_from_counts(counts: dict, predicted: str | None = None) -> dict:
+    """Convert raw keyword counts to 0-1 scores.
+
+    If `predicted` is provided, guarantee that category has at least
+    a minimum score and zero-out others (model-guided scoring).
+    """
+    total = sum(counts.values())
+    if total == 0:
+        # fallback moderate values
+        return {"Academic": 0.4, "Financial": 0.3, "Social": 0.3, "Emotional": 0.5}
+
+    # normalize by max count so that highest category becomes 1.0
+    max_count = max(counts.values())
+    scores = {k: counts[k] / max_count if max_count > 0 else 0.0 for k in counts}
+
+    if predicted and predicted in scores:
+        # enforce model's choice
+        for k in scores:
+            scores[k] = 0.0
+        scores[predicted] = 1.0
+    return scores
+
+
 def get_multi_stress_scores(text: str):
     """
-    Simulate multi-stress detection by analyzing keywords
-    This is a fallback for models without predict_proba
+    Legacy keyword-based scoring used when the model cannot be applied.
+    See `count_keyword_matches` and `scores_from_counts` for the newer
+    model-guided approach.
     """
     text_lower = text.lower()
     
@@ -64,28 +114,24 @@ def get_multi_stress_scores(text: str):
         "Emotional": 0.0
     }
     
-    # Academic keywords
-    academic_keywords = ['exam', 'test', 'study', 'studies', 'homework', 'grade', 'school', 'college', 'university', 'assignment', 'deadline', 'project', 'academic', 'class', 'course', 'learning']
-    academic_count = sum(1 for word in academic_keywords if word in text_lower)
-    scores["Academic"] = min(1.0, academic_count * 0.20)
+    # Academic keywords (trimmed to reduce overlap with other domains)
+    academic_count = sum(1 for word in ACADEMIC_KEYWORDS if word in text_lower)
+    scores["Academic"] = min(1.0, academic_count * 0.25)
     print(f"📚 Academic keywords found: {academic_count}, score: {scores['Academic']}")
     
     # Financial keywords
-    financial_keywords = ['money', 'debt', 'bill', 'pay', 'payment', 'payments', 'cost', 'expensive', 'afford', 'budget', 'financial', 'financially', 'income', 'rent', 'loan', 'credit', 'broke', 'poor']
-    financial_count = sum(1 for word in financial_keywords if word in text_lower)
-    scores["Financial"] = min(1.0, financial_count * 0.20)
+    financial_count = sum(1 for word in FINANCIAL_KEYWORDS if word in text_lower)
+    scores["Financial"] = min(1.0, financial_count * 0.25)
     print(f"💰 Financial keywords found: {financial_count}, score: {scores['Financial']}")
     
     # Social keywords
-    social_keywords = ['lonely', 'alone', 'friend', 'friends', 'relationship', 'relationships', 'social', 'isolated', 'isolation', 'people', 'family', 'talk', 'connect', 'rejected']
-    social_count = sum(1 for word in social_keywords if word in text_lower)
-    scores["Social"] = min(1.0, social_count * 0.20)
+    social_count = sum(1 for word in SOCIAL_KEYWORDS if word in text_lower)
+    scores["Social"] = min(1.0, social_count * 0.25)
     print(f"👥 Social keywords found: {social_count}, score: {scores['Social']}")
     
     # Emotional keywords
-    emotional_keywords = ['sad', 'anxious', 'anxiety', 'worried', 'worry', 'depressed', 'depression', 'overwhelm', 'overwhelmed', 'cry', 'crying', 'feel', 'feeling', 'emotion', 'emotional', 'upset', 'hurt', 'pain', 'stress', 'stressed']
-    emotional_count = sum(1 for word in emotional_keywords if word in text_lower)
-    scores["Emotional"] = min(1.0, emotional_count * 0.20)
+    emotional_count = sum(1 for word in EMOTIONAL_KEYWORDS if word in text_lower)
+    scores["Emotional"] = min(1.0, emotional_count * 0.25)
     print(f"💭 Emotional keywords found: {emotional_count}, score: {scores['Emotional']}")
     
     # If no keywords found at all, set moderate stress across board
@@ -104,6 +150,13 @@ def get_multi_stress_scores(text: str):
         if scores[max_key] > 0:
             scores[max_key] = min(1.0, scores[max_key] + 0.15)
             print(f"✨ Boosted {max_key} to {scores[max_key]}")
+
+        # enforce exclusivity: zero out the others so one dominates
+        dominant = max_key
+        for key in scores:
+            if key != dominant:
+                scores[key] = 0.0
+        print(f"🔒 Enforced dominance: {dominant}, zeroed others")
     
     # Ensure minimum variance (if all are same, add some variation)
     unique_values = len(set(scores.values()))
@@ -120,7 +173,12 @@ def get_multi_stress_scores(text: str):
 @router.post("/analyze-stress")
 def analyze_stress(data: StressRequest):
     """
-    Analyze ALL stress types simultaneously with individual scores
+    Analyze ALL stress types simultaneously with individual scores.
+    
+    Returns raw 0-1 scores for each stress category based on model prediction
+    and keyword matching. No high/medium/low categorization is applied to avoid
+    variability issues - the raw scores reflect the relative strength of each
+    stress type in the text. Keyword counts are included for transparency.
     """
     
     if not model or not label_encoder:
@@ -142,43 +200,37 @@ def analyze_stress(data: StressRequest):
         print(f"Cleaned: {cleaned}")
         print(f"-" * 60)
 
-        # Try to get probabilities from model
-        if hasattr(model, "predict_proba"):
-            try:
-                proba = model.predict_proba([cleaned])[0]
-                
-                # Map probabilities to stress types
-                stress_scores = {}
-                for idx, label in enumerate(label_encoder.classes_):
-                    stress_scores[label] = round(float(proba[idx]), 3)
-                
-                print(f"✅ Using model probabilities")
-                print(f"Probabilities: {stress_scores}")
-                
-            except Exception as e:
-                print(f"⚠️ predict_proba failed: {e}")
-                # Fallback to keyword-based
-                stress_scores = get_multi_stress_scores(data.text)
-        else:
-            print(f"⚠️ Model doesn't have predict_proba, using hybrid approach")
-            
-            # Model doesn't have predict_proba
-            # Get single prediction and boost it, but also check keywords
+        # Use model to determine dominant category, then score via keywords
+        stress_scores = None
+        if model and label_encoder:
             try:
                 pred = model.predict([cleaned])[0]
                 predicted_type = label_encoder.inverse_transform([pred])[0]
                 print(f"🎯 Model predicted: {predicted_type}")
-                
-                # Start with keyword-based scores
-                stress_scores = get_multi_stress_scores(data.text)
-                
-                # Boost the model's prediction
-                stress_scores[predicted_type] = max(stress_scores[predicted_type], 0.70)
-                print(f"📊 Boosted {predicted_type} to {stress_scores[predicted_type]}")
-                
+
+                counts = count_keyword_matches(data.text)
+                print(f"🔢 Keyword counts: {counts}")
+
+                stress_scores = scores_from_counts(counts, predicted=predicted_type)
+                print(f"📊 Scores from counts (model-guided): {stress_scores}")
             except Exception as e:
-                print(f"❌ Model prediction failed: {e}")
-                # Pure keyword-based
+                print(f"⚠️ Model prediction failed: {e}")
+                stress_scores = None
+
+        # if we didn't obtain scores via the new method, fall back
+        if stress_scores is None:
+            if model and hasattr(model, "predict_proba"):
+                try:
+                    proba = model.predict_proba([cleaned])[0]
+                    stress_scores = {label_encoder.classes_[i]: round(float(p), 3)
+                                     for i, p in enumerate(proba)}
+                    print(f"✅ Using model probabilities")
+                    print(f"Probabilities: {stress_scores}")
+                except Exception as e:
+                    print(f"⚠️ predict_proba failed: {e}")
+                    stress_scores = get_multi_stress_scores(data.text)
+            else:
+                print(f"⚠️ Using legacy keyword fallback")
                 stress_scores = get_multi_stress_scores(data.text)
 
         # Ensure all 4 types exist
@@ -199,10 +251,13 @@ def analyze_stress(data: StressRequest):
         # Calculate total stress score
         total_stress = sum(stress_scores.values())
         
-        # Calculate levels for each type
-        stress_levels = {}
-        for stress_type, score in stress_scores.items():
-            stress_levels[stress_type] = calculate_stress_level(score)
+        # Remove level categorization - just provide raw scores
+        # stress_levels = {}
+        # for stress_type, score in stress_scores.items():
+        #     stress_levels[stress_type] = calculate_stress_level(score)
+
+        # Add keyword counts for transparency/proof
+        keyword_counts = count_keyword_matches(data.text)
 
         result = {
             "success": True,
@@ -212,22 +267,23 @@ def analyze_stress(data: StressRequest):
             "text": data.text,
             "audio_url": data.audio_url,
             
-            # Multi-stress analysis
+            # Multi-stress analysis with raw scores only
             "stress_scores": stress_scores,
-            "stress_levels": stress_levels,
+            # "stress_levels": stress_levels,  # removed
+            "keyword_counts": keyword_counts,  # added for evidence
             "dominant_type": dominant_type,
             "dominant_score": dominant_score,
             "total_stress_score": round(total_stress, 3),
             
-            # Overall assessment
-            "overall_level": calculate_stress_level(total_stress / 4),
+            # Overall assessment (no level)
+            "overall_score": round(total_stress / 4, 3),
             "confidence": round(dominant_score, 3)
         }
         
         print(f"✅ Analysis complete!")
         print(f"Dominant: {dominant_type} ({dominant_score:.3f})")
         print(f"Total: {total_stress:.3f}")
-        print(f"Overall: {result['overall_level']}")
+        print(f"Overall: {result['overall_score']:.3f}")
         print(f"=" * 60)
         
         return result
@@ -298,8 +354,10 @@ def test_model(data: StressRequest):
             except Exception as e:
                 result["proba_error"] = str(e)
         
-        # Keyword-based scores
-        result["keyword_scores"] = get_multi_stress_scores(data.text)
+        # Keyword counts & derived scores
+        result["keyword_counts"] = count_keyword_matches(data.text)
+        result["keyword_scores"] = scores_from_counts(result["keyword_counts"],
+                                                      predicted=result.get("prediction"))
         
         return result
         

@@ -55,7 +55,11 @@ export async function saveAnalysisLocally(analysis, userId) {
       userId,
       text: analysis.text || '',
       localAudioPath: analysis.localAudioPath || null,
+      stress_scores: analysis.stress_scores || {},
+      stress_levels: analysis.stress_levels || {},
       stressType: analysis.stressType || 'Unknown',
+      total_stress_score: analysis.total_stress_score || 0,
+      overall_level: analysis.overall_level || 'Low',
       confidence: analysis.confidence || 0,
       timestamp: analysis.timestamp || Date.now(),
     };
@@ -82,7 +86,10 @@ export async function getLocalHistory(userId) {
   try {
     const data = await AsyncStorage.getItem(`${HISTORY_KEY}_${userId}`);
     if (!data) return [];
-    const history = JSON.parse(data);
+    let history = JSON.parse(data);
+    if (!Array.isArray(history)) history = [];
+    // filter by provided userId (defensive)
+    history = history.filter(item => item.userId === userId);
     // Ensure timestamp is a Date object
     return history.map(item => ({
       ...item,

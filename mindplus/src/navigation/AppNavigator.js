@@ -18,7 +18,6 @@ import VisualAffirmationScreen from "../screens/home/VisualAffirmationScreen";
 import SoundscapeScreen from "../screens/home/SoundscapeScreen";
 import MenuScreen from "../screens/home/menu.js";
 import ChatbotScreen from "../screens/home/ChatbotScreen";
-import DailyLogsScreen from "../screens/home/DailyLogsScreen.js";
 
 //voice recorder
 import VoiceRecorderScreen from "../components/Voice/VoiceRecorder.js";
@@ -52,7 +51,6 @@ export default function AppNavigator() {
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
       <Stack.Screen name="HeatmapScreen" component={HeatmapScreen} />
       <Stack.Screen name="DailyCheckInScreen" component={DailyCheckInScreen} />
-      <Stack.Screen name="DailyLogsScreen" component={DailyLogsScreen} />
       <Stack.Screen
         name="OverallEmotionScreen"
         component={OverallEmotionScreen}

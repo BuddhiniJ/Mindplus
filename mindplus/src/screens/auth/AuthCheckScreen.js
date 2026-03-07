@@ -29,19 +29,8 @@ export default function AuthCheckScreen({ navigation }) {
         return;
       }
 
-      // 2️⃣ Check if today's log exists
-      const today = new Date().toLocaleDateString("en-CA");
-
-      const todayLogRef = doc(db, "users", uid, "daily_logs", today);
-      const todayLogDoc = await getDoc(todayLogRef);
-
-      if (todayLogDoc.exists()) {
-        // Already submitted today → go to dashboard
-        navigation.replace("DailyCheckInScreen");
-      } else {
-        // Not submitted yet → allow check-in
-        navigation.replace("DailyLogsScreen");
-      }
+      // Not submitted yet → allow check-in
+      navigation.replace("DailyCheckInScreen");
 
     } catch (error) {
       console.log("AuthCheck error:", error);
