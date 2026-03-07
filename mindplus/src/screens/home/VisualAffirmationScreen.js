@@ -15,9 +15,11 @@ import {
 import VisualAffirmation from "../../components/VisualAffirmation";
 import BoxBreathingCard from "../../components/BoxBreathingCard";
 import GroundingCard from "../../components/GroundingCard";
+import MovementBreakCard from "../../components/MovementBreakCard";
 import { fetchCopingStrategy } from "../../services/api";
 
-const SESSION_SECONDS = 60;
+const DEFAULT_SESSION_SECONDS = 60;
+const MOVEMENT_BREAK_SECONDS = 300;
 // Temporary override: show Box Breathing for all emotions/confidence.
 const FORCE_BOX_BREATHING = true;
 
@@ -44,6 +46,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     severity = "medium",
     confidence,
     strategy: strategyFromRoute,
+    technique: techniqueFromRoute,
+    duration_seconds: durationFromRoute,
   } = route?.params || {};
 
   const [started, setStarted] = useState(false);
@@ -72,7 +76,9 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const showBreathing = FORCE_BOX_BREATHING || isAnxiety;
 
-  const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
+  const [secondsRemaining, setSecondsRemaining] = useState(
+    DEFAULT_SESSION_SECONDS
+  );
   const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
   // Progress animation for timer bar
   const timerProgressAnim = useMemo(() => new Animated.Value(1), []);
@@ -83,6 +89,35 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   );
   const [copingLoading, setCopingLoading] = useState(false);
   const [copingError, setCopingError] = useState(null);
+  const [recommendedTechnique, setRecommendedTechnique] = useState(
+    typeof techniqueFromRoute === "string" ? techniqueFromRoute : null
+  );
+  const [recommendedDuration, setRecommendedDuration] = useState(
+    Number.isFinite(Number(durationFromRoute))
+      ? Number(durationFromRoute)
+      : null
+  );
+
+  const mapTechniqueKey = (rawTechnique) => {
+    const key = String(rawTechnique || "")
+      .trim()
+      .toLowerCase();
+    if (key === "movement_break") return "movement";
+    if (key === "box_breathing") return "box";
+    if (key === "grounding") return "grounding";
+    if (key === "calmtimer" || key === "self_compassion") return "affirmation";
+    return null;
+  };
+
+  const activeSessionSeconds = useMemo(() => {
+    if (selectedTechnique === "movement") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : MOVEMENT_BREAK_SECONDS;
+    }
+    return DEFAULT_SESSION_SECONDS;
+  }, [recommendedDuration, selectedTechnique]);
 
   // Fetch or resolve coping strategy based on emotion and confidence
   useEffect(() => {
@@ -112,6 +147,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           const result = await fetchCopingStrategy(emotion, numericConfidence);
           if (!active) return;
           setCopingStrategy(result?.strategy || null);
+          setRecommendedTechnique(result?.technique || null);
+          setRecommendedDuration(result?.duration_seconds ?? null);
         } catch (e) {
           if (!active) return;
           setCopingError(
@@ -176,19 +213,24 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   useEffect(() => {
     if (!showBreathing) return;
     const fraction =
-      SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
+      activeSessionSeconds > 0 ? secondsRemaining / activeSessionSeconds : 0;
     Animated.timing(timerProgressAnim, {
       toValue: fraction,
       duration: 220,
       useNativeDriver: false,
     }).start();
-  }, [showBreathing, secondsRemaining, timerProgressAnim]);
+  }, [
+    activeSessionSeconds,
+    showBreathing,
+    secondsRemaining,
+    timerProgressAnim,
+  ]);
 
   // Start or restart the calm session
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
     setStarted(true);
-    setSecondsRemaining(SESSION_SECONDS);
+    setSecondsRemaining(activeSessionSeconds);
     bounceAnim.setValue(0);
     Animated.spring(bounceAnim, {
       toValue: 1,
@@ -239,6 +281,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   }, [anxietyBand, isAnxiety]);
 
   useEffect(() => {
+    const mapped = mapTechniqueKey(recommendedTechnique);
+    if (mapped) {
+      setSelectedTechnique(mapped);
+      return;
+    }
+
     if (anxietyExercise === "grounding") {
       setSelectedTechnique("grounding");
       return;
@@ -248,7 +296,15 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       return;
     }
     setSelectedTechnique("affirmation");
-  }, [anxietyExercise]);
+  }, [anxietyExercise, recommendedTechnique]);
+
+  useEffect(() => {
+    if (!started) {
+      setSecondsRemaining(activeSessionSeconds);
+    } else {
+      setSecondsRemaining((prev) => Math.min(prev, activeSessionSeconds));
+    }
+  }, [activeSessionSeconds, started]);
 
   const techniqueOptions = useMemo(
     () => [
@@ -269,6 +325,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         label: "Grounding",
         icon: "🌿",
         caption: "Anchor with your senses",
+      },
+      {
+        key: "movement",
+        label: "Movement Break",
+        icon: "🚶",
+        caption: "Stand, stretch, and walk for 5 minutes",
       },
     ],
     []
@@ -338,14 +400,21 @@ export default function VisualAffirmationScreen({ route, navigation }) {
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
           />
         ) : selectedTechnique === "grounding" ? (
           <GroundingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "movement" ? (
+          <MovementBreakCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
           />
         ) : (
           <Animated.View
