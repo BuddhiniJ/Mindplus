@@ -281,6 +281,14 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const headerTitle = "Calm Session";
 
+  const headerTechniqueLabel = useMemo(() => {
+    if (selectedTechnique === "self_compassion") return "Self Compassion";
+    if (selectedTechnique === "movement") return "Movement Break";
+    if (selectedTechnique === "grounding") return "Grounding";
+    if (selectedTechnique === "box") return "Box Breathing";
+    return "Calm Timer";
+  }, [selectedTechnique]);
+
   const anxietyExercise = useMemo(() => {
     if (FORCE_BOX_BREATHING) return "box";
     if (!isAnxiety) return null;
@@ -360,16 +368,29 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     <View style={styles.screen}>
       <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
         {/* Header with navigation and title */}
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
-          <View style={{ width: 64 }} />
+        <View style={styles.headerShell}>
+          <View style={styles.headerAuraOne} />
+          <View style={styles.headerAuraTwo} />
+
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backArrow}>←</Text>
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerKicker}>GUIDED RESET</Text>
+              <Text style={styles.headerTitle}>{headerTitle}</Text>
+            </View>
+
+            <View style={styles.headerMeta}>
+              <Text style={styles.headerMetaText}>{headerTechniqueLabel}</Text>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -577,28 +598,103 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerShell: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    overflow: "hidden",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  headerAuraOne: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#DBEAFE",
+    top: -46,
+    right: -24,
+    opacity: 0.72,
+  },
+  headerAuraTwo: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#E0E7FF",
+    bottom: -34,
+    left: -14,
+    opacity: 0.66,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
-    paddingTop: 6,
+    gap: 10,
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFFAA",
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    minWidth: 76,
+  },
+  backArrow: {
+    fontSize: 14,
+    color: "#1E3A8A",
+    fontWeight: "900",
+    marginRight: 4,
   },
   backText: {
     fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "700",
+    color: "#1E3A8A",
+    fontWeight: "800",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerKicker: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: "#2563EB",
+    fontWeight: "900",
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
     color: "#0F172A",
+  },
+  headerMeta: {
+    minWidth: 76,
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  headerMetaText: {
+    fontSize: 10,
+    color: "#3730A3",
+    fontWeight: "900",
+    textAlign: "center",
   },
   hero: {
     marginBottom: 18,
