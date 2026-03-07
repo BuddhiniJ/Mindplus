@@ -90,11 +90,12 @@ export default function VoiceRecorder({ navigation }) {
 
   const loadUserId = async () => {
     try {
-      let id = await AsyncStorage.getItem('userId');
+      // prefer authenticated firebase uid
+      let id = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
       if (!id) {
         id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await AsyncStorage.setItem('userId', id);
       }
+      await AsyncStorage.setItem('userId', id);
       setUserId(id);
     } catch (error) {
       console.error('Error loading user ID:', error);
@@ -232,8 +233,13 @@ export default function VoiceRecorder({ navigation }) {
         return;
       }
 
-      // Get current user ID (local)
-      const currentUserId = await AsyncStorage.getItem('userId');
+      // Determine current user ID (prefer firebase auth)
+      let currentUserId = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
+      if (!currentUserId) {
+        // fall back to random id as before
+        currentUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      await AsyncStorage.setItem('userId', currentUserId);
 
       // Save audio file locally with user ID
       const savedAudio = await saveAudioFile(uri, currentUserId);
@@ -258,20 +264,41 @@ export default function VoiceRecorder({ navigation }) {
 
       console.log('✅ Saved stress analysis locally for user:', currentUserId);
 
-      // Show popup with options
+      // Show confirmation dialog asking about stress level
+      const overallLevel = analysis.overall_level || 'Unknown';
+      const isHighStress = overallLevel === 'High' || overallLevel === 'Moderate';
+      
       Alert.alert(
-        '✨ Analysis Complete',
-        'Your stress analysis is ready. What would you like to do?',
+        '🎯 Stress Level Analysis',
+        `We detected ${overallLevel} stress levels from your voice.\n\nDo you agree with this assessment?`,
         [
+          {
+            text: 'I\'m Not Stressed - Re-record',
+            onPress: () => {
+              // User can re-record if they disagree
+              setStressAnalysis(null);
+              setTranscript("");
+            },
+            style: 'destructive',
+          },
           {
             text: 'View Analysis',
             onPress: () => navigation.navigate('StressMindMap', { analysis: analysis }),
+            style: 'default',
           },
           {
-            text: 'OK',
-            style: 'cancel',
+            text: 'Save & Continue',
+            onPress: () => {
+              Alert.alert(
+                '✅ Saved',
+                'Your stress analysis has been saved to your history. You can listen to your voice again later.',
+                [{ text: 'OK' }]
+              );
+            },
+            style: 'default',
           },
-        ]
+        ],
+        { cancelable: false }
       );
 
       // Also save to Firebase if authenticated
