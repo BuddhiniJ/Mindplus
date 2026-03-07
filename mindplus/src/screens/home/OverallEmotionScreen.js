@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   confidenceValue: {
-    fontSize: 44,
+    fontSize: 25,
     fontWeight: "700",
     color: "#3B82F6",
   },
@@ -464,9 +464,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   qualityText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#6B7280",
-    lineHeight: 20,
+    lineHeight: 24,
     fontWeight: "500",
     textAlign: "center",
   },

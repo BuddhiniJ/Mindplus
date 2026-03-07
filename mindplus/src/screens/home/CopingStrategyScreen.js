@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
+  useWindowDimensions,
 } from "react-native";
 import { fetchCopingStrategy } from "../../services/api";
 
@@ -62,6 +63,8 @@ export default function CopingStrategyScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
+  const { width } = useWindowDimensions();
+  const isCompactScreen = width < 380;
 
   useEffect(() => {
     loadCopingStrategy();
@@ -212,11 +215,27 @@ export default function CopingStrategyScreen({ route, navigation }) {
             },
           ]}
         >
+          <View
+            style={[
+              styles.summaryGlow,
+              { backgroundColor: emotionInfo.color + "22" },
+            ]}
+          />
+
+          <View style={styles.summaryTopRow}>
+            <Text style={styles.summaryTag}>Emotion Snapshot</Text>
+            <View style={styles.confidenceChip}>
+              <Text style={styles.confidenceChipText}>
+                {confidencePercentage}% sure
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.emotionSummaryHeader}>
             <View
               style={[
                 styles.emotionIconContainer,
-                { backgroundColor: emotionInfo.color + "20" },
+                { backgroundColor: emotionInfo.color + "25" },
               ]}
             >
               <Text style={styles.emotionIcon}>{emotionInfo.emoji}</Text>
@@ -229,8 +248,34 @@ export default function CopingStrategyScreen({ route, navigation }) {
             </View>
           </View>
 
-          <View style={styles.severityBadge}>
-            <Text style={styles.severityIcon}>{severityInfo.icon}</Text>
+          <View style={styles.confidenceBarWrap}>
+            <View style={styles.confidenceTrack}>
+              <View
+                style={[
+                  styles.confidenceFill,
+                  {
+                    backgroundColor: emotionInfo.color,
+                    width: `${Math.max(6, confidencePercentage)}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.severityBadge,
+              { borderColor: severityInfo.color + "40" },
+            ]}
+          >
+            <View
+              style={[
+                styles.severityIconBubble,
+                { backgroundColor: severityInfo.color + "25" },
+              ]}
+            >
+              <Text style={styles.severityIcon}>{severityInfo.icon}</Text>
+            </View>
             <View style={styles.severityTextContainer}>
               <Text style={styles.severityLabel}>{severityInfo.label}</Text>
               <Text style={styles.severityDescription}>
@@ -250,12 +295,55 @@ export default function CopingStrategyScreen({ route, navigation }) {
             },
           ]}
         >
-          <View style={styles.strategyHeader}>
-            <Text style={styles.strategyIcon}>💡</Text>
-            <Text style={styles.strategyTitle}>Recommended Action</Text>
+          <View
+            style={[
+              styles.strategyGlow,
+              { backgroundColor: emotionInfo.color + "20" },
+            ]}
+          />
+
+          <View style={styles.strategyTopRow}>
+            <View
+              style={[
+                styles.strategyPill,
+                { backgroundColor: emotionInfo.color + "20" },
+              ]}
+            >
+              <Text
+                style={[styles.strategyPillText, { color: emotionInfo.color }]}
+              >
+                TOP PICK
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.strategyPulse,
+                { backgroundColor: emotionInfo.color },
+              ]}
+            />
           </View>
 
-          <View style={styles.strategyContent}>
+          <View style={styles.strategyHeader}>
+            <Text style={styles.strategyIcon}>💡</Text>
+            <Text
+              style={[
+                styles.strategyTitle,
+                isCompactScreen && styles.strategyTitleCompact,
+              ]}
+            >
+              {isCompactScreen
+                ? "Recommended Action"
+                : "Recommended Action for You"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.strategyContent,
+              { borderColor: emotionInfo.color + "35" },
+            ]}
+          >
+            <Text style={styles.strategyLead}>Right now, try this:</Text>
             <Text style={styles.strategyText}>{copingData.strategy}</Text>
           </View>
 
@@ -270,26 +358,6 @@ export default function CopingStrategyScreen({ route, navigation }) {
           </View>
         </Animated.View>
 
-        {/* Why This Helps Card */}
-        <Animated.View
-          style={[
-            styles.infoCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <Text style={styles.infoTitle}>🌟 Why This Helps</Text>
-          <Text style={styles.infoText}>
-            {copingData.severity === "high"
-              ? "When emotions are intense, grounding techniques help you regain a sense of control and presence. These actions activate your body's natural calming response."
-              : copingData.severity === "medium"
-              ? "Moderate emotional states benefit from focused, purposeful actions. These strategies help you process and redirect your emotional energy constructively."
-              : "During mild emotional fluctuations, simple awareness and small actions can prevent escalation and maintain your emotional balance."}
-          </Text>
-        </Animated.View>
-
         {allowCalmSession && (
           <Animated.View
             style={[
@@ -297,6 +365,17 @@ export default function CopingStrategyScreen({ route, navigation }) {
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}
           >
+            <View style={styles.calmingGlow} />
+
+            <View style={styles.calmingTopRow}>
+              <View style={styles.calmingBadge}>
+                <Text style={styles.calmingBadgeText}>1-MIN RESET</Text>
+              </View>
+              <View style={styles.calmingIconWrap}>
+                <Text style={styles.calmingCardIcon}>🧘</Text>
+              </View>
+            </View>
+
             <Text style={styles.calmingTitle}>Need a calming break?</Text>
             <Text style={styles.calmingText}>
               Start a 1-minute affirmation session tailored to your state.
@@ -313,7 +392,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
               }
               activeOpacity={0.85}
             >
-              <Text style={styles.calmingButtonText}>Open Calm Session</Text>
+              <Text style={styles.calmingButtonText}>Start Calm Session</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -427,55 +506,116 @@ const styles = StyleSheet.create({
   },
   emotionSummaryCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
     marginBottom: 20,
+    position: "relative",
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  summaryGlow: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    right: -40,
+    top: -60,
+  },
+  summaryTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  summaryTag: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "#374151",
+  },
+  confidenceChip: {
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  confidenceChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#3730A3",
   },
   emotionSummaryHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   emotionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   emotionIcon: {
-    fontSize: 32,
+    fontSize: 34,
   },
   emotionSummaryText: {
     flex: 1,
   },
   emotionName: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
     color: "#111827",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   confidenceText: {
     fontSize: 14,
     color: "#6B7280",
     fontWeight: "500",
   },
+  confidenceBarWrap: {
+    marginBottom: 14,
+  },
+  confidenceTrack: {
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  confidenceFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
   severityBadge: {
     flexDirection: "row",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F8FAFC",
     padding: 12,
     borderRadius: 12,
     alignItems: "center",
+    borderWidth: 1,
+  },
+  severityIconBubble: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
   },
   severityIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 20,
   },
   severityTextContainer: {
     flex: 1,
@@ -495,48 +635,96 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
+    position: "relative",
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
     elevation: 5,
-    borderLeftWidth: 4,
-    borderLeftColor: "#3B82F6",
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+  },
+  strategyGlow: {
+    position: "absolute",
+    top: -40,
+    right: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+  },
+  strategyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  strategyPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  strategyPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  strategyPulse: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   strategyHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   strategyIcon: {
     fontSize: 32,
     marginRight: 12,
   },
   strategyTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "700",
     color: "#111827",
+    flex: 1,
+    flexShrink: 1,
+    lineHeight: 30,
+  },
+  strategyTitleCompact: {
+    fontSize: 20,
+    lineHeight: 26,
   },
   strategyContent: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F8FAFC",
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
+    borderWidth: 1,
+  },
+  strategyLead: {
+    fontSize: 13,
+    color: "#2563EB",
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   strategyText: {
-    fontSize: 16,
-    color: "#374151",
-    lineHeight: 26,
-    fontWeight: "500",
+    fontSize: 17,
+    color: "#1F2937",
+    lineHeight: 28,
+    fontWeight: "600",
   },
   strategyFooter: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    paddingTop: 14,
   },
   tipContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    padding: 12,
   },
   tipIcon: {
     fontSize: 18,
@@ -593,46 +781,93 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   calmingCard: {
-    backgroundColor: "#E0ECFF",
-    borderRadius: 16,
-    padding: 18,
+    backgroundColor: "#EFF6FF",
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#93C5FD",
+    position: "relative",
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  calmingGlow: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#BFDBFE",
+    top: -60,
+    right: -50,
+    opacity: 0.6,
+  },
+  calmingTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  calmingBadge: {
+    backgroundColor: "#DBEAFE",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  calmingBadgeText: {
+    color: "#1D4ED8",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  calmingIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  calmingCardIcon: {
+    fontSize: 18,
   },
   calmingTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 6,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0B3B8C",
+    marginBottom: 8,
   },
   calmingText: {
-    fontSize: 14,
-    color: "#374151",
-    marginBottom: 12,
-    lineHeight: 20,
+    fontSize: 15,
+    color: "#1E3A8A",
+    marginBottom: 14,
+    lineHeight: 22,
   },
   calmingButton: {
-    backgroundColor: "#2563EB",
-    paddingVertical: 12,
-    borderRadius: 12,
+    backgroundColor: "#1D4ED8",
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: "center",
-    shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowColor: "#1D4ED8",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#1E40AF",
   },
   calmingButtonText: {
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "800",
     fontSize: 15,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   resourceItem: {
     flexDirection: "row",
