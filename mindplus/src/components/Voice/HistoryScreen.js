@@ -10,6 +10,7 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { auth } from '../../firebase/firebaseConfig';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { getLocalHistory, deleteLocalAnalysis, getHistoryStats } from '../../services/historyStorageService';
@@ -52,13 +53,17 @@ export default function HistoryScreen({ navigation }) {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const userId = await AsyncStorage.getItem('userId');
+      // prefer authenticated UID if available
+      let userId = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
       
       if (!userId) {
         console.log('No userId found');
         setLoading(false);
         return;
       }
+
+      // persist for future use
+      await AsyncStorage.setItem('userId', userId);
 
       console.log('📖 Loading history for user:', userId);
       
@@ -136,19 +141,24 @@ export default function HistoryScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              const userId = await AsyncStorage.getItem('userId');
-              
+              let userId = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
+              if (!userId) {
+                console.warn('no userId when deleting');
+                return;
+              }
+              await AsyncStorage.setItem('userId', userId);
+
               if (playingAudio === item.id) {
                 await stopAudio();
               }
-              
+
               if (item.localAudioPath) {
                 await deleteAudioFile(item.localAudioPath);
               }
-              
+
               await deleteLocalAnalysis(userId, item.id);
               await loadHistory();
-              
+
               Alert.alert('Success', 'Recording deleted successfully');
             } catch (error) {
               console.error('Error deleting recording:', error);
