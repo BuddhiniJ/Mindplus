@@ -41,9 +41,16 @@ def evolve(data: FingerprintRequest):
     print("============================")
 
     # ---- Fingerprint Evolution (Your Current Logic) ----
-    avg_stress = mean([log["stress_today"] for log in logs])
-    avg_energy = mean([log["energy_level"] for log in logs])
-    avg_sleep = mean([log["sleep_hours"] for log in logs])
+    # avg_stress = mean([log["stress_today"] for log in logs])
+    # avg_energy = mean([log["energy_level"] for log in logs])
+    # avg_sleep = mean([log["sleep_hours"] for log in logs])
+    stress_vals = [log["stress_today"] for log in logs if log["stress_today"] is not None]
+    energy_vals = [log["energy_level"] for log in logs if log["energy_level"] is not None]
+    sleep_vals = [log["sleep_hours"] for log in logs if log["sleep_hours"] is not None]
+
+    avg_stress = mean(stress_vals) if stress_vals else 5
+    avg_energy = mean(energy_vals) if energy_vals else 5
+    avg_sleep = mean(sleep_vals) if sleep_vals else 6
 
     if data.previous_fingerprint:
         old_stress = data.previous_fingerprint.get("stress_index", avg_stress)
@@ -71,7 +78,13 @@ def evolve(data: FingerprintRequest):
     model = train_personalized_model(logs)
 
     if model:
-        latest = logs[-1]
+        # latest = logs[-1]
+        latest = logs[-1] if logs else {
+            "stress_today": avg_stress,
+            "sleep_hours": avg_sleep,
+            "energy_level": avg_energy,
+            "workload_intensity": 5
+        }
 
         current_features = [
             latest["stress_today"],
