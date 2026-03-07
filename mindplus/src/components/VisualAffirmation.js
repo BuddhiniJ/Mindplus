@@ -146,6 +146,8 @@ const EMOTION_FALLBACKS = {
   },
 };
 
+const DURATION_OPTIONS = [30, 60, 120, 300, 600];
+
 function normalizeEmotion(emotion) {
   if (!emotion) return "unknown";
   const key = String(emotion).trim().toLowerCase();
@@ -155,7 +157,9 @@ function normalizeEmotion(emotion) {
 }
 
 function normalizeSeverity(severity) {
-  const key = String(severity || "").trim().toLowerCase();
+  const key = String(severity || "")
+    .trim()
+    .toLowerCase();
   if (key === "low" || key === "medium" || key === "high") return key;
   return "low";
 }
@@ -194,12 +198,19 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
+function formatDurationLabel(totalSeconds) {
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = totalSeconds / 60;
+  return `${minutes}m`;
+}
+
 export default function VisualAffirmation({
   emotion,
   severity,
   start,
   autoStart = true,
   durationSeconds = 60,
+  onDurationChange,
 }) {
   const visualKey = useMemo(
     () => `${emotion}-${severity}`,
@@ -213,12 +224,18 @@ export default function VisualAffirmation({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(1)).current;
+  const [selectedDuration, setSelectedDuration] = useState(durationSeconds);
   const [secondsRemaining, setSecondsRemaining] = useState(durationSeconds);
   const prevStart = useRef(start);
 
   const isControlled = typeof start === "boolean";
   const [internalRunning, setInternalRunning] = useState(autoStart);
   const running = isControlled ? start : internalRunning;
+
+  useEffect(() => {
+    setSelectedDuration(durationSeconds);
+    setSecondsRemaining(durationSeconds);
+  }, [durationSeconds]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -254,11 +271,11 @@ export default function VisualAffirmation({
     if (isControlled) {
       const prev = prevStart.current;
       if (start && !prev) {
-        setSecondsRemaining(durationSeconds);
+        setSecondsRemaining(selectedDuration);
       }
       prevStart.current = start;
     }
-  }, [isControlled, start, durationSeconds]);
+  }, [isControlled, start, selectedDuration]);
 
   useEffect(() => {
     let mounted = true;
@@ -274,14 +291,22 @@ export default function VisualAffirmation({
 
   useEffect(() => {
     const fraction =
-      durationSeconds > 0 ? secondsRemaining / durationSeconds : 0;
+      selectedDuration > 0 ? secondsRemaining / selectedDuration : 0;
     Animated.timing(progressAnim, {
       toValue: fraction,
       duration: 220,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [secondsRemaining, durationSeconds, progressAnim]);
+  }, [secondsRemaining, selectedDuration, progressAnim]);
+
+  const handleDurationSelect = (nextDuration) => {
+    setSelectedDuration(nextDuration);
+    setSecondsRemaining(nextDuration);
+    if (typeof onDurationChange === "function") {
+      onDurationChange(nextDuration);
+    }
+  };
 
   if (!preset) return null;
 
@@ -293,6 +318,9 @@ export default function VisualAffirmation({
         { opacity: fadeAnim },
       ]}
     >
+      <View style={styles.glowA} />
+      <View style={styles.glowB} />
+
       <Animated.View
         pointerEvents="none"
         style={[
@@ -303,15 +331,68 @@ export default function VisualAffirmation({
       />
 
       <View style={styles.content}>
-        <Text style={[styles.label, { color: preset.textColor }]}>
-          {preset.label}
-        </Text>
+        <View style={styles.headerRow}>
+          <View
+            style={[
+              styles.labelBadge,
+              {
+                borderColor: preset.pulseColor,
+              },
+            ]}
+          >
+            <Text style={[styles.label, { color: preset.textColor }]}>
+              {preset.label}
+            </Text>
+          </View>
+          <Text style={[styles.momentTag, { color: preset.textColor }]}>
+            {formatDurationLabel(selectedDuration)} Calm
+          </Text>
+        </View>
+
         <Text style={[styles.title, { color: preset.textColor }]}>
           {preset.title}
         </Text>
-        <Text style={[styles.affirmation, { color: preset.textColor }]}>
-          {preset.affirmation}
-        </Text>
+
+        <View style={styles.quoteWrap}>
+          <Text style={[styles.affirmation, { color: preset.textColor }]}>
+            {preset.affirmation}
+          </Text>
+        </View>
+
+        <View style={styles.durationSection}>
+          <Text style={[styles.durationTitle, { color: preset.textColor }]}>
+            Session Length
+          </Text>
+          <View style={styles.durationRow}>
+            {DURATION_OPTIONS.map((option) => {
+              const isActive = option === selectedDuration;
+              return (
+                <Text
+                  key={option}
+                  style={[
+                    styles.durationChip,
+                    { borderColor: preset.pulseColor },
+                    isActive && [
+                      styles.durationChipActive,
+                      { backgroundColor: preset.pulseColor + "33" },
+                    ],
+                  ]}
+                  onPress={() => handleDurationSelect(option)}
+                >
+                  <Text
+                    style={[
+                      styles.durationChipText,
+                      { color: preset.textColor },
+                      isActive && styles.durationChipTextActive,
+                    ]}
+                  >
+                    {formatDurationLabel(option)}
+                  </Text>
+                </Text>
+              );
+            })}
+          </View>
+        </View>
 
         <CalmTimer
           progressAnim={progressAnim}
@@ -328,45 +409,130 @@ export default function VisualAffirmation({
 const styles = StyleSheet.create({
   container: {
     position: "relative",
-    borderRadius: 18,
-    padding: 20,
+    borderRadius: 24,
+    padding: 22,
     marginBottom: 20,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#FFFFFFB0",
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
+  },
+  glowA: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "#FFFFFF",
+    top: -110,
+    right: -60,
+    opacity: 0.3,
+  },
+  glowB: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#FFFFFF",
+    bottom: -70,
+    left: -40,
+    opacity: 0.22,
   },
   pulse: {
     position: "absolute",
-    top: -30,
-    left: -30,
-    right: -30,
-    bottom: -30,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    opacity: 0.35,
+    top: -24,
+    left: -24,
+    right: -24,
+    bottom: -24,
+    borderRadius: 28,
+    borderWidth: 1.2,
+    opacity: 0.28,
   },
   content: {
-    gap: 10,
+    gap: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  labelBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFFC5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 1,
-    opacity: 0.7,
+    letterSpacing: 0.8,
+  },
+  momentTag: {
+    fontSize: 12,
+    fontWeight: "700",
+    opacity: 0.75,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
+    lineHeight: 30,
+  },
+  quoteWrap: {
+    backgroundColor: "#FFFFFFA8",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
+  quoteMark: {
+    fontSize: 22,
+    lineHeight: 22,
+    fontWeight: "800",
+    opacity: 0.45,
+    marginBottom: 2,
   },
   affirmation: {
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: "600",
-    opacity: 0.9,
+    opacity: 0.95,
+  },
+  durationSection: {
+    marginTop: 2,
+  },
+  durationTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+    opacity: 0.75,
+  },
+  durationRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  durationChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#FFFFFFCC",
+  },
+  durationChipActive: {
+    borderWidth: 1.5,
+  },
+  durationChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  durationChipTextActive: {
+    fontWeight: "900",
   },
   timerBadge: {
     marginTop: 8,
