@@ -206,6 +206,40 @@ const styles = StyleSheet.create({
     color: "#1D4ED8",
     fontWeight: "600",
   },
+  autoVoiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    marginBottom: 4,
+  },
+  autoVoiceLabel: {
+    fontSize: 12,
+    color: "#4B5563",
+    marginRight: 8,
+  },
+  voiceRow: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  voiceButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#E0ECFF",
+  },
+  voiceButtonIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  voiceButtonLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1D4ED8",
+  },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",

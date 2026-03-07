@@ -5,11 +5,17 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
+import {
+  playBotMessageVoice,
+  stopBotMessageVoice,
+  cleanupTTS,
+} from "../../services/textToSpeechService";
 import { useGlobalAudioPlayer } from "../../context/GlobalAudioPlayerContext";
 import ChatHeader from "../../components/chatbot/ChatHeader";
 import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
@@ -99,6 +105,8 @@ export default function ChatbotScreen({ navigation }) {
   const [userLabel, setUserLabel] = useState("You");
   const [emergencyContact, setEmergencyContact] = useState(null);
   const [emergencyName, setEmergencyName] = useState(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const [autoVoiceEnabled, setAutoVoiceEnabled] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -249,7 +257,34 @@ export default function ChatbotScreen({ navigation }) {
       }
     };
     init();
+
+    // Clean up any TTS listeners when leaving the chatbot screen
+    return () => {
+      cleanupTTS();
+    };
   }, []);
+
+  // Handle play/stop for a specific bot message
+  const handleToggleVoice = (message) => {
+    if (!message || !message.text) return;
+
+    // If this message is already speaking, stop it
+    if (speakingMessageId === message.id) {
+      stopBotMessageVoice();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    // Start playback for the selected bot message
+    setSpeakingMessageId(message.id);
+    playBotMessageVoice(message.text, {
+      onFinish: () => {
+        setSpeakingMessageId((currentId) =>
+          currentId === message.id ? null : currentId
+        );
+      },
+    });
+  };
 
   const handleSend = async () => {
     if (!sessionId || !input.trim() || sending) return;
@@ -323,9 +358,24 @@ export default function ChatbotScreen({ navigation }) {
         }, typingSpeed * index);
       });
 
+      const totalTypingDuration = typingSpeed * chars.length;
+
+      // Auto voice playback once the bot has finished "typing"
+      if (autoVoiceEnabled && fullText) {
+        setTimeout(() => {
+          setSpeakingMessageId(botId);
+          playBotMessageVoice(fullText, {
+            onFinish: () => {
+              setSpeakingMessageId((currentId) =>
+                currentId === botId ? null : currentId
+              );
+            },
+          });
+        }, totalTypingDuration + 300);
+      }
+
       // Trigger any app action after the bot message has finished typing
       if (raw.app_action) {
-        const totalTypingDuration = typingSpeed * chars.length;
         setTimeout(() => {
           handleAppAction(raw.app_action, { emotion: reply.emotion });
         }, totalTypingDuration + 1500);
@@ -417,9 +467,24 @@ export default function ChatbotScreen({ navigation }) {
         }, typingSpeed * index);
       });
 
+      const totalTypingDuration = typingSpeed * chars.length;
+
+      // Auto voice playback for mood-based replies
+      if (autoVoiceEnabled && fullText) {
+        setTimeout(() => {
+          setSpeakingMessageId(botId);
+          playBotMessageVoice(fullText, {
+            onFinish: () => {
+              setSpeakingMessageId((currentId) =>
+                currentId === botId ? null : currentId
+              );
+            },
+          });
+        }, totalTypingDuration + 300);
+      }
+
       // Trigger any app action after the bot message has finished typing
       if (raw.app_action) {
-        const totalTypingDuration = typingSpeed * chars.length;
         setTimeout(() => {
           handleAppAction(raw.app_action, { emotion: reply.emotion });
         }, totalTypingDuration + 1500);
@@ -483,6 +548,16 @@ export default function ChatbotScreen({ navigation }) {
               moodOptions={moodOptions}
               showMoodOptions={showMoodOptions}
               onSelectMood={handleSelectMood}
+              onPressVoice={handleToggleVoice}
+              speakingMessageId={speakingMessageId}
+            />
+          </View>
+
+          <View style={styles.autoVoiceRow}>
+            <Text style={styles.autoVoiceLabel}>Auto voice</Text>
+            <Switch
+              value={autoVoiceEnabled}
+              onValueChange={setAutoVoiceEnabled}
             />
           </View>
 
