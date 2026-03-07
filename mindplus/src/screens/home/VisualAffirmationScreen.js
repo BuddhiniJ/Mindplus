@@ -48,6 +48,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const [started, setStarted] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
+  const [selectedTechnique, setSelectedTechnique] = useState("box");
   const bounceAnim = useMemo(() => new Animated.Value(0), []);
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
@@ -195,6 +196,10 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     }).start();
   };
 
+  const handleStop = () => {
+    setStarted(false);
+  };
+
   const emotionLabel = useMemo(() => {
     const raw = String(emotion || "").trim();
     if (!raw) return "Emotion";
@@ -231,6 +236,42 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     if (anxietyBand === "medium") return "box";
     return "grounding";
   }, [anxietyBand, isAnxiety]);
+
+  useEffect(() => {
+    if (anxietyExercise === "grounding") {
+      setSelectedTechnique("grounding");
+      return;
+    }
+    if (anxietyExercise === "box") {
+      setSelectedTechnique("box");
+      return;
+    }
+    setSelectedTechnique("affirmation");
+  }, [anxietyExercise]);
+
+  const techniqueOptions = useMemo(
+    () => [
+      {
+        key: "affirmation",
+        label: "Visual Affirmation",
+        icon: "🌟",
+        caption: "Gentle positive guidance",
+      },
+      {
+        key: "box",
+        label: "Box Breathing",
+        icon: "🫁",
+        caption: "Steady 4-step rhythm",
+      },
+      {
+        key: "grounding",
+        label: "Grounding",
+        icon: "🌿",
+        caption: "Anchor with your senses",
+      },
+    ],
+    []
+  );
 
   // Do not show this screen if anxiety is very low
   if (!FORCE_BOX_BREATHING && isAnxiety && anxietyBand === "low") {
@@ -291,14 +332,14 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           )}
         </View>
 
-        {anxietyExercise === "box" ? (
+        {selectedTechnique === "box" ? (
           <BoxBreathingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
             sessionSeconds={SESSION_SECONDS}
           />
-        ) : anxietyExercise === "grounding" ? (
+        ) : selectedTechnique === "grounding" ? (
           <GroundingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
@@ -329,17 +370,94 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           </Animated.View>
         )}
 
-        {/* Start/Restart button for the session */}
-        <View style={styles.ctaRow}>
-          <TouchableOpacity
-            style={[styles.startButton, started && styles.startButtonActive]}
-            activeOpacity={0.9}
-            onPress={handleStart}
-          >
-            <Text style={styles.startButtonText}>
-              {started ? "Restart 1:00" : "Start 1:00 Calm"}
+        {/* Start/Restart and Stop controls */}
+        <View style={styles.ctaPanel}>
+          <View style={styles.sessionStatusRow}>
+            <Text style={styles.sessionStatusText}>
+              {started ? "Session Active" : "Session Ready"}
             </Text>
-          </TouchableOpacity>
+            <Text style={styles.sessionStatusTime}>
+              {secondsRemaining}s left
+            </Text>
+          </View>
+
+          <View style={styles.ctaRow}>
+            <TouchableOpacity
+              style={[styles.startButton, started && styles.startButtonActive]}
+              activeOpacity={0.9}
+              onPress={handleStart}
+            >
+              <Text style={styles.startButtonText}>
+                {started ? "↻ Restart 1:00" : "▶ Start 1:00 Calm"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.stopButton, !started && styles.stopButtonDisabled]}
+              activeOpacity={0.9}
+              onPress={handleStop}
+              disabled={!started}
+            >
+              <Text
+                style={[
+                  styles.stopButtonText,
+                  !started && styles.stopButtonTextDisabled,
+                ]}
+              >
+                ⏹ Stop
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.techniqueCard}>
+          <View style={styles.techniqueHeaderRow}>
+            <Text style={styles.techniqueTitle}>
+              Try Other Coping Techniques
+            </Text>
+            <Text style={styles.techniqueHeaderIcon}>🎛️</Text>
+          </View>
+          <Text style={styles.techniqueSubtitle}>
+            Pick the support style that feels best right now.
+          </Text>
+
+          {techniqueOptions.map((option) => {
+            const isActive = selectedTechnique === option.key;
+            return (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.techniqueButton,
+                  isActive && styles.techniqueButtonActive,
+                ]}
+                activeOpacity={0.88}
+                onPress={() => setSelectedTechnique(option.key)}
+              >
+                <Text style={styles.techniqueButtonIcon}>{option.icon}</Text>
+                <View style={styles.techniqueTextWrap}>
+                  <Text
+                    style={[
+                      styles.techniqueButtonLabel,
+                      isActive && styles.techniqueButtonLabelActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.techniqueButtonCaption,
+                      isActive && styles.techniqueButtonCaptionActive,
+                    ]}
+                  >
+                    {option.caption}
+                  </Text>
+                </View>
+                {isActive ? (
+                  <Text style={styles.techniqueSelected}>Selected</Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Emotion-specific breathing tip */}
@@ -404,9 +522,37 @@ const styles = StyleSheet.create({
     color: "#374151",
     lineHeight: 22,
   },
-  ctaRow: {
+  ctaPanel: {
     marginTop: 6,
     marginBottom: 12,
+    backgroundColor: "#F8FAFF",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    borderRadius: 16,
+    padding: 12,
+  },
+  sessionStatusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sessionStatusText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sessionStatusTime: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  ctaRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   strategyCard: {
     backgroundColor: "#FFFFFF",
@@ -482,11 +628,91 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: "600",
   },
+  techniqueCard: {
+    backgroundColor: "#F8FAFF",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#D1E4FF",
+  },
+  techniqueHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  techniqueTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  techniqueHeaderIcon: {
+    fontSize: 18,
+  },
+  techniqueSubtitle: {
+    fontSize: 13,
+    color: "#475569",
+    marginBottom: 10,
+  },
+  techniqueButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDEAFE",
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  techniqueButtonActive: {
+    borderColor: "#60A5FA",
+    backgroundColor: "#EFF6FF",
+    shadowColor: "#60A5FA",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  techniqueButtonIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  techniqueTextWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  techniqueButtonLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 2,
+  },
+  techniqueButtonLabelActive: {
+    color: "#1D4ED8",
+  },
+  techniqueButtonCaption: {
+    fontSize: 12,
+    color: "#64748B",
+  },
+  techniqueButtonCaptionActive: {
+    color: "#334155",
+  },
+  techniqueSelected: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   startButton: {
     backgroundColor: "#3B82F6",
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
     shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -499,8 +725,31 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: "#FFFFFF",
     fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 0.4,
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+  stopButton: {
+    width: 120,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    paddingVertical: 16,
+  },
+  stopButtonDisabled: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#E2E8F0",
+  },
+  stopButtonText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#475569",
+    letterSpacing: 0.2,
+  },
+  stopButtonTextDisabled: {
+    color: "#94A3B8",
   },
   footerNote: {
     marginTop: 4,
