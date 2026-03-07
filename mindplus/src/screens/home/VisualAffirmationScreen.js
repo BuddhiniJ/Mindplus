@@ -264,7 +264,17 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         </View>
 
         <View style={styles.strategyCard}>
-          <Text style={styles.strategyTitle}>Coping Strategy</Text>
+          <View style={styles.strategyGlow} />
+
+          <View style={styles.strategyTopRow}>
+            <View style={styles.strategyBadge}>
+              <Text style={styles.strategyBadgeText}>PERSONALIZED</Text>
+            </View>
+            <Text style={styles.strategyEmoji}>💡</Text>
+          </View>
+
+          <Text style={styles.strategyTitle}>Your Coping Strategy</Text>
+          <Text style={styles.strategyLead}>Take this one small step now:</Text>
 
           {copingLoading ? (
             <Text style={styles.strategyTextMuted}>
@@ -400,31 +410,76 @@ const styles = StyleSheet.create({
   },
   strategyCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 12,
+    position: "relative",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  strategyGlow: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#DBEAFE",
+    top: -58,
+    right: -48,
+    opacity: 0.75,
+  },
+  strategyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  strategyBadge: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  strategyBadgeText: {
+    fontSize: 11,
+    color: "#1D4ED8",
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  strategyEmoji: {
+    fontSize: 20,
   },
   strategyTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "800",
     color: "#0F172A",
+    marginBottom: 6,
+  },
+  strategyLead: {
+    fontSize: 13,
+    color: "#1D4ED8",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
     marginBottom: 10,
   },
   strategyText: {
-    fontSize: 15,
-    color: "#111827",
-    lineHeight: 22,
+    fontSize: 16,
+    color: "#0F172A",
+    lineHeight: 24,
     fontWeight: "600",
   },
   strategyTextMuted: {
     fontSize: 14,
-    color: "#4B5563",
-    lineHeight: 20,
+    color: "#475569",
+    lineHeight: 21,
     fontWeight: "600",
   },
   startButton: {
