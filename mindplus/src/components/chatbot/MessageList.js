@@ -76,8 +76,8 @@ export default function MessageList({
                 isUser
                   ? styles.userBubble
                   : isCritical
-                  ? styles.criticalBubble
-                  : styles.botBubble,
+                    ? styles.criticalBubble
+                    : styles.botBubble,
               ]}
             >
               <Text
@@ -121,9 +121,8 @@ export default function MessageList({
                         onPress={() => onSelectMood && onSelectMood(opt)}
                         style={styles.promptChip}
                       >
-                        <Text style={styles.promptChipText}>
-                          {opt.emoji} {opt.label}
-                        </Text>
+                        <Text style={styles.promptChipText}>{opt.emoji}</Text>
+                        <Text style={styles.promptChipText}>{opt.label}</Text>
                       </Pressable>
                     ))}
                   </Animated.View>
