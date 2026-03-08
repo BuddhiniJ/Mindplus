@@ -66,6 +66,27 @@ const STATUS_THEME = {
 };
 
 const QUICK_COMMANDS = [
+  // Core wellbeing flows
+  {
+    id: "home_dashboard",
+    label: "Go to home dashboard",
+    description: "Overview of your wellbeing and shortcuts.",
+    appAction: {
+      action: "navigate",
+      target: "home_dashboard",
+    },
+  },
+  {
+    id: "heatmap",
+    label: "View emotion heatmap",
+    description: "See your stress and emotion patterns over time.",
+    appAction: {
+      action: "navigate",
+      target: "heatmap",
+    },
+  },
+
+  // Soundscapes & calming
   {
     id: "soft_rain",
     label: "Play soft rain",
@@ -84,6 +105,15 @@ const QUICK_COMMANDS = [
       action: "navigate",
       target: "soundscape",
       sound: "forest",
+    },
+  },
+  {
+    id: "open_soundscapes",
+    label: "Open soundscapes",
+    description: "Go to the full soundscape library.",
+    appAction: {
+      action: "navigate",
+      target: "soundscape",
     },
   },
   {
@@ -114,6 +144,8 @@ const QUICK_COMMANDS = [
       target: "meditation",
     },
   },
+
+  // Coping & strategies
   {
     id: "coping_tips",
     label: "Show coping strategies",
@@ -123,24 +155,44 @@ const QUICK_COMMANDS = [
       target: "stress_tips",
     },
   },
+
+  // Profile & menu
   {
-    id: "log_mood",
-    label: "Log today's mood",
-    description: "Jump to the daily check-in screen.",
+    id: "view_profile",
+    label: "Open my profile",
+    description: "View or edit your personal details.",
     appAction: {
       action: "navigate",
-      target: "mood_tracker",
-      mode: "log_today",
+      target: "profile",
+    },
+  },
+
+  // Voice features
+  {
+    id: "voice_recorder",
+    label: "Open voice journal",
+    description: "Record a voice note about how you feel.",
+    appAction: {
+      action: "navigate",
+      target: "voice_recorder",
     },
   },
   {
-    id: "mood_history",
-    label: "View mood history",
-    description: "See your overall emotion history.",
+    id: "listening_history",
+    label: "View listening history",
+    description: "See past recordings and sessions.",
     appAction: {
       action: "navigate",
-      target: "mood_tracker",
-      mode: "history",
+      target: "history",
+    },
+  },
+  {
+    id: "community",
+    label: "Open community",
+    description: "Go to the peer community space.",
+    appAction: {
+      action: "navigate",
+      target: "community",
     },
   },
 ];
@@ -272,6 +324,57 @@ export default function ChatbotScreen({ navigation }) {
         } else {
           navigation.navigate("OverallEmotionScreen");
         }
+        return;
+      }
+
+      // Home dashboard
+      if (action === "navigate" && target === "home_dashboard") {
+        navigation.navigate("HomeDashboardScreen");
+        return;
+      }
+
+      // Emotion heatmap
+      if (action === "navigate" && target === "heatmap") {
+        navigation.navigate("HeatmapScreen");
+        return;
+      }
+
+      // Profile
+      if (action === "navigate" && target === "profile") {
+        navigation.navigate("UserProfileScreen");
+        return;
+      }
+
+      // Main menu
+      if (action === "navigate" && target === "menu") {
+        navigation.navigate("MenuScreen");
+        return;
+      }
+
+      // Voice features
+      if (action === "navigate" && target === "voice_recorder") {
+        navigation.navigate("VoiceRecorderScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "stress_mind_map") {
+        navigation.navigate("StressMindMap");
+        return;
+      }
+
+      if (action === "navigate" && target === "history") {
+        navigation.navigate("HistoryScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "community") {
+        navigation.navigate("CommunityScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "voice_chat") {
+        navigation.navigate("ChatScreen");
+        return;
       }
     } catch (e) {
       console.log("Failed to handle app action", e);
