@@ -147,15 +147,19 @@ export default function MessageList({
                 msg.meta.techniques &&
                 msg.meta.techniques.length > 0 && (
                   <View style={styles.techniquesRow}>
-                    {msg.meta.techniques.map((t) => (
-                      <Pressable
-                        key={t}
-                        onPress={() => onSelectTechnique(t)}
-                        style={styles.techChip}
-                      >
-                        <Text style={styles.techChipText}>{t}</Text>
-                      </Pressable>
-                    ))}
+                    {[...msg.meta.techniques]
+                      .sort((a, b) => a.length - b.length)
+                      .map((t, index) => (
+                        <Pressable
+                          key={t}
+                          onPress={() => onSelectTechnique(t)}
+                          style={styles.techChip}
+                        >
+                          <Text style={styles.techChipText}>
+                            {index + 1}. {t}
+                          </Text>
+                        </Pressable>
+                      ))}
                   </View>
                 )}
 
