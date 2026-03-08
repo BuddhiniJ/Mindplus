@@ -303,14 +303,6 @@ export default function HelpfulResourcesSection({
                 >
                   <Text style={styles.resourcePrimaryButtonText}>View PDF</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.resourceSecondaryButton}
-                  onPress={() => handleOpenUrl(item.url)}
-                >
-                  <Text style={styles.resourceSecondaryButtonText}>
-                    Download PDF
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
           ))}
