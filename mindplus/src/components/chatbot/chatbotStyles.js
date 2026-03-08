@@ -17,12 +17,17 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
   header: {
-    paddingTop: 10,
-    paddingBottom: 18,
+    paddingTop: 5,
+    paddingBottom: 5,
     paddingHorizontal: 20,
     backgroundColor: "#3B82F6",
     borderBottomLeftRadius: 34,
     borderBottomRightRadius: 34,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   headerRow: {
     flexDirection: "row",
@@ -39,7 +44,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 10,
     backgroundColor: "#ffffffff",
-    marginBottom: 8,
+    marginBottom: 0,
   },
   backContent: {
     flexDirection: "row",
@@ -62,34 +67,46 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginTop: 4,
   },
+  settingsButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EEF2FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 0,
+  },
   dailyQuoteCard: {
     marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 2,
+    marginBottom: 0,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 2,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#000000",
     borderWidth: 1,
     borderColor: "#BFDBFE",
   },
   dailyQuoteLabel: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "800",
     color: "#3B82F6",
-    marginBottom: 4,
+    marginBottom: 2,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    marginLeft: 100,
+    marginTop: 2,
   },
   dailyQuoteText: {
     fontSize: 14,
-    color: "#0F172A",
+    color: "#ffffff",
     lineHeight: 20,
+    marginLeft: 5,
   },
   dailyQuoteAuthor: {
-    marginTop: 4,
+    marginTop: -2,
     fontSize: 12,
-    color: "#64748B",
+    color: "#6a6d72",
     fontStyle: "italic",
   },
   resourcesCard: {
@@ -288,7 +305,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 40,
-    marginRight: 12,
+    marginRight: 20,
   },
   chatArea: {
     flex: 1,
@@ -535,9 +552,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   statusCard: {
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 10,
+    marginHorizontal: 18,
+    marginTop: 4,
+    marginBottom: 2,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12, // slightly bigger, modern rounded corners
@@ -565,7 +582,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   statusPercentText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
     color: "#ffffffff",
   },
@@ -738,6 +755,37 @@ const styles = StyleSheet.create({
   callNowButtonIcon: {
     marginRight: 8,
     fontSize: 16,
+  },
+
+  /* =======================
+     START NOW BUTTON (TECHNIQUE)
+  ======================= */
+  startNowButton: {
+    marginTop: 18,
+    paddingVertical: 13,
+    borderRadius: 18,
+    backgroundColor: "#3B82F6",
+    alignItems: "center",
+
+    shadowColor: "#1D4ED8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  startNowButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+  },
+
+  startNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    fontFamily: "System",
   },
   messageRow: {
     flexDirection: "row",

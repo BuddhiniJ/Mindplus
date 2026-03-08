@@ -9,7 +9,7 @@ const QUOTES = [
   },
   {
     text: "You’ve already survived 100% of your hardest days.",
-    author: "Unknown",
+    author: "MindPlus",
   },
   {
     text: "Rest is not a reward. It’s a part of the journey.",
@@ -17,7 +17,7 @@ const QUOTES = [
   },
   {
     text: "You don’t have to do it all today. Just do the next right thing.",
-    author: "Unknown",
+    author: "MindPlus",
   },
   {
     text: "Your feelings are valid, and they won’t last forever.",
@@ -25,7 +25,7 @@ const QUOTES = [
   },
   {
     text: "Progress is progress, no matter how small.",
-    author: "Unknown",
+    author: "MindPlus",
   },
   {
     text: "It’s okay to ask for help. You’re not alone in this.",
@@ -69,7 +69,7 @@ export async function getTodayQuote() {
   try {
     await AsyncStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ date: todayKey, index })
+      JSON.stringify({ date: todayKey, index }),
     );
   } catch (error) {
     console.log("Failed to store daily quote", error);
