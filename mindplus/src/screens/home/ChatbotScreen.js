@@ -266,6 +266,7 @@ export default function ChatbotScreen({ navigation }) {
   const [showCommands, setShowCommands] = useState(false);
   const [showResources, setShowResources] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [resourcesMeta, setResourcesMeta] = useState(null);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -1024,6 +1025,14 @@ export default function ChatbotScreen({ navigation }) {
     overallStatus: lastStatusMeta?.overallStatus,
     stressLevel: lastStatusMeta?.stressLevel,
   });
+
+  const handleOpenResources = (meta) => {
+    const targetMeta = meta || lastStatusMeta;
+    if (!targetMeta) return;
+    setResourcesMeta(targetMeta);
+    setShowResources(true);
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.container}>
@@ -1031,25 +1040,6 @@ export default function ChatbotScreen({ navigation }) {
           onBack={() => navigation.goBack()}
           onSettings={() => setShowSettingsPanel(true)}
         />
-
-        <ChatStatusCard
-          statusTheme={statusTheme}
-          overallLabel={overallLabel}
-          stressPercent={stressPercent}
-        />
-
-        {lastStatusMeta && (
-          <View style={styles.commandsRow}>
-            <TouchableOpacity
-              style={styles.commandsButton}
-              onPress={() => setShowResources((prev) => !prev)}
-            >
-              <Text style={styles.commandsButtonText}>
-                View helpful resources
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {dailyQuote && (
           <View style={styles.dailyQuoteCard}>
@@ -1060,6 +1050,12 @@ export default function ChatbotScreen({ navigation }) {
             ) : null}
           </View>
         )}
+
+        <ChatStatusCard
+          statusTheme={statusTheme}
+          overallLabel={overallLabel}
+          stressPercent={stressPercent}
+        />
 
         <Modal
           visible={showCommands}
@@ -1166,11 +1162,13 @@ export default function ChatbotScreen({ navigation }) {
               </Text>
 
               <ScrollView style={styles.commandsList}>
-                {lastStatusMeta && (
+                {(resourcesMeta || lastStatusMeta) && (
                   <HelpfulResourcesSection
-                    emotion={lastStatusMeta.emotion}
-                    stressLevel={lastStatusMeta.stressLevel}
-                    overallStatus={lastStatusMeta.overallStatus}
+                    emotion={(resourcesMeta || lastStatusMeta).emotion}
+                    stressLevel={(resourcesMeta || lastStatusMeta).stressLevel}
+                    overallStatus={
+                      (resourcesMeta || lastStatusMeta).overallStatus
+                    }
                   />
                 )}
               </ScrollView>
@@ -1302,6 +1300,7 @@ export default function ChatbotScreen({ navigation }) {
               onSelectMood={handleSelectMood}
               onPressVoice={handleToggleVoice}
               speakingMessageId={speakingMessageId}
+              onPressHelpfulResources={handleOpenResources}
             />
           </View>
 
