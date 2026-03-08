@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TextInput,
   Animated,
+  Alert,
 } from "react-native";
 import { TECHNIQUE_DETAILS } from "../../components/chatbot/TechniqueDetailCard";
 
@@ -1437,8 +1438,47 @@ export default function TechniquePracticeScreen({ route, navigation }) {
 
   const normalized = normalizeTechnique(technique);
 
+  const [completed, setCompleted] = useState(false);
+  const completedRef = useRef(false);
+
+  const handleDone = () => {
+    completedRef.current = true;
+    setCompleted(true);
+    navigation.goBack();
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (completedRef.current) {
+        return;
+      }
+
+      e.preventDefault();
+
+      Alert.alert(
+        "Leave this exercise?",
+        "You didn't finish this task. This will be tracked as not engaged.",
+        [
+          {
+            text: "Stay here",
+            style: "cancel",
+          },
+          {
+            text: "Leave anyway",
+            style: "destructive",
+            onPress: () => {
+              navigation.dispatch(e.data.action);
+            },
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const renderBody = () => {
-    const commonProps = { onDone: () => navigation.goBack() };
+    const commonProps = { onDone: handleDone };
 
     if (normalized.includes("5-4-3-2-1"))
       return <GroundingTechnique {...commonProps} />;
@@ -1519,7 +1559,7 @@ export default function TechniquePracticeScreen({ route, navigation }) {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.doneButton}
-          onPress={() => navigation.goBack()}
+          onPress={handleDone}
           activeOpacity={0.85}
         >
           <Text style={styles.doneButtonText}>I'm done for now</Text>
