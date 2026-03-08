@@ -33,6 +33,7 @@ import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
 import MessageList from "../../components/chatbot/MessageList";
 import PromptChips from "../../components/chatbot/PromptChips";
 import TechniqueDetailCard from "../../components/chatbot/TechniqueDetailCard";
+import HelpfulResourcesSection from "../../components/chatbot/HelpfulResourcesSection";
 import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 import { getTodayQuote } from "../../utils/dailyMotivation";
@@ -258,6 +259,7 @@ export default function ChatbotScreen({ navigation }) {
   const [alarmSound, setAlarmSound] = useState(null);
   const [autoContactTriggered, setAutoContactTriggered] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
+  const [showResources, setShowResources] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -947,6 +949,17 @@ export default function ChatbotScreen({ navigation }) {
               View available commands
             </Text>
           </TouchableOpacity>
+
+          {lastStatusMeta && (
+            <TouchableOpacity
+              style={[styles.commandsButton, { marginTop: 6 }]}
+              onPress={() => setShowResources((prev) => !prev)}
+            >
+              <Text style={styles.commandsButtonText}>
+                View helpful resources
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {dailyQuote && (
@@ -995,6 +1008,40 @@ export default function ChatbotScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.commandsCloseButton}
                 onPress={() => setShowCommands(false)}
+              >
+                <Text style={styles.commandsCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showResources}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowResources(false)}
+        >
+          <View style={styles.commandsModalOverlay}>
+            <View style={styles.commandsModalCard}>
+              <Text style={styles.commandsModalTitle}>Helpful resources</Text>
+              <Text style={styles.commandsModalSubtitle}>
+                Based on your recent stress level and emotions, here are some
+                guides, videos, and quick tips you can view or save for later.
+              </Text>
+
+              <ScrollView style={styles.commandsList}>
+                {lastStatusMeta && (
+                  <HelpfulResourcesSection
+                    emotion={lastStatusMeta.emotion}
+                    stressLevel={lastStatusMeta.stressLevel}
+                    overallStatus={lastStatusMeta.overallStatus}
+                  />
+                )}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.commandsCloseButton}
+                onPress={() => setShowResources(false)}
               >
                 <Text style={styles.commandsCloseButtonText}>Close</Text>
               </TouchableOpacity>
