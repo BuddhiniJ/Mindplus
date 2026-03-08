@@ -22,6 +22,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
+import { loadChatConversation, appendChatMessages } from "../../services/chatHistoryService";
 import {
   playBotMessageVoice,
   stopBotMessageVoice,
@@ -239,6 +240,7 @@ function getStressPercent({ overallStatus, stressLevel } = {}) {
 
 export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
@@ -387,7 +389,11 @@ export default function ChatbotScreen({ navigation }) {
     const init = async () => {
       try {
         const user = auth.currentUser;
+        let resolvedUserId = null;
+
         if (user) {
+          resolvedUserId = user.uid;
+          setUserId(user.uid);
           const profileRef = doc(db, "users", user.uid, "profile", "basic");
           const profileSnap = await getDoc(profileRef);
 
@@ -403,56 +409,76 @@ export default function ChatbotScreen({ navigation }) {
 
           setUserLabel(nickname || user.displayName || "You");
         }
+        // Attempt to restore an existing chat conversation if the user is logged in
+        let restored = null;
+        if (resolvedUserId) {
+          restored = await loadChatConversation(resolvedUserId);
+        }
 
-        const start = await startChatSession();
-        setSessionId(start.session_id);
+        if (restored && restored.messages && restored.messages.length > 0) {
+          setMessages(restored.messages);
+          setSessionId(restored.sessionId || null);
+        } else {
+          const start = await startChatSession();
+          setSessionId(start.session_id);
 
-        // Seed the conversation with the mood check-in prompt
-        if (start.initial_message) {
-          setInitialPrompt(start.initial_message);
-          setMoodOptions(start.mood_options || []);
-          setShowMoodOptions(false);
+          // Seed the conversation with the mood check-in prompt
+          if (start.initial_message) {
+            setInitialPrompt(start.initial_message);
+            setMoodOptions(start.mood_options || []);
+            setShowMoodOptions(false);
 
-          const fullText = start.initial_message || "";
-          const botId = `${Date.now()}-init`;
+            const fullText = start.initial_message || "";
+            const createdAt = Date.now();
+            const botId = `${createdAt}-init`;
 
-          // Add an empty bot message and progressively fill it, like other replies.
-          // Mark it as a mood prompt so the MessageList can render emoji options
-          // inside the same message bubble.
-          setMessages((prev) => [
-            ...prev,
-            {
+            const uiMessage = {
               id: botId,
               from: "bot",
               text: "",
               label: "MindPlus Bot",
               isMoodPrompt: true,
-            },
-          ]);
+              timestamp: createdAt,
+            };
 
-          const typingSpeed = 18; // ms per character
-          const chars = fullText.split("");
-          chars.forEach((_, index) => {
+            // Add an empty bot message and progressively fill it, like other replies.
+            // Mark it as a mood prompt so the MessageList can render emoji options
+            // inside the same message bubble.
+            setMessages((prev) => [...prev, uiMessage]);
+
+            // Persist the full initial message text for this user (if logged in)
+            if (resolvedUserId && fullText) {
+              const storedMessage = {
+                ...uiMessage,
+                text: fullText,
+              };
+              appendChatMessages(resolvedUserId, [storedMessage], start.session_id);
+            }
+
+            const typingSpeed = 18; // ms per character
+            const chars = fullText.split("");
+            chars.forEach((_, index) => {
+              setTimeout(() => {
+                const nextText = fullText.slice(0, index + 1);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === botId
+                      ? {
+                          ...m,
+                          text: nextText,
+                        }
+                      : m
+                  )
+                );
+              }, typingSpeed * index);
+            });
+
+            // After the typing effect finishes, fade in the mood options
+            const totalDuration = typingSpeed * chars.length + 150;
             setTimeout(() => {
-              const nextText = fullText.slice(0, index + 1);
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === botId
-                    ? {
-                        ...m,
-                        text: nextText,
-                      }
-                    : m
-                )
-              );
-            }, typingSpeed * index);
-          });
-
-          // After the typing effect finishes, fade in the mood options
-          const totalDuration = typingSpeed * chars.length + 150;
-          setTimeout(() => {
-            setShowMoodOptions(true);
-          }, totalDuration);
+              setShowMoodOptions(true);
+            }, totalDuration);
+          }
         }
       } catch (err) {
         console.log("Failed to start chatbot session", err);
@@ -617,6 +643,7 @@ export default function ChatbotScreen({ navigation }) {
 
     // Add a supportive bot response so the user feels heard
     const botId = `${Date.now()}-ack`;
+    const createdAt = Date.now();
     const text =
       "Thank you for letting me know you're here. I'm still with you. If at any moment you feel unsafe, please call 1926 or your emergency contact immediately.";
 
@@ -627,8 +654,21 @@ export default function ChatbotScreen({ navigation }) {
         from: "bot",
         text,
         label: "MindPlus Bot",
+        timestamp: createdAt,
       },
     ]);
+
+    if (userId) {
+      appendChatMessages(userId, [
+        {
+          id: botId,
+          from: "bot",
+          text,
+          label: "MindPlus Bot",
+          timestamp: createdAt,
+        },
+      ], sessionId);
+    }
 
     // Optionally speak this reassurance if auto voice is on
     if (autoVoiceEnabled) {
@@ -678,13 +718,27 @@ export default function ChatbotScreen({ navigation }) {
     // Clear the input after sending (for both typed and voice messages).
     setInput("");
 
+    const createdAt = Date.now();
     const userMessage = {
-      id: Date.now().toString(),
+      id: createdAt.toString(),
       from: "user",
       text,
       label: userLabel,
+      timestamp: createdAt,
     };
     setMessages((prev) => [...prev, userMessage]);
+
+    if (userId) {
+      appendChatMessages(
+        userId,
+        [
+          {
+            ...userMessage,
+          },
+        ],
+        sessionId
+      );
+    }
 
     try {
       setSending(true);
@@ -715,7 +769,8 @@ export default function ChatbotScreen({ navigation }) {
       setBotTyping(false);
 
       const fullText = reply.botMessage || "";
-      const botId = `${Date.now()}-bot`;
+      const botCreatedAt = Date.now();
+      const botId = `${botCreatedAt}-bot`;
       const baseMeta = {
         emotion: reply.emotion,
         stressLevel: reply.stressLevel,
@@ -726,16 +781,24 @@ export default function ChatbotScreen({ navigation }) {
       };
 
       // Add an empty bot message and progressively fill it character by character
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: botId,
-          from: "bot",
-          text: "",
-          label: "MindPlus Bot",
-          meta: baseMeta,
-        },
-      ]);
+      const uiBotMessage = {
+        id: botId,
+        from: "bot",
+        text: "",
+        label: "MindPlus Bot",
+        meta: baseMeta,
+        timestamp: botCreatedAt,
+      };
+
+      setMessages((prev) => [...prev, uiBotMessage]);
+
+      if (userId && fullText) {
+        const storedBotMessage = {
+          ...uiBotMessage,
+          text: fullText,
+        };
+        appendChatMessages(userId, [storedBotMessage], sessionId);
+      }
 
       const typingSpeed = 18; // ms per character
       const chars = fullText.split("");
@@ -798,13 +861,27 @@ export default function ChatbotScreen({ navigation }) {
     if (!sessionId || sending) return;
     const text = `${option.emoji} ${option.label}`;
 
+    const createdAt = Date.now();
     const userMessage = {
-      id: Date.now().toString(),
+      id: createdAt.toString(),
       from: "user",
       text,
       label: userLabel,
+      timestamp: createdAt,
     };
     setMessages((prev) => [...prev, userMessage]);
+
+    if (userId) {
+      appendChatMessages(
+        userId,
+        [
+          {
+            ...userMessage,
+          },
+        ],
+        sessionId
+      );
+    }
 
     try {
       setSending(true);
@@ -824,7 +901,8 @@ export default function ChatbotScreen({ navigation }) {
       setBotTyping(false);
 
       const fullText = reply.botMessage || "";
-      const botId = `${Date.now()}-bot`;
+      const botCreatedAt = Date.now();
+      const botId = `${botCreatedAt}-bot`;
       const baseMeta = {
         emotion: reply.emotion,
         stressLevel: reply.stressLevel,
@@ -835,16 +913,24 @@ export default function ChatbotScreen({ navigation }) {
       };
 
       // Add an empty bot message and progressively fill it character by character
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: botId,
-          from: "bot",
-          text: "",
-          label: "MindPlus Bot",
-          meta: baseMeta,
-        },
-      ]);
+      const uiBotMessage = {
+        id: botId,
+        from: "bot",
+        text: "",
+        label: "MindPlus Bot",
+        meta: baseMeta,
+        timestamp: botCreatedAt,
+      };
+
+      setMessages((prev) => [...prev, uiBotMessage]);
+
+      if (userId && fullText) {
+        const storedBotMessage = {
+          ...uiBotMessage,
+          text: fullText,
+        };
+        appendChatMessages(userId, [storedBotMessage], sessionId);
+      }
 
       const typingSpeed = 18; // ms per character
       const chars = fullText.split("");
