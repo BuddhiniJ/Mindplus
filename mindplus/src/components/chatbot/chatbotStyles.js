@@ -17,12 +17,17 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
   header: {
-    paddingTop: 10,
-    paddingBottom: 18,
+    paddingTop: 5,
+    paddingBottom: 5,
     paddingHorizontal: 20,
     backgroundColor: "#3B82F6",
     borderBottomLeftRadius: 34,
     borderBottomRightRadius: 34,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   headerRow: {
     flexDirection: "row",
@@ -39,7 +44,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 10,
     backgroundColor: "#ffffffff",
-    marginBottom: 8,
+    marginBottom: 0,
   },
   backContent: {
     flexDirection: "row",
@@ -61,6 +66,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "rgba(255,255,255,0.9)",
     marginTop: 4,
+  },
+  settingsButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EEF2FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 0,
   },
   dailyQuoteCard: {
     marginHorizontal: 16,
@@ -288,7 +302,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 40,
-    marginRight: 12,
+    marginRight: 20,
   },
   chatArea: {
     flex: 1,
@@ -535,9 +549,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   statusCard: {
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 10,
+    marginHorizontal: 18,
+    marginTop: 4,
+    marginBottom: 2,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12, // slightly bigger, modern rounded corners
@@ -565,7 +579,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   statusPercentText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
     color: "#ffffffff",
   },

@@ -22,7 +22,10 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
-import { loadChatConversation, appendChatMessages } from "../../services/chatHistoryService";
+import {
+  loadChatConversation,
+  appendChatMessages,
+} from "../../services/chatHistoryService";
 import {
   playBotMessageVoice,
   stopBotMessageVoice,
@@ -262,6 +265,7 @@ export default function ChatbotScreen({ navigation }) {
   const [autoContactTriggered, setAutoContactTriggered] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [showResources, setShowResources] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -452,7 +456,11 @@ export default function ChatbotScreen({ navigation }) {
                 ...uiMessage,
                 text: fullText,
               };
-              appendChatMessages(resolvedUserId, [storedMessage], start.session_id);
+              appendChatMessages(
+                resolvedUserId,
+                [storedMessage],
+                start.session_id,
+              );
             }
 
             const typingSpeed = 18; // ms per character
@@ -467,8 +475,8 @@ export default function ChatbotScreen({ navigation }) {
                           ...m,
                           text: nextText,
                         }
-                      : m
-                  )
+                      : m,
+                  ),
                 );
               }, typingSpeed * index);
             });
@@ -508,7 +516,7 @@ export default function ChatbotScreen({ navigation }) {
             shouldPlay: false,
             isLooping: false,
             volume: 1.0,
-          }
+          },
         );
         setAlarmSound(sound);
       } catch (e) {
@@ -535,7 +543,7 @@ export default function ChatbotScreen({ navigation }) {
       // Play an audible alert using the existing TTS pipeline
       playBotMessageVoice(
         "Critical alert. Your message indicates a serious concern. Help is available immediately.",
-        {}
+        {},
       );
 
       // Play an additional alarm tone to grab attention (if loaded)
@@ -576,10 +584,7 @@ export default function ChatbotScreen({ navigation }) {
             // If a personal emergency contact exists, also prepare an SMS to them
             if (emergencyContact) {
               setTimeout(() => {
-                handleSmsNumber(
-                  emergencyContact,
-                  condition || "critical"
-                );
+                handleSmsNumber(emergencyContact, condition || "critical");
               }, 2000);
             }
           }
@@ -591,7 +596,7 @@ export default function ChatbotScreen({ navigation }) {
       Alert.alert(
         "⚠️ Critical Alert",
         "Your message indicates a serious concern. Help is available immediately.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     } catch (e) {
       console.log("Failed to trigger critical alert flow", e);
@@ -659,15 +664,19 @@ export default function ChatbotScreen({ navigation }) {
     ]);
 
     if (userId) {
-      appendChatMessages(userId, [
-        {
-          id: botId,
-          from: "bot",
-          text,
-          label: "MindPlus Bot",
-          timestamp: createdAt,
-        },
-      ], sessionId);
+      appendChatMessages(
+        userId,
+        [
+          {
+            id: botId,
+            from: "bot",
+            text,
+            label: "MindPlus Bot",
+            timestamp: createdAt,
+          },
+        ],
+        sessionId,
+      );
     }
 
     // Optionally speak this reassurance if auto voice is on
@@ -676,7 +685,7 @@ export default function ChatbotScreen({ navigation }) {
       playBotMessageVoice(text, {
         onFinish: () => {
           setSpeakingMessageId((currentId) =>
-            currentId === botId ? null : currentId
+            currentId === botId ? null : currentId,
           );
         },
       });
@@ -699,7 +708,7 @@ export default function ChatbotScreen({ navigation }) {
     playBotMessageVoice(message.text, {
       onFinish: () => {
         setSpeakingMessageId((currentId) =>
-          currentId === message.id ? null : currentId
+          currentId === message.id ? null : currentId,
         );
       },
     });
@@ -736,7 +745,7 @@ export default function ChatbotScreen({ navigation }) {
             ...userMessage,
           },
         ],
-        sessionId
+        sessionId,
       );
     }
 
@@ -812,8 +821,8 @@ export default function ChatbotScreen({ navigation }) {
                     ...m,
                     text: nextText,
                   }
-                : m
-            )
+                : m,
+            ),
           );
         }, typingSpeed * index);
       });
@@ -827,7 +836,7 @@ export default function ChatbotScreen({ navigation }) {
           playBotMessageVoice(fullText, {
             onFinish: () => {
               setSpeakingMessageId((currentId) =>
-                currentId === botId ? null : currentId
+                currentId === botId ? null : currentId,
               );
             },
           });
@@ -879,7 +888,7 @@ export default function ChatbotScreen({ navigation }) {
             ...userMessage,
           },
         ],
-        sessionId
+        sessionId,
       );
     }
 
@@ -944,8 +953,8 @@ export default function ChatbotScreen({ navigation }) {
                     ...m,
                     text: nextText,
                   }
-                : m
-            )
+                : m,
+            ),
           );
         }, typingSpeed * index);
       });
@@ -959,7 +968,7 @@ export default function ChatbotScreen({ navigation }) {
           playBotMessageVoice(fullText, {
             onFinish: () => {
               setSpeakingMessageId((currentId) =>
-                currentId === botId ? null : currentId
+                currentId === botId ? null : currentId,
               );
             },
           });
@@ -1018,7 +1027,10 @@ export default function ChatbotScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.container}>
-        <ChatHeader onBack={() => navigation.goBack()} />
+        <ChatHeader
+          onBack={() => navigation.goBack()}
+          onSettings={() => setShowSettingsPanel(true)}
+        />
 
         <ChatStatusCard
           statusTheme={statusTheme}
@@ -1026,27 +1038,18 @@ export default function ChatbotScreen({ navigation }) {
           stressPercent={stressPercent}
         />
 
-        <View style={styles.commandsRow}>
-          <TouchableOpacity
-            style={styles.commandsButton}
-            onPress={() => setShowCommands(true)}
-          >
-            <Text style={styles.commandsButtonText}>
-              View available commands
-            </Text>
-          </TouchableOpacity>
-
-          {lastStatusMeta && (
+        {lastStatusMeta && (
+          <View style={styles.commandsRow}>
             <TouchableOpacity
-              style={[styles.commandsButton, { marginTop: 6 }]}
+              style={styles.commandsButton}
               onPress={() => setShowResources((prev) => !prev)}
             >
               <Text style={styles.commandsButtonText}>
                 View helpful resources
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
 
         {dailyQuote && (
           <View style={styles.dailyQuoteCard}>
@@ -1094,6 +1097,53 @@ export default function ChatbotScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.commandsCloseButton}
                 onPress={() => setShowCommands(false)}
+              >
+                <Text style={styles.commandsCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Chatbot settings panel opened from header */}
+        <Modal
+          visible={showSettingsPanel}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setShowSettingsPanel(false)}
+        >
+          <View style={styles.commandsModalOverlay}>
+            <View style={styles.commandsModalCard}>
+              <Text style={styles.commandsModalTitle}>Chatbot settings</Text>
+              <Text style={styles.commandsModalSubtitle}>
+                Adjust how MindPlus Assistant behaves.
+              </Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.commandsButton,
+                  { alignSelf: "flex-start", marginBottom: 12 },
+                ]}
+                onPress={() => {
+                  setShowSettingsPanel(false);
+                  setShowCommands(true);
+                }}
+              >
+                <Text style={styles.commandsButtonText}>
+                  View available commands
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.autoVoiceRow}>
+                <Text style={styles.autoVoiceLabel}>Auto voice</Text>
+                <Switch
+                  value={autoVoiceEnabled}
+                  onValueChange={setAutoVoiceEnabled}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.commandsCloseButton, { marginTop: 16 }]}
+                onPress={() => setShowSettingsPanel(false)}
               >
                 <Text style={styles.commandsCloseButtonText}>Close</Text>
               </TouchableOpacity>
@@ -1185,7 +1235,7 @@ export default function ChatbotScreen({ navigation }) {
                     onPress={() =>
                       handleSmsNumber(
                         emergencyContact,
-                        criticalAlert?.condition || "critical"
+                        criticalAlert?.condition || "critical",
                       )
                     }
                   >
@@ -1252,14 +1302,6 @@ export default function ChatbotScreen({ navigation }) {
               onSelectMood={handleSelectMood}
               onPressVoice={handleToggleVoice}
               speakingMessageId={speakingMessageId}
-            />
-          </View>
-
-          <View style={styles.autoVoiceRow}>
-            <Text style={styles.autoVoiceLabel}>Auto voice</Text>
-            <Switch
-              value={autoVoiceEnabled}
-              onValueChange={setAutoVoiceEnabled}
             />
           </View>
 
