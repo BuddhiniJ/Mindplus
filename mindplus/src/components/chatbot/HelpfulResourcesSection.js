@@ -23,7 +23,7 @@ const PDF_RESOURCES = [
     title: "Doing What Matters in Times of Stress (WHO)",
     description:
       "A WHO self‑help guide with practical exercises to manage stress in difficult times.",
-    url: "https://www.who.int/docs/default-source/mental-health/doing-what-matters-in-times-of-stress.pdf",
+    url: "https://www.who.int/publications/i/item/9789240003927",
     emotions: ["stressed", "anxious", "sad"],
   },
   {
@@ -39,7 +39,7 @@ const PDF_RESOURCES = [
     title: "How to Manage and Reduce Stress",
     description:
       "A practical guide with simple steps to understand and reduce everyday stress.",
-    url: "https://www.mentalhealth.org.uk/sites/default/files/2022-08/how-to-manage-stress-guide.pdf",
+    url: "https://www.mentalhealth.org.uk/explore-mental-health/publications/how-manage-and-reduce-stress",
     emotions: ["stressed", "anxious"],
   },
   {
@@ -47,7 +47,7 @@ const PDF_RESOURCES = [
     title: "What Is Health Anxiety?",
     description:
       "A clear explanation of health anxiety and why worries about health can become overwhelming.",
-    url: "https://www.cci.health.wa.gov.au/~/media/CCI/Mental-Health-Professionals/Health-Anxiety/Health-Anxiety-Information-Sheet-01-What-is-Health-Anxiety.pdf",
+    url: "https://www.cci.health.wa.gov.au/Resources/Looking-After-Yourself/Health-Anxiety",
     emotions: ["anxious"],
   },
   {
@@ -55,7 +55,7 @@ const PDF_RESOURCES = [
     title: "What Is Anxiety?",
     description:
       "An overview of anxiety, common symptoms, and how it can affect your life.",
-    url: "https://www.cci.health.wa.gov.au/~/media/CCI/Mental-Health-Professionals/Anxiety/Anxiety-Information-Sheet-01-What-is-Anxiety.pdf",
+    url: "https://www.cci.health.wa.gov.au/Resources/Looking-After-Yourself/Anxiety",
     emotions: ["anxious", "stressed"],
   },
   {
@@ -63,31 +63,15 @@ const PDF_RESOURCES = [
     title: "What Is Depression?",
     description:
       "An introductory guide to understanding depression, its signs, and how it can be treated.",
-    url: "https://www.cci.health.wa.gov.au/~/media/CCI/Mental-Health-Professionals/Depression/Depression-Information-Sheet-01-What-is-Depression.pdf",
+    url: "https://www.cci.health.wa.gov.au/Resources/Looking-After-Yourself/Depression",
     emotions: ["sad"],
-  },
-  {
-    id: "ac_panic_attacks",
-    title: "Help for Panic Attacks",
-    description:
-      "Strategies from Anxiety Canada to understand and manage sudden waves of panic.",
-    url: "https://www.anxietycanada.com/sites/default/files/adult_hmpanic.pdf",
-    emotions: ["anxious"],
-  },
-  {
-    id: "ac_worry_time",
-    title: "Worry Time Worksheet",
-    description:
-      'A structured worksheet to contain worries by scheduling a specific daily "worry time".',
-    url: "https://www.anxietycanada.com/sites/default/files/WorryTime.pdf",
-    emotions: ["anxious", "stressed"],
   },
   {
     id: "ac_calm_breathing",
     title: "Calm Breathing Guide",
     description:
       "Step‑by‑step instructions from Anxiety Canada for calm breathing to ease anxiety.",
-    url: "https://www.anxietycanada.com/sites/default/files/CalmBreathing.pdf",
+    url: "https://www.anxietycanada.com/sites/default/files/calm_breathing.pdf",
     emotions: ["anxious", "stressed"],
   },
   {
@@ -95,7 +79,7 @@ const PDF_RESOURCES = [
     title: "How to Manage Stress (Mind)",
     description:
       "A guide from Mind with ideas for recognising, understanding, and managing stress.",
-    url: "https://www.mind.org.uk/media-a/2892/how-to-manage-stress-2019.pdf",
+    url: "https://www.mind.org.uk/information-support/types-of-mental-health-problems/stress/managing-stress/",
     emotions: ["stressed"],
   },
   {
@@ -103,7 +87,7 @@ const PDF_RESOURCES = [
     title: "How to Manage Anger",
     description:
       "Support from Mind on understanding anger and finding safer ways to express it.",
-    url: "https://www.mind.org.uk/media-a/2940/how-to-manage-anger-2018.pdf",
+    url: "https://www.mind.org.uk/information-support/types-of-mental-health-problems/anger/managing-anger/",
     emotions: ["angry", "stressed"],
   },
   {
@@ -111,7 +95,7 @@ const PDF_RESOURCES = [
     title: "How to Manage Anxiety",
     description:
       "Information and tips from Mind to help you manage anxiety and worry.",
-    url: "https://www.mind.org.uk/media-a/2902/how-to-manage-anxiety-2018.pdf",
+    url: "https://www.mind.org.uk/information-support/types-of-mental-health-problems/anxiety-and-panic-attacks/self-care/",
     emotions: ["anxious", "stressed"],
   },
   {
@@ -119,7 +103,7 @@ const PDF_RESOURCES = [
     title: "Managing Low Mood and Depression",
     description:
       "A Mind guide offering ideas for coping with low mood and depression.",
-    url: "https://www.mind.org.uk/media-a/2941/how-to-manage-low-mood-and-depression-2018.pdf",
+    url: "https://www.mind.org.uk/information-support/types-of-mental-health-problems/depression/self-care/",
     emotions: ["sad"],
   },
   {
@@ -127,7 +111,7 @@ const PDF_RESOURCES = [
     title: "Stress Management Tips (APA)",
     description:
       "Practical tips from the American Psychological Association on handling stress.",
-    url: "https://www.apa.org/topics/stress/tips.pdf",
+    url: "https://www.apa.org/topics/stress",
     emotions: ["stressed"],
   },
   {
@@ -135,23 +119,16 @@ const PDF_RESOURCES = [
     title: "Stress: Coping With Everyday Problems (NIMH)",
     description:
       "An NIMH booklet explaining stress, its effects, and healthy coping strategies.",
-    url: "https://www.nimh.nih.gov/sites/default/files/documents/health/publications/stress/stress.pdf",
+    url: "https://www.nimh.nih.gov/health/publications/stress",
     emotions: ["stressed", "anxious"],
   },
-  {
-    id: "nimh_anxiety_disorders",
-    title: "Anxiety Disorders (NIMH)",
-    description:
-      "Information from NIMH about different anxiety disorders and treatment options.",
-    url: "https://www.nimh.nih.gov/sites/default/files/documents/health/publications/anxiety-disorders/anxiety-disorders.pdf",
-    emotions: ["anxious"],
-  },
+
   {
     id: "nimh_depression_booklet",
     title: "Depression: What You Need to Know (NIMH)",
     description:
       "A booklet from NIMH that explains symptoms, causes, and treatments for depression.",
-    url: "https://www.nimh.nih.gov/sites/default/files/documents/health/publications/depression/depression.pdf",
+    url: "https://www.nimh.nih.gov/health/publications/depression",
     emotions: ["sad"],
   },
   {
@@ -159,17 +136,10 @@ const PDF_RESOURCES = [
     title: "Stress Management Worksheet",
     description:
       "A printable worksheet from Mental Health America to help you map out stressors and coping steps.",
-    url: "https://www.mhanational.org/sites/default/files/Stress%20Management%20Worksheet.pdf",
+    url: "https://www.mhanational.org/managing-stress-tips",
     emotions: ["stressed"],
   },
-  {
-    id: "mha_toolkit",
-    title: "Mental Health Toolkit (MHA)",
-    description:
-      "A toolkit of resources from Mental Health America to support your overall mental health.",
-    url: "https://www.mhanational.org/sites/default/files/Mental%20Health%20Toolkit.pdf",
-    emotions: ["stressed", "sad", "anxious"],
-  },
+
   {
     id: "unicef_support_child_covid",
     title: "Supporting Your Child During Difficult Times (UNICEF)",
@@ -183,18 +153,18 @@ const PDF_RESOURCES = [
 const VIDEO_RESOURCES = [
   {
     id: "guided_meditation",
-    title: "10‑Minute Guided Meditation for Stress Relief",
+    title: "10-Minute Guided Meditation for Stress Relief",
     description:
-      "A short, beginner‑friendly meditation to help your mind and body unwind.",
-    url: "https://www.youtube.com/results?search_query=10+minute+guided+meditation+for+stress+relief",
+      "A short, beginner-friendly meditation to help your mind and body unwind.",
+    url: "https://www.youtube.com/watch?v=inpok4MKVLM",
     emotions: ["stressed", "anxious"],
   },
   {
     id: "breathing_video",
     title: "Breathing Exercises for Anxiety",
     description:
-      "Follow‑along breathing to slow your heart rate and ease tension.",
-    url: "https://www.youtube.com/results?search_query=breathing+exercises+for+anxiety",
+      "Follow-along breathing to slow your heart rate and ease tension.",
+    url: "https://www.youtube.com/watch?v=odADwWzHR24",
     emotions: ["anxious", "stressed"],
   },
   {
@@ -202,7 +172,7 @@ const VIDEO_RESOURCES = [
     title: "Techniques to Cool Down When You Feel Angry",
     description:
       "Simple practices to release anger safely and soften intense emotions.",
-    url: "https://www.youtube.com/results?search_query=calming+techniques+for+anger",
+    url: "https://www.youtube.com/watch?v=BsVq5R_F6RA",
     emotions: ["angry"],
   },
   {
@@ -210,7 +180,7 @@ const VIDEO_RESOURCES = [
     title: "Short Motivational Talk for Low Mood",
     description:
       "A gentle reminder that you are not alone and that change is possible.",
-    url: "https://www.youtube.com/results?search_query=motivational+talk+when+you+feel+sad",
+    url: "https://www.youtube.com/watch?v=ZXsQAXx_ao0",
     emotions: ["sad", "neutral"],
   },
 ];
