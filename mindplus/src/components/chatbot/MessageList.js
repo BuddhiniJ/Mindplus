@@ -104,6 +104,20 @@ export default function MessageList({
                       {speakingMessageId === msg.id ? "Stop" : "Listen"}
                     </Text>
                   </Pressable>
+
+                  {msg.from === "bot" &&
+                    msg.meta &&
+                    (msg.meta.overallStatus || msg.meta.stressLevel) &&
+                    onPressHelpfulResources && (
+                      <Pressable
+                        style={[styles.commandsButton, { marginLeft: 8 }]}
+                        onPress={() => onPressHelpfulResources(msg.meta)}
+                      >
+                        <Text style={styles.commandsButtonText}>
+                          View resources
+                        </Text>
+                      </Pressable>
+                    )}
                 </View>
               )}
 
@@ -177,21 +191,7 @@ export default function MessageList({
                   </View>
                 )}
 
-              {msg.from === "bot" &&
-                msg.meta &&
-                (msg.meta.overallStatus || msg.meta.stressLevel) &&
-                onPressHelpfulResources && (
-                  <View style={{ marginTop: 8 }}>
-                    <Pressable
-                      style={styles.commandsButton}
-                      onPress={() => onPressHelpfulResources(msg.meta)}
-                    >
-                      <Text style={styles.commandsButtonText}>
-                        View helpful resources
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
+              {/* helpful-resources button now sits next to the Listen button in voiceRow */}
             </View>
           </View>
         );
@@ -210,7 +210,7 @@ export default function MessageList({
             <View style={styles.typingRow}>
               <ActivityIndicator size="small" color="#6B7280" />
               <Text style={styles.typingText}>
-                Thinking of the best way to respond…
+                Thinking of the best reply… 🤔
               </Text>
             </View>
           </View>

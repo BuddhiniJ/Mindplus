@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     maxWidth: 260,
   },
   messageBubble: {
-    maxWidth: "78%",
+    maxWidth: "75%",
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 15,
     color: "#111827",
+    fontWeight: "500",
   },
   metaContainer: {
     marginTop: 14,
@@ -463,12 +464,20 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 6,
     marginTop: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   techChip: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#FBCFE8",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   techChipText: {
     fontSize: 11,
@@ -499,6 +508,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#E0ECFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   voiceButtonIcon: {
     fontSize: 14,
@@ -609,6 +622,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 4,
     paddingTop: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   promptChip: {
     width: "32%",
@@ -621,9 +638,10 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   promptChipText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#ffffff",
     textAlign: "center",
+    fontWeight: "700",
   },
   techDetailCard: {
     marginHorizontal: 20,
