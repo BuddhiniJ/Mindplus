@@ -1270,6 +1270,14 @@ export default function ChatbotScreen({ navigation }) {
             emergencyContact={emergencyContact}
             emergencyName={emergencyName}
             onClose={() => setSelectedTechnique(null)}
+            onStart={
+              selectedTechnique
+                ? () =>
+                    navigation.navigate("TechniquePracticeScreen", {
+                      technique: selectedTechnique,
+                    })
+                : undefined
+            }
           />
 
           <ChatInputBar

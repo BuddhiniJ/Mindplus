@@ -739,6 +739,37 @@ const styles = StyleSheet.create({
     marginRight: 8,
     fontSize: 16,
   },
+
+  /* =======================
+     START NOW BUTTON (TECHNIQUE)
+  ======================= */
+  startNowButton: {
+    marginTop: 18,
+    paddingVertical: 13,
+    borderRadius: 18,
+    backgroundColor: "#3B82F6",
+    alignItems: "center",
+
+    shadowColor: "#1D4ED8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  startNowButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+  },
+
+  startNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    fontFamily: "System",
+  },
   messageRow: {
     flexDirection: "row",
     marginBottom: 4,

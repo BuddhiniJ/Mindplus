@@ -18,6 +18,7 @@ import VisualAffirmationScreen from "../screens/home/VisualAffirmationScreen";
 import SoundscapeScreen from "../screens/home/SoundscapeScreen";
 import MenuScreen from "../screens/home/menu.js";
 import ChatbotScreen from "../screens/home/ChatbotScreen";
+import TechniquePracticeScreen from "../screens/home/TechniquePracticeScreen";
 
 //voice recorder
 import VoiceRecorderScreen from "../components/Voice/VoiceRecorder.js";
@@ -66,14 +67,21 @@ export default function AppNavigator() {
       <Stack.Screen name="SoundscapeScreen" component={SoundscapeScreen} />
       <Stack.Screen name="MenuScreen" component={MenuScreen} />
       <Stack.Screen name="ChatbotScreen" component={ChatbotScreen} />
+      <Stack.Screen
+        name="TechniquePracticeScreen"
+        component={TechniquePracticeScreen}
+      />
 
       {/* //voice recorder */}
       <Stack.Screen name="StressMindMap" component={StressMindMap} />
-      <Stack.Screen name="VoiceRecorderScreen" component={VoiceRecorderScreen} />
+      <Stack.Screen
+        name="VoiceRecorderScreen"
+        component={VoiceRecorderScreen}
+      />
       <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
       <Stack.Screen name="GreetingContainer" component={GreetingContainer} />
       <Stack.Screen name="CommunityScreen" component={CommunityScreen} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
-        </Stack.Navigator>
+    </Stack.Navigator>
   );
 }

@@ -3,7 +3,7 @@ import { View, Text, Pressable, Linking } from "react-native";
 import styles from "./chatbotStyles";
 import { Ionicons } from "@expo/vector-icons";
 
-const TECHNIQUE_DETAILS = {
+export const TECHNIQUE_DETAILS = {
   "5-4-3-2-1 grounding":
     "Look around and gently notice: 5 things you can see, 4 you can feel, 3 you can hear, 2 you can smell, and 1 you can taste.",
   "Box breathing (4-4-4-4)":
@@ -33,6 +33,7 @@ export default function TechniqueDetailCard({
   emergencyContact,
   emergencyName,
   onClose,
+  onStart,
 }) {
   if (!technique) return null;
 
@@ -105,10 +106,26 @@ export default function TechniqueDetailCard({
       )}
 
       {!isEmergencyService && !isContactTrusted && (
-        <Text style={styles.techDetailBody}>
-          {TECHNIQUE_DETAILS[technique] ||
-            "This is a grounding or coping technique. You can try it gently and notice how your body responds."}
-        </Text>
+        <>
+          <Text style={styles.techDetailBody}>
+            {TECHNIQUE_DETAILS[technique] ||
+              "This is a grounding or coping technique. You can try it gently and notice how your body responds."}
+          </Text>
+
+          {onStart && (
+            <Pressable
+              onPress={onStart}
+              accessibilityRole="button"
+              accessibilityLabel="Start this technique now"
+              style={({ pressed }) => [
+                styles.startNowButton,
+                pressed && styles.startNowButtonPressed,
+              ]}
+            >
+              <Text style={styles.startNowButtonText}>Start now</Text>
+            </Pressable>
+          )}
+        </>
       )}
     </View>
   );
