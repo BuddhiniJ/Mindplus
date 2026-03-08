@@ -8,6 +8,7 @@ import {
   TextInput,
   Animated,
   Alert,
+  Image,
 } from "react-native";
 import { TECHNIQUE_DETAILS } from "../../components/chatbot/TechniqueDetailCard";
 
@@ -1470,7 +1471,7 @@ export default function TechniquePracticeScreen({ route, navigation }) {
               navigation.dispatch(e.data.action);
             },
           },
-        ]
+        ],
       );
     });
 
@@ -1545,13 +1546,19 @@ export default function TechniquePracticeScreen({ route, navigation }) {
           style={styles.backButton}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>{"\u2190"} Back to chat</Text>
+          <Text style={styles.backButtonText}>{"\u2190"} Back to Chat</Text>
         </TouchableOpacity>
 
         <Text style={styles.title}>{technique}</Text>
         <Text style={styles.subtitle}>
           Let's practice this together step by step.
         </Text>
+
+        <Image
+          source={require("../../../assets/stress.gif")}
+          style={styles.stressGif}
+          resizeMode="contain"
+        />
 
         {renderBody()}
       </ScrollView>
@@ -1612,6 +1619,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(255,255,255,0.9)",
     marginBottom: 20,
+  },
+  stressGif: {
+    width: "80%",
+    height: 200,
+    alignSelf: "center",
+    marginBottom: 10,
+    marginTop: 30,
+    borderRadius: 30,
   },
   card: {
     borderRadius: 22,

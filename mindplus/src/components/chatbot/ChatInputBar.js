@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -29,6 +29,26 @@ export default function ChatInputBar({
   const [voiceError, setVoiceError] = useState(null);
   const [recording, setRecording] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
+  const voiceErrorTimeoutRef = useRef(null);
+
+  const showVoiceError = (message) => {
+    setVoiceError(message);
+    if (voiceErrorTimeoutRef.current) {
+      clearTimeout(voiceErrorTimeoutRef.current);
+    }
+    voiceErrorTimeoutRef.current = setTimeout(() => {
+      setVoiceError(null);
+      voiceErrorTimeoutRef.current = null;
+    }, 10000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (voiceErrorTimeoutRef.current) {
+        clearTimeout(voiceErrorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Start recording the user's voice using expo-av, then
   // send it to the existing Google Speech-to-Text helper.
@@ -40,9 +60,9 @@ export default function ChatInputBar({
       if (!permission.granted) {
         Alert.alert(
           "Microphone permission required",
-          "Please enable microphone access in Settings to use voice input."
+          "Please enable microphone access in Settings to use voice input.",
         );
-        setVoiceError("Microphone permission is required to use voice input.");
+        showVoiceError("Microphone permission is required to use voice input.");
         return;
       }
 
@@ -77,7 +97,7 @@ export default function ChatInputBar({
     } catch (error) {
       console.log("startRecording error", error);
       setListening(false);
-      setVoiceError("Sorry, I couldn't start recording. Please try again.");
+      showVoiceError("Sorry, I couldn't start recording. Please try again.");
     }
   };
 
@@ -97,8 +117,8 @@ export default function ChatInputBar({
 
       if (!uri) {
         setTranscribing(false);
-        setVoiceError(
-          "Sorry, I couldn't capture your voice. Please try again."
+        showVoiceError(
+          "Sorry, I couldn't capture your voice. Please try again.",
         );
         return;
       }
@@ -108,7 +128,9 @@ export default function ChatInputBar({
       setTranscribing(false);
 
       if (!text || text.startsWith("No speech detected")) {
-        setVoiceError("Sorry, I couldn't hear that clearly. Please try again.");
+        showVoiceError(
+          "Sorry, I couldn't hear that clearly. Please try again.",
+        );
         return;
       }
 
@@ -117,8 +139,8 @@ export default function ChatInputBar({
     } catch (error) {
       console.log("stopRecording error", error);
       setTranscribing(false);
-      setVoiceError(
-        "Sorry, something went wrong while processing your voice. Please try again."
+      showVoiceError(
+        "Sorry, something went wrong while processing your voice. Please try again.",
       );
     }
   };
@@ -143,17 +165,18 @@ export default function ChatInputBar({
         <TextInput
           style={{
             flex: 1,
-            minHeight: 44,
+            minHeight: 40,
             maxHeight: 120,
             paddingHorizontal: 12,
             paddingVertical: 10,
             borderRadius: 20,
             backgroundColor: "#F1F5F9",
             color: "#0F172A",
+            fontWeight: "600",
           }}
           value={input}
           onChangeText={onChangeInput}
-          placeholder="Type how you're feeling… or tap the mic"
+          placeholder="Type how you're feeling…"
           placeholderTextColor="#94A3B8"
           multiline
           blurOnSubmit={false}
@@ -175,7 +198,7 @@ export default function ChatInputBar({
           <Ionicons
             name={listening ? "mic" : "mic-outline"}
             size={22}
-            color={listening ? "#FFFFFF" : "#4B5563"}
+            color={listening ? "#FFFFFF" : "#1d77f5"}
           />
         </TouchableOpacity>
 
@@ -185,7 +208,7 @@ export default function ChatInputBar({
           disabled={!canSend}
           style={{
             marginLeft: 8,
-            backgroundColor: canSend ? "#6366F1" : "#CBD5E1",
+            backgroundColor: canSend ? "#3B82F6" : "#d9dde2",
             paddingHorizontal: 16,
             borderRadius: 20,
             justifyContent: "center",
@@ -195,7 +218,7 @@ export default function ChatInputBar({
           {sending ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Send</Text>
+            <Text style={{ color: "#ffffff", fontWeight: "600" }}>Send</Text>
           )}
         </TouchableOpacity>
       </View>
