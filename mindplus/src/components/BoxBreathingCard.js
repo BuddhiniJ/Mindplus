@@ -93,7 +93,7 @@ export default function BoxBreathingCard({
         remainingLabel={formatTime(secondsRemaining)}
         ringColor="#C4B5FD"
         textColor="#1F1147"
-        note="1-minute box breathing"
+        note="Box breathing"
       />
     </View>
   );

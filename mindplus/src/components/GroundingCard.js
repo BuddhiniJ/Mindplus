@@ -80,7 +80,7 @@ export default function GroundingCard({
         remainingLabel={formatTime(secondsRemaining)}
         ringColor="#7DD3FC"
         textColor="#0B1E34"
-        note="1-minute grounding"
+        note="Grounding"
       />
     </View>
   );

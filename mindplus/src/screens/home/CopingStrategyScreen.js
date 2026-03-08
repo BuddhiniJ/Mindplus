@@ -63,12 +63,66 @@ export default function CopingStrategyScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
+  const ctaPulseAnim = React.useRef(new Animated.Value(1)).current;
   const { width } = useWindowDimensions();
   const isCompactScreen = width < 380;
 
   useEffect(() => {
     loadCopingStrategy();
   }, []);
+
+  const normalizedEmotion = String(copingData?.emotion || "")
+    .trim()
+    .toLowerCase();
+  const confidenceValue = Number(copingData?.confidence);
+  const isAnxiety = normalizedEmotion === "anxiety";
+  const isStress =
+    normalizedEmotion === "stress" || normalizedEmotion === "stressed";
+  const anxietyBand = !Number.isFinite(confidenceValue)
+    ? "medium"
+    : confidenceValue < 0.4
+      ? "low"
+      : confidenceValue < 0.7
+        ? "medium"
+        : "high";
+  const stressBand = !Number.isFinite(confidenceValue)
+    ? "medium"
+    : confidenceValue < 0.4
+      ? "low"
+      : confidenceValue < 0.7
+        ? "medium"
+        : "high";
+  const allowCalmSession =
+    !(isAnxiety && anxietyBand === "low") &&
+    !(isStress && stressBand === "low");
+
+  useEffect(() => {
+    if (!copingData || loading || error || !allowCalmSession) {
+      ctaPulseAnim.setValue(1);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ctaPulseAnim, {
+          toValue: 1.04,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaPulseAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulse.start();
+
+    return () => {
+      pulse.stop();
+    };
+  }, [allowCalmSession, ctaPulseAnim, copingData, loading, error]);
 
   // Fetch coping strategy from API based on emotion and confidence
   const loadCopingStrategy = async () => {
@@ -151,37 +205,11 @@ export default function CopingStrategyScreen({ route, navigation }) {
   const severityInfo = SEVERITY_INFO[copingData.severity] || SEVERITY_INFO.low;
   const confidencePercentage = Math.round((copingData.confidence || 0) * 100);
 
-  const normalizedEmotion = String(copingData.emotion || "")
-    .trim()
-    .toLowerCase();
-
-  // Check if emotion is anxiety-related
-  const isAnxiety = normalizedEmotion === "anxiety";
-  // Check if emotion is stress-related
-  const isStress =
-    normalizedEmotion === "stress" || normalizedEmotion === "stressed";
-  // Determine anxiety severity band
-  const anxietyConfidence = Number(copingData.confidence);
-  const anxietyBand = !Number.isFinite(anxietyConfidence)
-    ? "medium"
-    : anxietyConfidence < 0.4
-    ? "low"
-    : anxietyConfidence < 0.7
-    ? "medium"
-    : "high";
-
-  const stressConfidence = Number(copingData.confidence);
-  const stressBand = !Number.isFinite(stressConfidence)
-    ? "medium"
-    : stressConfidence < 0.4
-    ? "low"
-    : stressConfidence < 0.7
-    ? "medium"
-    : "high";
-
-  const allowCalmSession =
-    !(isAnxiety && anxietyBand === "low") &&
-    !(isStress && stressBand === "low");
+  const techniqueDurationSeconds = Number(copingData.duration_seconds);
+  const techniqueDurationLabel = Number.isFinite(techniqueDurationSeconds)
+    ? `${Math.max(1, Math.round(techniqueDurationSeconds / 60))}-minute`
+    : "1-minute";
+  const recommendedTechnique = copingData.technique || "Guided affirmation";
 
   return (
     <View style={styles.container}>
@@ -369,33 +397,61 @@ export default function CopingStrategyScreen({ route, navigation }) {
 
             <View style={styles.calmingTopRow}>
               <View style={styles.calmingBadge}>
-                <Text style={styles.calmingBadgeText}>1-MIN RESET</Text>
+                <Text style={styles.calmingBadgeText}>PRIORITY STEP</Text>
               </View>
               <View style={styles.calmingIconWrap}>
                 <Text style={styles.calmingCardIcon}>🧘</Text>
               </View>
             </View>
 
-            <Text style={styles.calmingTitle}>Need a calming break?</Text>
-            <Text style={styles.calmingText}>
-              Start a 1-minute affirmation session tailored to your state.
+            <View style={styles.calmingPriorityRow}>
+              <View style={styles.calmingPriorityDot} />
+              <Text style={styles.calmingPriorityText}>
+                Most effective action for your current state
+              </Text>
+            </View>
+
+            <Text style={styles.calmingTitle}>
+              Tap here for your next technique
             </Text>
-            <TouchableOpacity
-              style={styles.calmingButton}
-              onPress={() =>
-                navigation.navigate("VisualAffirmationScreen", {
-                  emotion: copingData.emotion,
-                  severity: copingData.severity,
-                  confidence: copingData.confidence,
-                  strategy: copingData.strategy,
-                  technique: copingData.technique,
-                  duration_seconds: copingData.duration_seconds,
-                })
-              }
-              activeOpacity={0.85}
-            >
-              <Text style={styles.calmingButtonText}>Start Calm Session</Text>
-            </TouchableOpacity>
+            <Text style={styles.calmingText}>
+              Start your {techniqueDurationLabel} coping session now to regulate
+              your emotion quickly.
+            </Text>
+
+            {/* <View style={styles.calmingTechniqueHighlight}>
+              <Text style={styles.calmingTechniqueText}>
+                Recommended: {recommendedTechnique}
+              </Text>
+            </View> */}
+
+            <Animated.View style={{ transform: [{ scale: ctaPulseAnim }] }}>
+              <TouchableOpacity
+                style={styles.calmingButton}
+                onPress={() =>
+                  navigation.navigate("VisualAffirmationScreen", {
+                    emotion: copingData.emotion,
+                    severity: copingData.severity,
+                    confidence: copingData.confidence,
+                    strategy: copingData.strategy,
+                    technique: copingData.technique,
+                    duration_seconds: copingData.duration_seconds,
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <View style={styles.calmingButtonInnerRow}>
+                  <Text style={styles.calmingButtonText}>
+                    Start My Technique Now
+                  </Text>
+                  <Text style={styles.calmingButtonArrow}>→</Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Text style={styles.calmingSubHint}>
+              Open your personalized coping technique and begin immediately.
+            </Text>
           </Animated.View>
         )}
 
@@ -813,6 +869,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
+  calmingPriorityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    backgroundColor: "#DBEAFE",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignSelf: "flex-start",
+  },
+  calmingPriorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1D4ED8",
+    marginRight: 8,
+  },
+  calmingPriorityText: {
+    color: "#1E3A8A",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   calmingBadge: {
     backgroundColor: "#DBEAFE",
     borderWidth: 1,
@@ -849,8 +929,22 @@ const styles = StyleSheet.create({
   calmingText: {
     fontSize: 15,
     color: "#1E3A8A",
-    marginBottom: 14,
+    marginBottom: 12,
     lineHeight: 22,
+  },
+  calmingTechniqueHighlight: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  calmingTechniqueText: {
+    color: "#1D4ED8",
+    fontSize: 14,
+    fontWeight: "700",
   },
   calmingButton: {
     backgroundColor: "#1D4ED8",
@@ -865,11 +959,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1E40AF",
   },
+  calmingButtonInnerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   calmingButtonText: {
     color: "#FFFFFF",
     fontWeight: "800",
     fontSize: 15,
     letterSpacing: 0.5,
+  },
+  calmingButtonArrow: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 18,
+    marginLeft: 8,
+    marginTop: -1,
+  },
+  calmingSubHint: {
+    marginTop: 10,
+    color: "#1E40AF",
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "600",
   },
   resourceItem: {
     flexDirection: "row",
