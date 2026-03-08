@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Image, ScrollView, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { clearChatHistory } from "../../services/chatHistoryService";
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -34,6 +43,10 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = async () => {
     try {
+      const currentUser = auth.currentUser;
+      if (currentUser?.uid) {
+        await clearChatHistory(currentUser.uid);
+      }
       await auth.signOut();
       navigation.replace("Login");
     } catch (error) {
@@ -54,7 +67,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
+        colors={["#E9EAEB", "#D4E4F7", "#FFFFFF", "#E1F5FE"]}
         style={styles.gradientBackground}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -90,7 +103,12 @@ export default function ProfileScreen({ navigation }) {
               style={styles.menuItem}
               onPress={() => navigation.navigate("EditProfileScreen")}
             >
-              <Ionicons name="person-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+              <Ionicons
+                name="person-outline"
+                size={24}
+                color="#5FA1D5"
+                style={styles.menuIcon}
+              />
               <Text style={styles.menuText}>Edit Profile</Text>
             </TouchableOpacity>
 
@@ -98,17 +116,24 @@ export default function ProfileScreen({ navigation }) {
               style={styles.menuItem}
               onPress={() => navigation.navigate("Dass21Screen1")}
             >
-              <Ionicons name="document-text-outline" size={24} color="#5FA1D5" style={styles.menuIcon} />
+              <Ionicons
+                name="document-text-outline"
+                size={24}
+                color="#5FA1D5"
+                style={styles.menuIcon}
+              />
               <Text style={styles.menuText}>Retake Assessment</Text>
             </TouchableOpacity>
           </View>
 
           {/* Logout Button */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Ionicons name="exit-outline" size={24} color="#A52A2A" style={styles.menuIcon} />
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons
+              name="exit-outline"
+              size={24}
+              color="#A52A2A"
+              style={styles.menuIcon}
+            />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </ScrollView>

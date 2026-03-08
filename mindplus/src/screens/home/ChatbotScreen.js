@@ -22,6 +22,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
+import { loadChatConversation, appendChatMessages } from "../../services/chatHistoryService";
 import {
   playBotMessageVoice,
   stopBotMessageVoice,
@@ -33,6 +34,7 @@ import ChatStatusCard from "../../components/chatbot/ChatStatusCard";
 import MessageList from "../../components/chatbot/MessageList";
 import PromptChips from "../../components/chatbot/PromptChips";
 import TechniqueDetailCard from "../../components/chatbot/TechniqueDetailCard";
+import HelpfulResourcesSection from "../../components/chatbot/HelpfulResourcesSection";
 import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 import { getTodayQuote } from "../../utils/dailyMotivation";
@@ -66,6 +68,27 @@ const STATUS_THEME = {
 };
 
 const QUICK_COMMANDS = [
+  // Core wellbeing flows
+  {
+    id: "home_dashboard",
+    label: "Go to home dashboard",
+    description: "Overview of your wellbeing and shortcuts.",
+    appAction: {
+      action: "navigate",
+      target: "home_dashboard",
+    },
+  },
+  {
+    id: "heatmap",
+    label: "View emotion heatmap",
+    description: "See your stress and emotion patterns over time.",
+    appAction: {
+      action: "navigate",
+      target: "heatmap",
+    },
+  },
+
+  // Soundscapes & calming
   {
     id: "soft_rain",
     label: "Play soft rain",
@@ -84,6 +107,15 @@ const QUICK_COMMANDS = [
       action: "navigate",
       target: "soundscape",
       sound: "forest",
+    },
+  },
+  {
+    id: "open_soundscapes",
+    label: "Open soundscapes",
+    description: "Go to the full soundscape library.",
+    appAction: {
+      action: "navigate",
+      target: "soundscape",
     },
   },
   {
@@ -114,6 +146,8 @@ const QUICK_COMMANDS = [
       target: "meditation",
     },
   },
+
+  // Coping & strategies
   {
     id: "coping_tips",
     label: "Show coping strategies",
@@ -123,24 +157,44 @@ const QUICK_COMMANDS = [
       target: "stress_tips",
     },
   },
+
+  // Profile & menu
   {
-    id: "log_mood",
-    label: "Log today's mood",
-    description: "Jump to the daily check-in screen.",
+    id: "view_profile",
+    label: "Open my profile",
+    description: "View or edit your personal details.",
     appAction: {
       action: "navigate",
-      target: "mood_tracker",
-      mode: "log_today",
+      target: "profile",
+    },
+  },
+
+  // Voice features
+  {
+    id: "voice_recorder",
+    label: "Open voice journal",
+    description: "Record a voice note about how you feel.",
+    appAction: {
+      action: "navigate",
+      target: "voice_recorder",
     },
   },
   {
-    id: "mood_history",
-    label: "View mood history",
-    description: "See your overall emotion history.",
+    id: "listening_history",
+    label: "View listening history",
+    description: "See past recordings and sessions.",
     appAction: {
       action: "navigate",
-      target: "mood_tracker",
-      mode: "history",
+      target: "history",
+    },
+  },
+  {
+    id: "community",
+    label: "Open community",
+    description: "Go to the peer community space.",
+    appAction: {
+      action: "navigate",
+      target: "community",
     },
   },
 ];
@@ -186,6 +240,7 @@ function getStressPercent({ overallStatus, stressLevel } = {}) {
 
 export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
@@ -206,6 +261,7 @@ export default function ChatbotScreen({ navigation }) {
   const [alarmSound, setAlarmSound] = useState(null);
   const [autoContactTriggered, setAutoContactTriggered] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
+  const [showResources, setShowResources] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -272,6 +328,57 @@ export default function ChatbotScreen({ navigation }) {
         } else {
           navigation.navigate("OverallEmotionScreen");
         }
+        return;
+      }
+
+      // Home dashboard
+      if (action === "navigate" && target === "home_dashboard") {
+        navigation.navigate("HomeDashboardScreen");
+        return;
+      }
+
+      // Emotion heatmap
+      if (action === "navigate" && target === "heatmap") {
+        navigation.navigate("HeatmapScreen");
+        return;
+      }
+
+      // Profile
+      if (action === "navigate" && target === "profile") {
+        navigation.navigate("UserProfileScreen");
+        return;
+      }
+
+      // Main menu
+      if (action === "navigate" && target === "menu") {
+        navigation.navigate("MenuScreen");
+        return;
+      }
+
+      // Voice features
+      if (action === "navigate" && target === "voice_recorder") {
+        navigation.navigate("VoiceRecorderScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "stress_mind_map") {
+        navigation.navigate("StressMindMap");
+        return;
+      }
+
+      if (action === "navigate" && target === "history") {
+        navigation.navigate("HistoryScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "community") {
+        navigation.navigate("CommunityScreen");
+        return;
+      }
+
+      if (action === "navigate" && target === "voice_chat") {
+        navigation.navigate("ChatScreen");
+        return;
       }
     } catch (e) {
       console.log("Failed to handle app action", e);
@@ -282,7 +389,11 @@ export default function ChatbotScreen({ navigation }) {
     const init = async () => {
       try {
         const user = auth.currentUser;
+        let resolvedUserId = null;
+
         if (user) {
+          resolvedUserId = user.uid;
+          setUserId(user.uid);
           const profileRef = doc(db, "users", user.uid, "profile", "basic");
           const profileSnap = await getDoc(profileRef);
 
@@ -298,56 +409,76 @@ export default function ChatbotScreen({ navigation }) {
 
           setUserLabel(nickname || user.displayName || "You");
         }
+        // Attempt to restore an existing chat conversation if the user is logged in
+        let restored = null;
+        if (resolvedUserId) {
+          restored = await loadChatConversation(resolvedUserId);
+        }
 
-        const start = await startChatSession();
-        setSessionId(start.session_id);
+        if (restored && restored.messages && restored.messages.length > 0) {
+          setMessages(restored.messages);
+          setSessionId(restored.sessionId || null);
+        } else {
+          const start = await startChatSession();
+          setSessionId(start.session_id);
 
-        // Seed the conversation with the mood check-in prompt
-        if (start.initial_message) {
-          setInitialPrompt(start.initial_message);
-          setMoodOptions(start.mood_options || []);
-          setShowMoodOptions(false);
+          // Seed the conversation with the mood check-in prompt
+          if (start.initial_message) {
+            setInitialPrompt(start.initial_message);
+            setMoodOptions(start.mood_options || []);
+            setShowMoodOptions(false);
 
-          const fullText = start.initial_message || "";
-          const botId = `${Date.now()}-init`;
+            const fullText = start.initial_message || "";
+            const createdAt = Date.now();
+            const botId = `${createdAt}-init`;
 
-          // Add an empty bot message and progressively fill it, like other replies.
-          // Mark it as a mood prompt so the MessageList can render emoji options
-          // inside the same message bubble.
-          setMessages((prev) => [
-            ...prev,
-            {
+            const uiMessage = {
               id: botId,
               from: "bot",
               text: "",
               label: "MindPlus Bot",
               isMoodPrompt: true,
-            },
-          ]);
+              timestamp: createdAt,
+            };
 
-          const typingSpeed = 18; // ms per character
-          const chars = fullText.split("");
-          chars.forEach((_, index) => {
+            // Add an empty bot message and progressively fill it, like other replies.
+            // Mark it as a mood prompt so the MessageList can render emoji options
+            // inside the same message bubble.
+            setMessages((prev) => [...prev, uiMessage]);
+
+            // Persist the full initial message text for this user (if logged in)
+            if (resolvedUserId && fullText) {
+              const storedMessage = {
+                ...uiMessage,
+                text: fullText,
+              };
+              appendChatMessages(resolvedUserId, [storedMessage], start.session_id);
+            }
+
+            const typingSpeed = 18; // ms per character
+            const chars = fullText.split("");
+            chars.forEach((_, index) => {
+              setTimeout(() => {
+                const nextText = fullText.slice(0, index + 1);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === botId
+                      ? {
+                          ...m,
+                          text: nextText,
+                        }
+                      : m
+                  )
+                );
+              }, typingSpeed * index);
+            });
+
+            // After the typing effect finishes, fade in the mood options
+            const totalDuration = typingSpeed * chars.length + 150;
             setTimeout(() => {
-              const nextText = fullText.slice(0, index + 1);
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === botId
-                    ? {
-                        ...m,
-                        text: nextText,
-                      }
-                    : m
-                )
-              );
-            }, typingSpeed * index);
-          });
-
-          // After the typing effect finishes, fade in the mood options
-          const totalDuration = typingSpeed * chars.length + 150;
-          setTimeout(() => {
-            setShowMoodOptions(true);
-          }, totalDuration);
+              setShowMoodOptions(true);
+            }, totalDuration);
+          }
         }
       } catch (err) {
         console.log("Failed to start chatbot session", err);
@@ -512,6 +643,7 @@ export default function ChatbotScreen({ navigation }) {
 
     // Add a supportive bot response so the user feels heard
     const botId = `${Date.now()}-ack`;
+    const createdAt = Date.now();
     const text =
       "Thank you for letting me know you're here. I'm still with you. If at any moment you feel unsafe, please call 1926 or your emergency contact immediately.";
 
@@ -522,8 +654,21 @@ export default function ChatbotScreen({ navigation }) {
         from: "bot",
         text,
         label: "MindPlus Bot",
+        timestamp: createdAt,
       },
     ]);
+
+    if (userId) {
+      appendChatMessages(userId, [
+        {
+          id: botId,
+          from: "bot",
+          text,
+          label: "MindPlus Bot",
+          timestamp: createdAt,
+        },
+      ], sessionId);
+    }
 
     // Optionally speak this reassurance if auto voice is on
     if (autoVoiceEnabled) {
@@ -573,13 +718,27 @@ export default function ChatbotScreen({ navigation }) {
     // Clear the input after sending (for both typed and voice messages).
     setInput("");
 
+    const createdAt = Date.now();
     const userMessage = {
-      id: Date.now().toString(),
+      id: createdAt.toString(),
       from: "user",
       text,
       label: userLabel,
+      timestamp: createdAt,
     };
     setMessages((prev) => [...prev, userMessage]);
+
+    if (userId) {
+      appendChatMessages(
+        userId,
+        [
+          {
+            ...userMessage,
+          },
+        ],
+        sessionId
+      );
+    }
 
     try {
       setSending(true);
@@ -610,7 +769,8 @@ export default function ChatbotScreen({ navigation }) {
       setBotTyping(false);
 
       const fullText = reply.botMessage || "";
-      const botId = `${Date.now()}-bot`;
+      const botCreatedAt = Date.now();
+      const botId = `${botCreatedAt}-bot`;
       const baseMeta = {
         emotion: reply.emotion,
         stressLevel: reply.stressLevel,
@@ -621,16 +781,24 @@ export default function ChatbotScreen({ navigation }) {
       };
 
       // Add an empty bot message and progressively fill it character by character
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: botId,
-          from: "bot",
-          text: "",
-          label: "MindPlus Bot",
-          meta: baseMeta,
-        },
-      ]);
+      const uiBotMessage = {
+        id: botId,
+        from: "bot",
+        text: "",
+        label: "MindPlus Bot",
+        meta: baseMeta,
+        timestamp: botCreatedAt,
+      };
+
+      setMessages((prev) => [...prev, uiBotMessage]);
+
+      if (userId && fullText) {
+        const storedBotMessage = {
+          ...uiBotMessage,
+          text: fullText,
+        };
+        appendChatMessages(userId, [storedBotMessage], sessionId);
+      }
 
       const typingSpeed = 18; // ms per character
       const chars = fullText.split("");
@@ -693,13 +861,27 @@ export default function ChatbotScreen({ navigation }) {
     if (!sessionId || sending) return;
     const text = `${option.emoji} ${option.label}`;
 
+    const createdAt = Date.now();
     const userMessage = {
-      id: Date.now().toString(),
+      id: createdAt.toString(),
       from: "user",
       text,
       label: userLabel,
+      timestamp: createdAt,
     };
     setMessages((prev) => [...prev, userMessage]);
+
+    if (userId) {
+      appendChatMessages(
+        userId,
+        [
+          {
+            ...userMessage,
+          },
+        ],
+        sessionId
+      );
+    }
 
     try {
       setSending(true);
@@ -719,7 +901,8 @@ export default function ChatbotScreen({ navigation }) {
       setBotTyping(false);
 
       const fullText = reply.botMessage || "";
-      const botId = `${Date.now()}-bot`;
+      const botCreatedAt = Date.now();
+      const botId = `${botCreatedAt}-bot`;
       const baseMeta = {
         emotion: reply.emotion,
         stressLevel: reply.stressLevel,
@@ -730,16 +913,24 @@ export default function ChatbotScreen({ navigation }) {
       };
 
       // Add an empty bot message and progressively fill it character by character
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: botId,
-          from: "bot",
-          text: "",
-          label: "MindPlus Bot",
-          meta: baseMeta,
-        },
-      ]);
+      const uiBotMessage = {
+        id: botId,
+        from: "bot",
+        text: "",
+        label: "MindPlus Bot",
+        meta: baseMeta,
+        timestamp: botCreatedAt,
+      };
+
+      setMessages((prev) => [...prev, uiBotMessage]);
+
+      if (userId && fullText) {
+        const storedBotMessage = {
+          ...uiBotMessage,
+          text: fullText,
+        };
+        appendChatMessages(userId, [storedBotMessage], sessionId);
+      }
 
       const typingSpeed = 18; // ms per character
       const chars = fullText.split("");
@@ -844,6 +1035,17 @@ export default function ChatbotScreen({ navigation }) {
               View available commands
             </Text>
           </TouchableOpacity>
+
+          {lastStatusMeta && (
+            <TouchableOpacity
+              style={[styles.commandsButton, { marginTop: 6 }]}
+              onPress={() => setShowResources((prev) => !prev)}
+            >
+              <Text style={styles.commandsButtonText}>
+                View helpful resources
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {dailyQuote && (
@@ -892,6 +1094,40 @@ export default function ChatbotScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.commandsCloseButton}
                 onPress={() => setShowCommands(false)}
+              >
+                <Text style={styles.commandsCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showResources}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowResources(false)}
+        >
+          <View style={styles.commandsModalOverlay}>
+            <View style={styles.commandsModalCard}>
+              <Text style={styles.commandsModalTitle}>Helpful resources</Text>
+              <Text style={styles.commandsModalSubtitle}>
+                Based on your recent stress level and emotions, here are some
+                guides, videos, and quick tips you can view or save for later.
+              </Text>
+
+              <ScrollView style={styles.commandsList}>
+                {lastStatusMeta && (
+                  <HelpfulResourcesSection
+                    emotion={lastStatusMeta.emotion}
+                    stressLevel={lastStatusMeta.stressLevel}
+                    overallStatus={lastStatusMeta.overallStatus}
+                  />
+                )}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.commandsCloseButton}
+                onPress={() => setShowResources(false)}
               >
                 <Text style={styles.commandsCloseButtonText}>Close</Text>
               </TouchableOpacity>
