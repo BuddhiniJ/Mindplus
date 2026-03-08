@@ -42,6 +42,7 @@ import ChatInputBar from "../../components/chatbot/ChatInputBar";
 import styles from "../../components/chatbot/chatbotStyles";
 import { getTodayQuote } from "../../utils/dailyMotivation";
 import { Audio } from "expo-av";
+import * as Location from "expo-location";
 
 const STATUS_THEME = {
   critical: {
@@ -611,25 +612,46 @@ export default function ChatbotScreen({ navigation }) {
     });
   };
 
-  const buildEmergencySmsBody = (condition) => {
+  const buildEmergencySmsBody = async (condition) => {
     const now = new Date().toISOString();
     const name = userLabel || "User";
     const label = condition || "critical concern";
+
+    let locationText = "Not available";
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const loc = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = loc.coords || {};
+        if (latitude != null && longitude != null) {
+          locationText = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        }
+      }
+    } catch (e) {
+      console.log("Failed to get current location for SMS", e);
+    }
+
     return (
       `This is an automatic safety message from MindPlus.\n\n` +
       `User: ${name}\n` +
       `Detected condition: ${label}\n` +
-      `Time: ${now}`
+      `Time: ${now}\n` +
+      `Location: ${locationText}`
     );
   };
 
-  const handleSmsNumber = (number, condition) => {
+  const handleSmsNumber = async (number, condition) => {
     if (!number) return;
-    const body = encodeURIComponent(buildEmergencySmsBody(condition));
-    const url = `sms:${number}?body=${body}`;
-    Linking.openURL(url).catch((err) => {
-      console.log("Failed to start SMS", err);
-    });
+    try {
+      const smsBody = await buildEmergencySmsBody(condition);
+      const body = encodeURIComponent(smsBody);
+      const url = `sms:${number}?body=${body}`;
+      Linking.openURL(url).catch((err) => {
+        console.log("Failed to start SMS", err);
+      });
+    } catch (e) {
+      console.log("Failed to build SMS body", e);
+    }
   };
 
   const handleAcknowledgeAlert = async () => {
