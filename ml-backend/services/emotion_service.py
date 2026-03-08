@@ -1,6 +1,6 @@
 # Import required libraries for ML model, data validation, and file operations
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from transformers import pipeline
 import os
 import re
@@ -29,6 +29,9 @@ class CopingStrategyResponse(BaseModel):
     confidence: float
     severity: str
     strategy: Optional[str]
+    coping_strategy: Optional[str] = None
+    technique: Optional[str] = None
+    duration_seconds: Optional[int] = None
 
 
 # Common words to filter out when extracting keywords from text
@@ -45,11 +48,48 @@ classifier = pipeline("text-classification", model=MODEL_NAME)
 COPING_STRATEGY_PATH = Path(__file__).parent.parent / "CopingStrategy.json"
 
 
-def load_coping_strategies(path: Path) -> Dict[str, Dict[str, str]]:
+def _normalize_strategy_entry(entry: Any) -> Optional[Dict[str, Any]]:
+    # Backward compatible: allow both string and object strategy values.
+    if isinstance(entry, str):
+        return {
+            "coping_strategy": entry,
+            "technique": None,
+            "duration_seconds": None,
+        }
+
+    if not isinstance(entry, dict):
+        return None
+
+    duration = entry.get("duration_seconds")
+    if duration is not None:
+        try:
+            duration = int(duration)
+        except (TypeError, ValueError):
+            duration = None
+
+    return {
+        "coping_strategy": entry.get("coping_strategy"),
+        "technique": entry.get("technique"),
+        "duration_seconds": duration,
+    }
+
+
+def load_coping_strategies(path: Path) -> Dict[str, Dict[str, Dict[str, Any]]]:
     try:
         with path.open("r", encoding="utf-8") as fh:
             payload = json.load(fh)
-            return {emotion.lower(): {k.lower(): v for k, v in strategies.items()} for emotion, strategies in payload.items()}
+            normalized: Dict[str, Dict[str, Dict[str, Any]]] = {}
+            for emotion, strategies in payload.items():
+                if not isinstance(strategies, dict):
+                    continue
+                per_severity: Dict[str, Dict[str, Any]] = {}
+                for severity, strategy_value in strategies.items():
+                    entry = _normalize_strategy_entry(strategy_value)
+                    if entry is not None:
+                        per_severity[str(severity).lower()] = entry
+                if per_severity:
+                    normalized[str(emotion).lower()] = per_severity
+            return normalized
     except FileNotFoundError:
         return {}
     except json.JSONDecodeError as exc:
@@ -91,7 +131,7 @@ def pick_severity(confidence: float) -> str:
 
 
 # Get appropriate coping strategy based on emotion and confidence level
-def get_coping_strategy(emotion: str, confidence: float) -> Optional[str]:
+def get_coping_strategy(emotion: str, confidence: float) -> Optional[Dict[str, Any]]:
     severity = pick_severity(confidence)
 
     strategies = COPING_STRATEGIES.get(emotion.lower()) or COPING_STRATEGIES.get("neutral")
@@ -122,10 +162,14 @@ async def coping_strategy(payload: CopingStrategyRequest):
     emotion = payload.emotion.strip().lower() or "neutral"
     confidence = max(0.0, min(1.0, payload.confidence))
     severity = pick_severity(confidence)
-    strategy = get_coping_strategy(emotion, confidence)
+    strategy_entry = get_coping_strategy(emotion, confidence) or {}
+    strategy_text = strategy_entry.get("coping_strategy")
     return CopingStrategyResponse(
         emotion=emotion,
         confidence=confidence,
         severity=severity,
-        strategy=strategy,
+        strategy=strategy_text,
+        coping_strategy=strategy_text,
+        technique=strategy_entry.get("technique"),
+        duration_seconds=strategy_entry.get("duration_seconds"),
     )

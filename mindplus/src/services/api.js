@@ -108,11 +108,18 @@ export async function fetchCopingStrategy(emotion, confidence) {
     throw new Error(`Coping strategy service error: ${response.status}`);
   }
   const data = await response.json();
+  const normalizedStrategy = data.coping_strategy ?? data.strategy ?? null;
+  const normalizedDuration = Number.isFinite(data.duration_seconds)
+    ? data.duration_seconds
+    : null;
   return {
     emotion: data.emotion ?? emotion,
     confidence: Number.isFinite(data.confidence) ? data.confidence : confidence,
     severity: data.severity ?? 'low',
-    strategy: data.strategy ?? null,
+    strategy: normalizedStrategy,
+    coping_strategy: normalizedStrategy,
+    technique: data.technique ?? null,
+    duration_seconds: normalizedDuration,
   };
 }
 
