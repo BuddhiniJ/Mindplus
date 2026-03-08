@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import CalmTimer from "./CalmTimer";
+import {
+  playBotMessageVoice,
+  stopBotMessageVoice,
+} from "../services/textToSpeechService";
 
 const VISUAL_PRESETS = {
   "sadness-medium": {
@@ -226,6 +237,7 @@ export default function VisualAffirmation({
   const progressAnim = useRef(new Animated.Value(1)).current;
   const [selectedDuration, setSelectedDuration] = useState(durationSeconds);
   const [secondsRemaining, setSecondsRemaining] = useState(durationSeconds);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const prevStart = useRef(start);
 
   const isControlled = typeof start === "boolean";
@@ -300,6 +312,27 @@ export default function VisualAffirmation({
     }).start();
   }, [secondsRemaining, selectedDuration, progressAnim]);
 
+  useEffect(() => {
+    return () => {
+      stopBotMessageVoice();
+    };
+  }, []);
+
+  const handleSpeakToggle = async () => {
+    if (isSpeaking) {
+      await stopBotMessageVoice();
+      setIsSpeaking(false);
+      return;
+    }
+
+    setIsSpeaking(true);
+    await playBotMessageVoice(preset.affirmation, {
+      onFinish: () => {
+        setIsSpeaking(false);
+      },
+    });
+  };
+
   const handleDurationSelect = (nextDuration) => {
     setSelectedDuration(nextDuration);
     setSecondsRemaining(nextDuration);
@@ -357,6 +390,24 @@ export default function VisualAffirmation({
           <Text style={[styles.affirmation, { color: preset.textColor }]}>
             {preset.affirmation}
           </Text>
+
+          <View style={styles.ttsRow}>
+            <TouchableOpacity
+              style={[
+                styles.ttsButton,
+                { borderColor: preset.pulseColor },
+                isSpeaking && {
+                  backgroundColor: preset.pulseColor + "33",
+                },
+              ]}
+              onPress={handleSpeakToggle}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.ttsButtonText, { color: preset.textColor }]}>
+                {isSpeaking ? "Stop Voice" : "Listen Affirmation"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.durationSection}>
@@ -500,6 +551,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: "600",
     opacity: 0.95,
+  },
+  ttsRow: {
+    marginTop: 12,
+    flexDirection: "row",
+  },
+  ttsButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFFD9",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  ttsButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   durationSection: {
     marginTop: 2,

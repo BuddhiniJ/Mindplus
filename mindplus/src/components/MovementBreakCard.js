@@ -15,7 +15,7 @@ export default function MovementBreakCard({
   progressAnim,
   pulseAnim,
   sessionSeconds = 300,
-  title = "Movement Break (5 Minutes)",
+  title = "Movement Break",
 }) {
   const movement = useMemo(() => {
     const elapsed = sessionSeconds - secondsRemaining;
@@ -108,7 +108,7 @@ export default function MovementBreakCard({
         remainingLabel={formatTime(secondsRemaining)}
         ringColor="#FBBF24"
         textColor="#3F2A00"
-        note="5-minute movement break"
+        note="Movement break"
       />
     </View>
   );

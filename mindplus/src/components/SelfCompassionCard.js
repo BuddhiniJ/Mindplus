@@ -107,7 +107,7 @@ export default function SelfCompassionCard({
         remainingLabel={formatTime(secondsRemaining)}
         ringColor="#F9A8D4"
         textColor="#4A044E"
-        note="1-minute self-compassion"
+        note="Self-compassion"
       />
     </View>
   );
