@@ -53,6 +53,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   } = route?.params || {};
 
   const [started, setStarted] = useState(false);
+  const [isSessionCompleted, setIsSessionCompleted] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
   const [selectedTechnique, setSelectedTechnique] = useState("box");
   const [affirmationDuration, setAffirmationDuration] = useState(60);
@@ -113,6 +114,12 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   };
 
   const activeSessionSeconds = useMemo(() => {
+    if (selectedTechnique === "affirmation") {
+      return Number.isFinite(Number(affirmationDuration)) &&
+        Number(affirmationDuration) > 0
+        ? Number(affirmationDuration)
+        : DEFAULT_SESSION_SECONDS;
+    }
     if (selectedTechnique === "movement") {
       return Number.isFinite(Number(recommendedDuration)) &&
         Number(recommendedDuration) > 0
@@ -126,7 +133,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         : SELF_COMPASSION_SECONDS;
     }
     return DEFAULT_SESSION_SECONDS;
-  }, [recommendedDuration, selectedTechnique]);
+  }, [affirmationDuration, recommendedDuration, selectedTechnique]);
 
   // Fetch or resolve coping strategy based on emotion and confidence
   useEffect(() => {
@@ -238,6 +245,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   // Start or restart the calm session
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
+    setIsSessionCompleted(false);
     setStarted(true);
     setSecondsRemaining(activeSessionSeconds);
     bounceAnim.setValue(0);
@@ -250,6 +258,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const handleStop = () => {
     setStarted(false);
+    setIsSessionCompleted(false);
   };
 
   const emotionLabel = useMemo(() => {
@@ -322,6 +331,20 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       setSecondsRemaining((prev) => Math.min(prev, activeSessionSeconds));
     }
   }, [activeSessionSeconds, started]);
+
+  // Transition to completed state when the session timer reaches zero.
+  useEffect(() => {
+    if (!started) return;
+    if (secondsRemaining > 0) return;
+    setStarted(false);
+    setIsSessionCompleted(true);
+  }, [secondsRemaining, started]);
+
+  const sessionState = isSessionCompleted
+    ? "completed"
+    : started
+      ? "active"
+      : "ready";
 
   const techniqueOptions = useMemo(
     () => [
@@ -486,13 +509,49 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
         {/* Start/Restart and Stop controls */}
         <View style={styles.ctaPanel}>
+          <View style={styles.progressStateRow}>
+            {[
+              { key: "ready", label: "Ready" },
+              { key: "active", label: "Active" },
+              { key: "completed", label: "Completed" },
+            ].map((state) => {
+              const isCurrent = sessionState === state.key;
+              return (
+                <View
+                  key={state.key}
+                  style={[
+                    styles.progressStateChip,
+                    isCurrent && styles.progressStateChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.progressStateText,
+                      isCurrent && styles.progressStateTextActive,
+                    ]}
+                  >
+                    {state.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+
           <View style={styles.sessionStatusRow}>
             <Text style={styles.sessionStatusText}>
-              {started ? "Session Active" : "Session Ready"}
+              {sessionState === "completed"
+                ? "Session Completed"
+                : sessionState === "active"
+                  ? "Session Active"
+                  : "Session Ready"}
             </Text>
-            {/* <Text style={styles.sessionStatusTime}>
-              {secondsRemaining}s left
-            </Text> */}
+            <Text style={styles.sessionStatusTime}>
+              {sessionState === "active"
+                ? `${secondsRemaining}s left`
+                : sessionState === "completed"
+                  ? "Great job"
+                  : "Press start"}
+            </Text>
           </View>
 
           <View style={styles.ctaRow}>
@@ -502,7 +561,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
               onPress={handleStart}
             >
               <Text style={styles.startButtonText}>
-                {started ? "↻ Restart" : "▶ Start Calm"}
+                {sessionState === "completed"
+                  ? "↻ Start Again"
+                  : started
+                    ? "↻ Restart"
+                    : "▶ Start Calm"}
               </Text>
             </TouchableOpacity>
 
@@ -523,6 +586,29 @@ export default function VisualAffirmationScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {isSessionCompleted ? (
+          <View style={styles.completionCard}>
+            <View style={styles.completionTopRow}>
+              <Text style={styles.completionIcon}>✅</Text>
+              <Text style={styles.completionTitle}>
+                You completed this session
+              </Text>
+            </View>
+            <Text style={styles.completionSubtitle}>
+              Capture how you feel now to strengthen your progress tracking.
+            </Text>
+            <TouchableOpacity
+              style={styles.completionActionButton}
+              activeOpacity={0.88}
+              onPress={() => navigation.navigate("DailyCheckInScreen")}
+            >
+              <Text style={styles.completionActionText}>
+                Next Action: Log Check-in
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.techniqueCard}>
           <View style={styles.techniqueHeaderRow}>
@@ -545,7 +631,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
                   isActive && styles.techniqueButtonActive,
                 ]}
                 activeOpacity={0.88}
-                onPress={() => setSelectedTechnique(option.key)}
+                onPress={() => {
+                  setSelectedTechnique(option.key);
+                  setStarted(false);
+                  setIsSessionCompleted(false);
+                }}
               >
                 <Text style={styles.techniqueButtonIcon}>{option.icon}</Text>
                 <View style={styles.techniqueTextWrap}>
@@ -719,6 +809,36 @@ const styles = StyleSheet.create({
     borderColor: "#D6E6FF",
     borderRadius: 16,
     padding: 12,
+  },
+  progressStateRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  progressStateChip: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#EAF2FF",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressStateChipActive: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#93C5FD",
+  },
+  progressStateText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  progressStateTextActive: {
+    color: "#1D4ED8",
+    fontWeight: "800",
   },
   sessionStatusRow: {
     flexDirection: "row",
@@ -939,6 +1059,46 @@ const styles = StyleSheet.create({
   },
   stopButtonTextDisabled: {
     color: "#94A3B8",
+  },
+  completionCard: {
+    backgroundColor: "#ECFDF3",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+    padding: 14,
+    marginBottom: 12,
+  },
+  completionTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  completionIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  completionTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#14532D",
+  },
+  completionSubtitle: {
+    fontSize: 13,
+    color: "#166534",
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  completionActionButton: {
+    backgroundColor: "#16A34A",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  completionActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   footerNote: {
     marginTop: 4,

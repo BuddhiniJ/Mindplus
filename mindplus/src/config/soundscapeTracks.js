@@ -14,4 +14,19 @@ export const SOUNDSCAPE_TRACKS = {
   white: {
     uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
   },
+  river: {
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+  },
+  night: {
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+  },
+  pink: {
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+  },
+  brown: {
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+  },
+  piano: {
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+  },
 };
