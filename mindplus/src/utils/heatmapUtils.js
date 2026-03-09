@@ -3,9 +3,9 @@ export const getDaysInMonth = (year, month) => {
 };
 
 export const STRESS_COLORS = {
-  low: "#DCFCE7",
-  medium: "#FEF3C7",
-  high: "#FEE2E2",
+  low: "#4CAF50",
+  medium: "#FFC107",
+  high: "#F44336",
 };
 
 export const generateMockPredictions = (year, month) => {

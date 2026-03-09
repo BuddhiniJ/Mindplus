@@ -91,7 +91,7 @@ export default function HeatmapScreen({ navigation }) {
     const user = auth.currentUser;
     if (!user) return;
 
-    console.log("function called");
+    // console.log("function called");
 
     const docRef = doc(db, "users", user.uid, "stressData", monthKey);
     const snapshot = await getDoc(docRef);
@@ -249,15 +249,11 @@ export default function HeatmapScreen({ navigation }) {
   };
 
   const recalculateStress = async (dateString) => {
-    // console.log("function called");
+    console.log("function called");
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-
-      // const data = await response.json();
-      // console.log("Backend response:", data);
-
       const baselineSnap = await getDoc(
         doc(db, "users", user.uid, "baseline", "dass21")
       );
@@ -274,15 +270,6 @@ export default function HeatmapScreen({ navigation }) {
       );
 
       const logsSnapshot = await getDocs(logsQuery);
-      // const recentLogs = logsSnapshot.docs.map(doc => {
-      //   const data = doc.data();
-      //   return {
-      //     stress_today: data.stress_today,
-      //     energy_level: data.energy_level,
-      //     sleep_hours: data.sleep_hours,
-      //     workload_intensity: data.workload_intensity
-      //   };
-      // });
 
       const recentLogs = logsSnapshot.docs.map((doc) => {
         const data = doc.data();
@@ -344,32 +331,14 @@ export default function HeatmapScreen({ navigation }) {
         });
       }
 
-
-      // const payload = {
-      //   baseline: baselineData,
-      //   recent_logs: recentLogs,
-      //   previous_fingerprint: previousFingerprint,
-      //   upcoming_events: upcomingEventsArray
-      // };
-
       const payload = {
         baseline: baselineData || null,
-        recent_logs: recentLogs.filter(log => log.stress_today !== null),
+        recent_logs: recentLogs,
         previous_fingerprint: previousFingerprint || null,
-        upcoming_events: upcomingEventsArray
+        upcoming_events: upcomingEventsArray || []
       };
 
-      // const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(payload),
-      // });
-
-      // console.log(payload);
-
-      // const data = await response.json();
-
-      console.log("Sending payload:", JSON.stringify(payload, null, 2));
+      console.log(payload);
 
       const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
@@ -383,13 +352,16 @@ export default function HeatmapScreen({ navigation }) {
 
       console.log("Backend response:", data);
 
-      if (data.status === "success" && data.data.future_5_days) {
+      if (
+        data.status === "success" &&
+        data.data.future_5_days &&
+        data.data.future_5_days.future_5_days
+      ) {
 
         const newPredictions = {};
-
         const today = new Date();
 
-        data.data.future_5_days.forEach((value, index) => {
+        data.data.future_5_days.future_5_days.forEach((value, index) => {
           const futureDate = new Date();
           futureDate.setDate(today.getDate() + index + 1);
 
@@ -547,13 +519,27 @@ export default function HeatmapScreen({ navigation }) {
                 const isPastOrToday = diffDays <= 0;
                 const isWithinForecastWindow = diffDays > 0 && diffDays <= 5;
 
-                if ((hasPrediction && (isPastOrToday || isWithinForecastWindow))) {
-                  // const stressValue =
-                  //   (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
-                  const stressValue = predictions[dateKey] || 0;
+                // if ((hasPrediction && (isPastOrToday || isWithinForecastWindow))) {
+                //   // const stressValue =
+                //   //   (predictions[dateKey] || 0) + (isWithinForecastWindow ? totalWeight * 0.6 : 0);
+                //   const stressValue = predictions[dateKey] || 0;
 
+                //   const level = calculateStressLevel(stressValue, 0);
+                //   stressColor = STRESS_COLORS[level];
+                // }
+
+                let isFuturePrediction = false;
+
+                if (hasPrediction && (isPastOrToday || isWithinForecastWindow)) {
+
+                  const stressValue = predictions[dateKey] || 0;
                   const level = calculateStressLevel(stressValue, 0);
+
                   stressColor = STRESS_COLORS[level];
+
+                  if (isWithinForecastWindow) {
+                    isFuturePrediction = true;
+                  }
                 }
 
                 // return (
@@ -590,7 +576,8 @@ export default function HeatmapScreen({ navigation }) {
                     <View
                       style={[
                         styles.dayWrapper,
-                        isToday && styles.todayBorder
+                        isToday && styles.todayBorder,
+                        isFuturePrediction && styles.futurePrediction
                       ]}
                     >
                       <CalendarDay
@@ -604,6 +591,28 @@ export default function HeatmapScreen({ navigation }) {
                 );
 
               })}
+            </View>
+
+            <View style={styles.legendContainer}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: "#4CAF50" }]} />
+                <Text style={styles.legendText}>Low Stress</Text>
+              </View>
+
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: "#FFC107" }]} />
+                <Text style={styles.legendText}>Moderate Stress</Text>
+              </View>
+
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: "#F44336" }]} />
+                <Text style={styles.legendText}>High Stress</Text>
+              </View>
+
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, styles.futureLegend]} />
+                <Text style={styles.legendText}>Predicted</Text>
+              </View>
             </View>
 
             <View style={styles.todayMessageContainer}>
@@ -743,6 +752,46 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#6366F1", // matches your theme
     borderRadius: 50,
-    // padding: 2,
+    padding: 2,
+  },
+  futurePrediction: {
+    opacity: 0.5,
+    borderWidth: 2,
+    borderColor: "#9d9eee", // matches your theme
+    borderRadius: 50,
+    padding: 2,
+    borderStyle: "dashed",
+  },
+  legendContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginTop: 15,
+  },
+
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 10,
+    marginVertical: 5,
+  },
+
+  legendBox: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+
+  futureLegend: {
+    borderWidth: 2,
+    borderColor: "#9d9eee",
+    backgroundColor: "transparent",
+    borderStyle: "dotted",
+  },
+
+  legendText: {
+    fontSize: 12,
+    color: "#444",
   },
 });
