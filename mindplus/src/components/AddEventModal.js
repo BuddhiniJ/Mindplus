@@ -59,14 +59,9 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
               <TouchableOpacity
                 key={num}
                 onPress={() => setImportance(num)}
-                style={{
-                  padding: 8,
-                  margin: 4,
-                  borderRadius: 6,
-                  backgroundColor: importance === num ? "#4A90E2" : "#ccc"
-                }}
+                style={importanceBtn(importance === num)}
               >
-                <Text style={{ color: "white" }}>{num}</Text>
+                <Text style={{ color: importance === num ? "#fff" : "#1E3A8A" }}>{num}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -86,14 +81,16 @@ export default function AddEventModal({ visible, date, onSave, onClose }) {
 
 const inputStyle = {
   borderWidth: 1,
-  borderColor: "#E5E7EB",
+  borderColor: "#93C5FD", // light blue border
   borderRadius: 12,
   padding: 14,
   marginTop: 12,
+  backgroundColor: "#EFF6FF", // very light blue background
+  color: "#1E3A8A", // dark blue text
 };
 
 const primaryBtn = {
-  backgroundColor: "#3B82F6",
+  backgroundColor: "#2563EB", // deep blue
   padding: 14,
   borderRadius: 12,
   marginTop: 16,
@@ -106,6 +103,17 @@ const secondaryBtn = {
 };
 
 const btnText = {
-  color: "#fff",
+  color: "#FFFFFF",
   fontWeight: "600",
 };
+
+const importanceBtn = (selected) => ({
+  padding: 8,
+  width:31,
+  margin: 4,
+  borderRadius: 6,
+  backgroundColor: selected ? "#1D4ED8" : "#BFDBFE", // selected deep blue, unselected light blue
+  color: selected ? "#FFFFFF" : "#1E3A8A",
+  justifyContent: "center",
+  alignItems: "center",
+});
