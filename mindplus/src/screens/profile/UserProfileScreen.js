@@ -14,6 +14,7 @@ import { avatars } from "../../utils/avatars";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { clearChatHistory } from "../../services/chatHistoryService";
+import BottomNavigation from "../../components/BottomNavigation";
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -72,18 +73,18 @@ export default function ProfileScreen({ navigation }) {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate("HomeDashboardScreen")}
+        <View style={styles.container1}>
+          <LinearGradient
+            colors={['#b3c6ddff', '#4895D0']}
+            style={styles.hheader}
           >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <View style={{ width: 40 }} />
-        </View>
+            <View style={styles.headerContent}>
+              <Text style={styles.title}>My Proflie</Text>
+              <Text style={styles.subtitle}></Text>
 
+            </View>
+          </LinearGradient>
+        </View>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
@@ -124,19 +125,21 @@ export default function ProfileScreen({ navigation }) {
               />
               <Text style={styles.menuText}>Retake Assessment</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons
-              name="exit-outline"
-              size={24}
-              color="#A52A2A"
-              style={styles.menuIcon}
-            />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+
+            {/* Logout Button */}
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons
+                name="exit-outline"
+                size={24}
+                color="#A52A2A"
+                style={styles.menuIcon}
+              />
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
+        <BottomNavigation navigation={navigation} />
       </LinearGradient>
     </View>
   );
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 40,
     marginBottom: 30,
   },
   avatar: {
@@ -220,12 +223,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    // Shadow for iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   menuIcon: {
     marginRight: 15,
@@ -240,7 +237,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFF0F0",
-    width: "90%",
     padding: 18,
     borderRadius: 15,
     borderWidth: 1,
@@ -250,5 +246,38 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#000",
     fontWeight: "500",
+  },
+  headerContent: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#ffffffff",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#ffffffff",
+    fontWeight: "500",
+  },
+  hheader: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop:10,
+  },
+  container1: {
+    flex: 1,
+    paddingTop: 20,
   },
 });
