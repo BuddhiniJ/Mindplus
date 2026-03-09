@@ -15,6 +15,8 @@ from services.emotion_service import (
     predict, coping_strategy, health, MODEL_NAME
 )
 from routes.fingerprint_routes import router as fingerprint_router
+from services.advanced_stress_model import predict_future_stress
+
 
 # =====  Chatbot Imports =====
 from services.chatbot_service import (
@@ -69,28 +71,6 @@ async def emotion_predict(payload: PredictRequest):
 async def emotion_coping_strategy(payload: CopingStrategyRequest):
     return await coping_strategy(payload)
 
-# @app.post("/predict")
-# def predict_cluster(scores: UserScores):
-
-#     # Convert input to numpy array
-#     x = np.array([[scores.stress, scores.anxiety, scores.depression]])
-
-#     # Get cluster index
-#     cluster_id = model.predict(x)[0]
-
-#     # Return cluster label from dictionary
-#     label = LABELS.get(cluster_id, "unknown")
-
-#     # Confidence: inverse distance to centroid (simple metric)
-#     distances = model.transform(x)[0]
-#     confidence = float(1 / (1 + distances[cluster_id]))
-
-#     return {
-#         "clusterId": int(cluster_id),
-#         "label": label,
-#         "confidence": confidence
-#     }
-
 # ================= CHATBOT ROUTES ====================
 
 @app.post("/chatbot/analyze", response_model=AnalysisResult)
@@ -127,7 +107,27 @@ def root():
 # Include voice routes
 app.include_router(voice_routes)
 
-app.include_router(fingerprint_router, prefix="/api")
+### Stress prediction
+@app.post("/api/fingerprint/evolve")
+def evolve_fingerprint(payload: dict):
+
+    try:
+
+        predictions = predict_future_stress(payload)
+
+        return {
+            "status": "success",
+            "data": {
+                "future_5_days": predictions
+            }
+        }
+
+    except Exception as e:
+
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 # Startup event
 @app.on_event("startup")
