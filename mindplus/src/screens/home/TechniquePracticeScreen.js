@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { TECHNIQUE_DETAILS } from "../../components/chatbot/TechniqueDetailCard";
 
 // Helper to normalize technique names
@@ -1546,7 +1547,15 @@ export default function TechniquePracticeScreen({ route, navigation }) {
           style={styles.backButton}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>{"\u2190"} Back to Chat</Text>
+          <View style={styles.backContent}>
+            <Ionicons
+              name="chevron-back"
+              size={14}
+              style={{ marginRight: 4 }}
+              color="#111827"
+            />
+            <Text style={styles.backButtonText}>Back to Chat</Text>
+          </View>
         </TouchableOpacity>
 
         <Text style={styles.title}>{technique}</Text>
@@ -1603,6 +1612,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#FFFFFF",
     marginBottom: 18,
+  },
+  backContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   backButtonText: {
     fontSize: 13,

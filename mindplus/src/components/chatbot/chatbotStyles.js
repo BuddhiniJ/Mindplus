@@ -5,6 +5,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#EEF2FF",
   },
+  containerDark: {
+    backgroundColor: "#020617",
+  },
+  containerForest: {
+    backgroundColor: "#022c22",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -23,6 +29,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
     borderBottomLeftRadius: 34,
     borderBottomRightRadius: 34,
+  },
+  headerDark: {
+    backgroundColor: "#020617",
+  },
+  headerForest: {
+    backgroundColor: "#064e3b",
   },
   headerTopRow: {
     flexDirection: "row",
@@ -323,6 +335,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 80,
   },
+  messagesContainerCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingBottom: 60,
+  },
   emptyState: {
     alignItems: "center",
     marginTop: 40,
@@ -407,6 +424,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#111827",
     fontWeight: "500",
+  },
+  messageTextLarge: {
+    fontSize: 17,
   },
   metaContainer: {
     marginTop: 14,
@@ -503,6 +523,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#4B5563",
     marginRight: 8,
+  },
+  settingsSectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4B5563",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  settingsThemeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    marginBottom: 4,
+  },
+  settingsThemePill: {
+    flex: 1,
+    marginHorizontal: 3,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    alignItems: "center",
+  },
+  settingsThemePillActive: {
+    backgroundColor: "#3B82F6",
+    borderColor: "#3B82F6",
+  },
+  settingsThemePillLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  settingsThemePillLabelActive: {
+    color: "#FFFFFF",
   },
   voiceRow: {
     flexDirection: "row",
@@ -865,6 +921,12 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "700",
+  },
+  messageTimestamp: {
+    marginTop: 4,
+    fontSize: 10,
+    color: "#9CA3AF",
+    alignSelf: "flex-end",
   },
   commandsRow: {
     marginHorizontal: 16,

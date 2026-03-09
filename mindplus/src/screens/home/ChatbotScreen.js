@@ -71,6 +71,12 @@ const STATUS_THEME = {
   },
 };
 
+const CHAT_THEMES = [
+  { id: "calm", label: "Calm blue" },
+  { id: "forest", label: "Forest" },
+  { id: "dark", label: "Dark" },
+];
+
 const QUICK_COMMANDS = [
   // Core wellbeing flows
   {
@@ -268,6 +274,11 @@ export default function ChatbotScreen({ navigation }) {
   const [showResources, setShowResources] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [resourcesMeta, setResourcesMeta] = useState(null);
+  const [showStressCard, setShowStressCard] = useState(true);
+  const [chatTheme, setChatTheme] = useState("calm");
+  const [compactMessages, setCompactMessages] = useState(false);
+  const [showTimestamps, setShowTimestamps] = useState(false);
+  const [largeText, setLargeText] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -1048,6 +1059,13 @@ export default function ChatbotScreen({ navigation }) {
     stressLevel: lastStatusMeta?.stressLevel,
   });
 
+  const themeContainerStyle =
+    chatTheme === "dark"
+      ? styles.containerDark
+      : chatTheme === "forest"
+        ? styles.containerForest
+        : null;
+
   const handleOpenResources = (meta) => {
     const targetMeta = meta || lastStatusMeta;
     if (!targetMeta) return;
@@ -1056,11 +1074,12 @@ export default function ChatbotScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.container}>
+    <View style={[styles.container, themeContainerStyle]}>
+      <SafeAreaView style={[styles.container, themeContainerStyle]}>
         <ChatHeader
           onBack={() => navigation.goBack()}
           onSettings={() => setShowSettingsPanel(true)}
+          theme={chatTheme}
         />
 
         {dailyQuote && (
@@ -1073,11 +1092,13 @@ export default function ChatbotScreen({ navigation }) {
           </View>
         )}
 
-        <ChatStatusCard
-          statusTheme={statusTheme}
-          overallLabel={overallLabel}
-          stressPercent={stressPercent}
-        />
+        {showStressCard && (
+          <ChatStatusCard
+            statusTheme={statusTheme}
+            overallLabel={overallLabel}
+            stressPercent={stressPercent}
+          />
+        )}
 
         <Modal
           visible={showCommands}
@@ -1151,12 +1172,89 @@ export default function ChatbotScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
+              <View style={{ marginTop: 4, marginBottom: 4 }}>
+                <Text style={styles.settingsSectionTitle}>Assistant</Text>
+              </View>
+
               <View style={styles.autoVoiceRow}>
                 <Text style={styles.autoVoiceLabel}>Auto voice</Text>
                 <Switch
                   value={autoVoiceEnabled}
                   onValueChange={setAutoVoiceEnabled}
                 />
+              </View>
+
+              <View style={{ marginTop: 12, marginBottom: 4 }}>
+                <Text style={styles.settingsSectionTitle}>Insights</Text>
+              </View>
+
+              <View style={styles.autoVoiceRow}>
+                <Text style={styles.autoVoiceLabel}>
+                  Show stress insight card
+                </Text>
+                <Switch
+                  value={showStressCard}
+                  onValueChange={setShowStressCard}
+                />
+              </View>
+
+              <View style={{ marginTop: 12, marginBottom: 6 }}>
+                <Text style={styles.settingsSectionTitle}>Chat appearance</Text>
+              </View>
+
+              <View style={styles.settingsThemeRow}>
+                {CHAT_THEMES.map((theme) => {
+                  const isActive = chatTheme === theme.id;
+                  return (
+                    <TouchableOpacity
+                      key={theme.id}
+                      style={[
+                        styles.settingsThemePill,
+                        isActive && styles.settingsThemePillActive,
+                      ]}
+                      onPress={() => setChatTheme(theme.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.settingsThemePillLabel,
+                          isActive && styles.settingsThemePillLabelActive,
+                        ]}
+                      >
+                        {theme.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={[styles.autoVoiceRow, { marginTop: 10 }]}>
+                <Text style={styles.autoVoiceLabel}>
+                  Compact message layout
+                </Text>
+                <Switch
+                  value={compactMessages}
+                  onValueChange={setCompactMessages}
+                />
+              </View>
+
+              <View style={{ marginTop: 16, marginBottom: 4 }}>
+                <Text style={styles.settingsSectionTitle}>
+                  Details & accessibility
+                </Text>
+              </View>
+
+              <View style={styles.autoVoiceRow}>
+                <Text style={styles.autoVoiceLabel}>Show message time</Text>
+                <Switch
+                  value={showTimestamps}
+                  onValueChange={setShowTimestamps}
+                />
+              </View>
+
+              <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                <Text style={styles.autoVoiceLabel}>Larger chat text</Text>
+                <Switch value={largeText} onValueChange={setLargeText} />
               </View>
 
               <TouchableOpacity
@@ -1323,6 +1421,9 @@ export default function ChatbotScreen({ navigation }) {
               onPressVoice={handleToggleVoice}
               speakingMessageId={speakingMessageId}
               onPressHelpfulResources={handleOpenResources}
+              compactMode={compactMessages}
+              showTimestamps={showTimestamps}
+              largeText={largeText}
             />
           </View>
 

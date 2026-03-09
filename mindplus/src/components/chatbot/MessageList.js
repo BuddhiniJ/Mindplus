@@ -22,6 +22,9 @@ export default function MessageList({
   onPressVoice,
   speakingMessageId,
   onPressHelpfulResources,
+  compactMode = false,
+  showTimestamps = false,
+  largeText = false,
 }) {
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0));
@@ -43,10 +46,26 @@ export default function MessageList({
     }
   }, [showMoodOptions, moodOptions?.length]);
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    try {
+      const d = new Date(timestamp);
+      return d.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return "";
+    }
+  };
+
   return (
     <ScrollView
       ref={scrollViewRef}
-      contentContainerStyle={styles.messagesContainer}
+      contentContainerStyle={[
+        styles.messagesContainer,
+        compactMode && styles.messagesContainerCompact,
+      ]}
       keyboardShouldPersistTaps="handled"
     >
       {messages.length === 0 && (
@@ -86,7 +105,11 @@ export default function MessageList({
                 {msg.label}
               </Text>
               <Text
-                style={[styles.messageText, isUser && { color: "#FFFFFF" }]}
+                style={[
+                  styles.messageText,
+                  largeText && styles.messageTextLarge,
+                  isUser && { color: "#FFFFFF" },
+                ]}
               >
                 {msg.text}
               </Text>
@@ -196,6 +219,12 @@ export default function MessageList({
                 )}
 
               {/* helpful-resources button now sits next to the Listen button in voiceRow */}
+
+              {showTimestamps && msg.timestamp && (
+                <Text style={styles.messageTimestamp}>
+                  {formatTime(msg.timestamp)}
+                </Text>
+              )}
             </View>
           </View>
         );
