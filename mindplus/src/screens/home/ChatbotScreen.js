@@ -1470,7 +1470,7 @@ export default function ChatbotScreen({ navigation }) {
   return (
     <SafeAreaView
       style={[styles.container, themeContainerStyle]}
-      edges={["top", "left", "right"]}
+      edges={["top", "left", "right", "bottom"]}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
