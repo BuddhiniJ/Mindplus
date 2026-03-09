@@ -153,7 +153,9 @@ export default function ChatInputBar({
   return (
     <View
       style={{
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingTop: 0,
+        paddingBottom: 22,
         borderTopWidth: 1,
         borderColor: "#E2E8F0",
         backgroundColor: "#FFFFFF",
@@ -161,7 +163,7 @@ export default function ChatInputBar({
         shadowOpacity: isFocused ? 0.08 : 0.04,
         shadowRadius: 8,
         elevation: isFocused ? 4 : 2,
-        marginBottom: 4,
+        marginBottom: -27, // Compensate for extra padding when keyboard is open
       }}
     >
       <View
@@ -183,6 +185,7 @@ export default function ChatInputBar({
             fontWeight: "600",
             borderWidth: isFocused ? 1 : 0,
             borderColor: isFocused ? "#3B82F6" : "transparent",
+            marginTop: 16,
           }}
           value={input}
           onChangeText={(text) => {
@@ -210,6 +213,7 @@ export default function ChatInputBar({
             backgroundColor: listening ? "#F97373" : "#E5E7EB",
             alignItems: "center",
             justifyContent: "center",
+            marginTop: 16,
             transform: [{ scale: pressed ? 0.95 : 1 }],
           })}
         >
@@ -230,6 +234,7 @@ export default function ChatInputBar({
             paddingHorizontal: 16,
             borderRadius: 20,
             justifyContent: "center",
+            marginTop: 16,
             height: 40,
             opacity: !canSend ? 1 : pressed ? 0.85 : 1,
             transform: [{ scale: pressed && canSend ? 0.97 : 1 }],
