@@ -143,8 +143,6 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "See your emotional snapshot",
       icon: "💭",
       color: "#FCE7F3",
-      featured: false,
-      cta: "View snapshot",
       onPress: handleViewTodayEmotion,
     },
     {
@@ -153,8 +151,6 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "Get your personalized support",
       icon: "💡",
       color: "#DDD6FE",
-      featured: false,
-      cta: "Start support plan",
       onPress: handleCopingStrategy,
     },
     {
@@ -163,8 +159,6 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "Let your voice carry the weight",
       icon: "🎙️",
       color: "#DBF4D6",
-      featured: false,
-      cta: "Record now",
       onPress: () => navigation.navigate("VoiceRecorderScreen"),
     },
     {
@@ -173,8 +167,6 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "See how your stress shifts",
       icon: "📅",
       color: "#EEF2FF",
-      featured: false,
-      cta: "Open calendar",
       onPress: () => navigation.navigate("HeatmapScreen"),
     },
     {
@@ -183,8 +175,6 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "Talk with your AI companion",
       icon: "💬",
       color: "#FEF3C7",
-      featured: false,
-      cta: "Start chat",
       onPress: () => navigation.navigate("ChatbotScreen"),
     },
     {
@@ -193,13 +183,9 @@ export default function HomeDashboardScreen({ navigation }) {
       subtitle: "Step into calming sound layers",
       icon: "🎧",
       color: "#E0F2FE",
-      featured: false,
-      cta: "Listen now",
       onPress: () => navigation.navigate("SoundscapeScreen"),
     },
   ];
-  const spotlightActions = quickActions.filter((action) => action.featured);
-  const regularActions = quickActions.filter((action) => !action.featured);
 
   return (
     <View style={styles.container}>
@@ -240,7 +226,7 @@ export default function HomeDashboardScreen({ navigation }) {
                 </Text>
               </View>
             </View>
-          </View>          
+          </View>
 
           <View style={styles.actionsSection}>
             <Text style={styles.sectionTitle}>Choose Your Calm Path</Text>
@@ -249,37 +235,8 @@ export default function HomeDashboardScreen({ navigation }) {
               moment.
             </Text>
 
-            <View style={styles.spotlightStack}>
-              {spotlightActions.map((action) => (
-                <TouchableOpacity
-                  key={action.key}
-                  style={styles.spotlightCard}
-                  onPress={action.onPress}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.spotlightGlow} />
-                  <View style={styles.spotlightTopRow}>
-                    <View
-                      style={[
-                        styles.spotlightIconWrap,
-                        { backgroundColor: action.color },
-                      ]}
-                    >
-                      <Text style={styles.spotlightIcon}>{action.icon}</Text>
-                    </View>
-                    <Text style={styles.spotlightTag}>Quick Relief</Text>
-                  </View>
-                  <Text style={styles.spotlightTitle}>{action.title}</Text>
-                  <Text style={styles.spotlightSubtitle}>{action.subtitle}</Text>
-                  <View style={styles.spotlightButton}>
-                    <Text style={styles.spotlightButtonText}>{action.cta}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <View style={styles.actionsGrid}>
-              {regularActions.map((action) => (
+              {quickActions.map((action) => (
                 <TouchableOpacity
                   key={action.key}
                   style={styles.actionCard}
@@ -299,10 +256,6 @@ export default function HomeDashboardScreen({ navigation }) {
                   <Text style={styles.actionDescription}>
                     {action.subtitle}
                   </Text>
-
-                  <View style={styles.actionFooterPill}>
-                    <Text style={styles.actionFooterText}>Open</Text>
-                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -619,82 +572,6 @@ const styles = {
   },
   actionsSection: {
     marginBottom: 24,
-  },
-  spotlightStack: {
-    marginBottom: 14,
-    gap: 12,
-  },
-  spotlightCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#DFEBF7",
-    padding: 16,
-    overflow: "hidden",
-    shadowColor: "#3F6283",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  spotlightGlow: {
-    position: "absolute",
-    top: -18,
-    right: -10,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(212, 228, 247, 0.46)",
-  },
-  spotlightTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  spotlightIconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  spotlightIcon: {
-    fontSize: 26,
-  },
-  spotlightTag: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    color: "#33587A",
-    backgroundColor: "#EDF5FF",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  spotlightTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#102940",
-    marginBottom: 4,
-  },
-  spotlightSubtitle: {
-    fontSize: 13,
-    color: "#4C6073",
-    lineHeight: 19,
-    marginBottom: 12,
-  },
-  spotlightButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#2A5F8D",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 11,
-  },
-  spotlightButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
   },
   sectionTitle: {
     fontSize: 22,
