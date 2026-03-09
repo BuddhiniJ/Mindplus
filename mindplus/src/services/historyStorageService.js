@@ -48,7 +48,13 @@ export async function deleteAudioFile(uri) {
  */
 export async function saveAnalysisLocally(analysis, userId) {
   try {
+    console.log('[saveAnalysisLocally] 💾 Saving analysis');
+    console.log('[saveAnalysisLocally] 👤 User ID:', userId);
+    console.log('[saveAnalysisLocally] ⏰ Timestamp:', analysis.timestamp);
+    console.log('[saveAnalysisLocally] 🎯 Stress type:', analysis.stressType);
+    
     const history = await getLocalHistory(userId);
+    console.log('[saveAnalysisLocally] 📚 Current history length:', history.length);
 
     const newEntry = {
       id: `${userId}_${analysis.timestamp}`,
@@ -56,25 +62,36 @@ export async function saveAnalysisLocally(analysis, userId) {
       text: analysis.text || '',
       localAudioPath: analysis.localAudioPath || null,
       stress_scores: analysis.stress_scores || {},
-      stress_levels: analysis.stress_levels || {},
+      keyword_counts: analysis.keyword_counts || {},
       stressType: analysis.stressType || 'Unknown',
+      dominant_score: analysis.dominant_score || 0,
       total_stress_score: analysis.total_stress_score || 0,
-      overall_level: analysis.overall_level || 'Low',
+      overall_score: analysis.overall_score || 0,
       confidence: analysis.confidence || 0,
       timestamp: analysis.timestamp || Date.now(),
     };
 
+    console.log('[saveAnalysisLocally] 📝 New entry created:', newEntry.id);
+    
     history.unshift(newEntry); // newest first
     const trimmedHistory = history.slice(0, 100);
 
-    await AsyncStorage.setItem(
-      `${HISTORY_KEY}_${userId}`,
-      JSON.stringify(trimmedHistory)
-    );
-
+    const storageKey = `${HISTORY_KEY}_${userId}`;
+    console.log('[saveAnalysisLocally] 🔑 Storage key:', storageKey);
+    console.log('[saveAnalysisLocally] 📊 Will save:', trimmedHistory.length, 'records');
+    
+    const jsonString = JSON.stringify(trimmedHistory);
+    console.log('[saveAnalysisLocally] 📦 Serialized size:', jsonString.length, 'bytes');
+    
+    await AsyncStorage.setItem(storageKey, jsonString);
+    
+    // Verify it was saved
+    const verify = await AsyncStorage.getItem(storageKey);
+    console.log('[saveAnalysisLocally] ✅ Save verified:', !!verify, 'bytes:', verify ? verify.length : 0);
+    
     return newEntry;
   } catch (err) {
-    console.error('Failed to save analysis:', err);
+    console.error('[saveAnalysisLocally] ❌ Error:', err);
     throw err;
   }
 }
@@ -84,20 +101,89 @@ export async function saveAnalysisLocally(analysis, userId) {
  */
 export async function getLocalHistory(userId) {
   try {
-    const data = await AsyncStorage.getItem(`${HISTORY_KEY}_${userId}`);
-    if (!data) return [];
+    const storageKey = `${HISTORY_KEY}_${userId}`;
+    console.log('[getLocalHistory] 🔑 Storage key:', storageKey);
+    console.log('[getLocalHistory] 👤 UserId:', userId);
+    
+    const data = await AsyncStorage.getItem(storageKey);
+    console.log('[getLocalHistory] 📦 Raw data exists:', !!data);
+    console.log('[getLocalHistory] 📦 Raw data length:', data ? data.length : 0);
+    
+    if (!data) {
+      console.log('[getLocalHistory] ✅ No data found for key:', storageKey);
+      
+      // Debug: Log all keys to help troubleshoot
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const relevantKeys = allKeys.filter(k => k.includes('stress_analysis') || k.includes(userId));
+        console.log('[getLocalHistory] 🔍 Relevant keys:', relevantKeys);
+      } catch (e) {
+        console.log('[getLocalHistory] 🔍 Error listing keys:', e);
+      }
+      
+      return [];
+    }
+    
     let history = JSON.parse(data);
-    if (!Array.isArray(history)) history = [];
+    console.log('[getLocalHistory] 📊 Parsed history array length:', Array.isArray(history) ? history.length : 'not an array');
+    
+    if (!Array.isArray(history)) {
+      console.log('[getLocalHistory] ⚠️ History is not an array, converting to empty');
+      history = [];
+    }
+    
     // filter by provided userId (defensive)
+    const beforeFilter = history.length;
     history = history.filter(item => item.userId === userId);
+    console.log('[getLocalHistory] 🔄 After userId filter:', beforeFilter, '->', history.length);
+    
     // Ensure timestamp is a Date object
-    return history.map(item => ({
+    const processedHistory = history.map(item => ({
       ...item,
       timestamp: new Date(item.timestamp),
     }));
+    
+    console.log('[getLocalHistory] ✅ Final processed history:', processedHistory.length, 'items');
+    return processedHistory;
   } catch (err) {
-    console.error('Failed to get local history:', err);
+    console.error('[getLocalHistory] ❌ Error:', err);
     return [];
+  }
+}
+
+
+/**
+ * Migrate history from an old user ID to a new one. This is useful when
+ * an anonymous Firebase sign-in generates a UID after the app has already
+ * recorded entries under a temporary local ID. We merge any existing
+ * entries and then delete the old key.
+ */
+export async function migrateHistory(oldUserId, newUserId) {
+  if (!oldUserId || !newUserId || oldUserId === newUserId) return;
+
+  try {
+    const oldHistory = await getLocalHistory(oldUserId);
+    if (oldHistory.length === 0) return;
+
+    const newHistory = await getLocalHistory(newUserId);
+    // combine and dedupe by entry id
+    const combined = [...oldHistory, ...newHistory];
+    const seen = new Set();
+    const deduped = combined.filter(entry => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    });
+
+    await AsyncStorage.setItem(
+      `${HISTORY_KEY}_${newUserId}`,
+      JSON.stringify(deduped)
+    );
+    // remove old key
+    await AsyncStorage.removeItem(`${HISTORY_KEY}_${oldUserId}`);
+    console.log(`✅ Migrated history from ${oldUserId} to ${newUserId}`);
+  } catch (err) {
+    console.error('History migration failed:', err);
   }
 }
 

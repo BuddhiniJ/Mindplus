@@ -31,18 +31,14 @@ export async function analyzeStress(userId, text, audioUrl) {
     const data = await response.json();
     console.log('✅ Backend response:', data);
 
-    // Normalize response: backend returns string levels, we need to ensure consistency
-    const normalizedLevels = {};
-    Object.keys(data.stress_levels || {}).forEach(type => {
-      normalizedLevels[type] = data.stress_levels[type]; // Keep as string ("Low", "Moderate", "High")
-    });
-
+    // Normalize response: backend now returns raw scores without levels
     return {
       stress_scores: data.stress_scores || {},
-      stress_levels: normalizedLevels, // String levels from backend
+      keyword_counts: data.keyword_counts || {},
       dominant_type: data.dominant_type || 'Emotional',
+      dominant_score: data.dominant_score || 0,
       total_stress_score: data.total_stress_score || 0,
-      overall_level: data.overall_level || 'Low', // Backend returns string level
+      overall_score: data.overall_score || 0,
       confidence: data.confidence || 0.5,
     };
 
@@ -107,29 +103,26 @@ function analyzeStressLocally(text) {
 
   console.log('📊 Local scores:', scores);
 
-  // Calculate stress levels as STRINGS to match backend format
-  const calculateLevel = (score) => {
-    if (score < 0.33) return 'Low';
-    if (score < 0.66) return 'Moderate';
-    return 'High';
-  };
-
-  const stress_levels = {};
-  Object.keys(scores).forEach(type => {
-    stress_levels[type] = calculateLevel(scores[type]);
-  });
-
   // Find dominant type
   const dominant_type = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
   const total_stress_score = Object.values(scores).reduce((a, b) => a + b, 0);
-  const overall_level = calculateLevel(total_stress_score / 4); // String level
+  const overall_score = total_stress_score / 4;
+
+  // Mock keyword counts for local fallback
+  const keyword_counts = {
+    Academic: academicCount,
+    Financial: financialCount,
+    Social: socialCount,
+    Emotional: emotionalCount,
+  };
 
   return {
     stress_scores: scores,
-    stress_levels: stress_levels,
+    keyword_counts: keyword_counts,
     dominant_type: dominant_type,
+    dominant_score: scores[dominant_type],
     total_stress_score: total_stress_score,
-    overall_level: overall_level,
+    overall_score: overall_score,
     confidence: scores[dominant_type],
   };
 }
