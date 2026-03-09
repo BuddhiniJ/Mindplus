@@ -31,6 +31,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from "../../config/api.js";
+import BottomNavigation from "../../components/BottomNavigation.js";
 
 export default function HeatmapScreen({ navigation }) {
   // Month names for display
@@ -249,7 +250,7 @@ export default function HeatmapScreen({ navigation }) {
   };
 
   const recalculateStress = async (dateString) => {
-    console.log("function called");
+    // console.log("function called");
     const user = auth.currentUser;
     if (!user) return;
 
@@ -338,7 +339,7 @@ export default function HeatmapScreen({ navigation }) {
         upcoming_events: upcomingEventsArray || []
       };
 
-      console.log(payload);
+      // console.log(payload);
 
       const response = await fetch(`${API_BASE_URL}/api/fingerprint/evolve`, {
         method: "POST",
@@ -350,7 +351,7 @@ export default function HeatmapScreen({ navigation }) {
 
       const data = await response.json();
 
-      console.log("Backend response:", data);
+      // console.log("Backend response:", data);
 
       if (
         data.status === "success" &&
@@ -429,29 +430,32 @@ export default function HeatmapScreen({ navigation }) {
         end={{ x: 1, y: 1 }}
       >
         <ScrollView style={styles.container}>
-          <View style={styles.content}>
 
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-              >
-                <Ionicons name="arrow-back" size={24} color="white" />
-              </TouchableOpacity>
+          <LinearGradient
+            colors={['#b3c6ddff', '#4895D0']}
+            style={styles.hheader}
+          >
+            <View style={styles.headerContent}>
+              <Text style={styles.title}>Stress Heatmap</Text>
+              <Text style={styles.subtitle}>Track your stress patterns</Text>
             </View>
-            <View style={styles.header}>
+          </LinearGradient>
+          
+          <View style={styles.content}>
+            <View style={styles.monthSelector}>
 
-              <TouchableOpacity onPress={goToPreviousMonth}>
-                <Text style={styles.monthNav}>{"<"}</Text>
+              <TouchableOpacity onPress={goToPreviousMonth} style={styles.monthArrow}>
+                <Ionicons name="chevron-back" size={22} color="#4F8EF7" />
               </TouchableOpacity>
 
-              <Text style={styles.title}>
+              <Text style={styles.monthTitle}>
                 {MONTH_NAMES[month]} {year}
               </Text>
 
-              <TouchableOpacity onPress={goToNextMonth}>
-                <Text style={styles.monthNav}>{">"}</Text>
+              <TouchableOpacity onPress={goToNextMonth} style={styles.monthArrow}>
+                <Ionicons name="chevron-forward" size={22} color="#4F8EF7" />
               </TouchableOpacity>
+
             </View>
 
             {/* Weekday names row */}
@@ -468,7 +472,11 @@ export default function HeatmapScreen({ navigation }) {
             </View>
 
             {loading && (
-              <ActivityIndicator size="small" color="#6366F1" />
+              <ActivityIndicator
+                size="small"
+                color="#4F8EF7"
+                style={{ marginVertical: 10 }}
+              />
             )}
 
             <View style={styles.calendarGrid}>
@@ -585,6 +593,7 @@ export default function HeatmapScreen({ navigation }) {
                         stressColor={stressColor}
                         hasEvents={events.length > 0}
                         onPress={() => openDay(day)}
+                        activeOpacity={0.7}
                       />
                     </View>
                   </View>
@@ -622,9 +631,17 @@ export default function HeatmapScreen({ navigation }) {
                   { backgroundColor: STRESS_COLORS[todayLevel] },
                 ]}
               />
-              <Text style={styles.todayMessageText}>
-                {todayMessage}
-              </Text>
+              <View style={{ flex: 1 }}>
+
+                <Text style={styles.insightTitle}>
+                  Today's Insight
+                </Text>
+
+                <Text style={styles.todayMessageText}>
+                  {todayMessage}
+                </Text>
+
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -640,6 +657,7 @@ export default function HeatmapScreen({ navigation }) {
           }
           onClose={() => setModalVisible(false)}
         />
+        <BottomNavigation navigation={navigation} />
       </LinearGradient>
     </>
   );
@@ -647,24 +665,27 @@ export default function HeatmapScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   weekdaysRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 4,
-    marginLeft: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    paddingHorizontal: 6
   },
+
   weekdayText: {
-    textAlign: 'center',
-    fontWeight: '600',
-    color: '#6366F1',
-    fontSize: 15,
-    marginRight: 2,
+    width: "14.28%",
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#6B7A99",
+    fontSize: 13
   },
   monthNav: {
-    fontSize: 22,
-    color: '#6366F1',
-    fontWeight: 'bold',
-    marginHorizontal: 8,
-    marginTop: 20,
+    fontSize: 20,
+    color: "#4F8EF7",
+    fontWeight: "700",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "#EAF2FF"
   },
   gradientBackground: {
     flex: 1,
@@ -674,30 +695,37 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   content: {
-    padding: 20,
+    padding: 22
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 8,
+    marginBottom: 18,
+    paddingHorizontal: 10,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#22223B',
-    flex: 1,
-    textAlign: 'center',
-  },
+
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#A3CEF1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "#4F8EF7",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#4F8EF7",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1F2A44",
+    flex: 1,
+    textAlign: "center",
+    letterSpacing: 0.4
   },
   todayButton: {
     backgroundColor: '#6366F1',
@@ -712,53 +740,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginVertical: 12,
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginVertical: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2
   },
   todayMessageContainer: {
-    marginTop: 24,
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: 22,
+    padding: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    borderLeftWidth: 6,
+    borderLeftColor: "#b9d1fb"
   },
+
   todayStressIndicator: {
-    width: 12,
-    height: 48,
+    width: 10,
+    height: 46,
     borderRadius: 6,
-    marginRight: 16,
+    marginRight: 14
   },
+
   todayMessageText: {
     flex: 1,
-    fontSize: 16,
-    color: '#22223B',
-    marginTop: 0,
-    fontWeight: '500',
+    fontSize: 15,
+    color: "#1F2A44",
+    fontWeight: "500",
+    lineHeight: 20
   },
   dayWrapper: {
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  todayBorder: {
-    borderWidth: 3,
-    borderColor: "#6366F1", // matches your theme
     borderRadius: 50,
-    padding: 2,
+    padding: 3,
+  },
+  todayBorder: {
+    borderWidth: 2,
+    borderColor: "#4F8EF7",
+    backgroundColor: "#EDF4FF",
+    borderRadius: 15,
   },
   futurePrediction: {
-    opacity: 0.5,
+    opacity: 0.6,
     borderWidth: 2,
-    borderColor: "#9d9eee", // matches your theme
-    borderRadius: 50,
+    borderColor: "#7FB3FF",
+    borderRadius: 15,
     padding: 2,
     borderStyle: "dashed",
   },
@@ -766,21 +806,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    marginTop: 15,
+    marginTop: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2
   },
 
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 10,
-    marginVertical: 5,
+    marginVertical: 4
   },
 
   legendBox: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
-    marginRight: 6,
+    width: 12,
+    height: 12,
+    borderRadius: 4,
+    marginRight: 6
+  },
+
+  legendText: {
+    fontSize: 12,
+    color: "#6B7A99",
+    fontWeight: "500"
   },
 
   futureLegend: {
@@ -789,9 +843,93 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderStyle: "dotted",
   },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 4
+  },
 
-  legendText: {
-    fontSize: 12,
-    color: "#444",
+  headerTextContainer: {
+    flex: 1,
+  },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1F2A44",
+    letterSpacing: 0.3
+  },
+
+  headerSubtitle: {
+    fontSize: 13,
+    color: "#6B7A99",
+    marginTop: 2
+  },
+  monthSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2
+  },
+
+  monthTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2A44"
+  },
+
+  monthArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F2F6FF",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  insightTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4F8EF7",
+    marginBottom: 4
+  },
+  headerContent: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#ffffffff",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#ffffffff",
+    fontWeight: "500",
+  },
+  hheader: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop:10,
   },
 });
