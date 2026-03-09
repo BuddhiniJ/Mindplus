@@ -15,9 +15,13 @@ import {
 import VisualAffirmation from "../../components/VisualAffirmation";
 import BoxBreathingCard from "../../components/BoxBreathingCard";
 import GroundingCard from "../../components/GroundingCard";
+import MovementBreakCard from "../../components/MovementBreakCard";
+import SelfCompassionCard from "../../components/SelfCompassionCard";
 import { fetchCopingStrategy } from "../../services/api";
 
-const SESSION_SECONDS = 60;
+const DEFAULT_SESSION_SECONDS = 60;
+const MOVEMENT_BREAK_SECONDS = 300;
+const SELF_COMPASSION_SECONDS = 60;
 // Temporary override: show Box Breathing for all emotions/confidence.
 const FORCE_BOX_BREATHING = true;
 
@@ -44,10 +48,15 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     severity = "medium",
     confidence,
     strategy: strategyFromRoute,
+    technique: techniqueFromRoute,
+    duration_seconds: durationFromRoute,
   } = route?.params || {};
 
   const [started, setStarted] = useState(false);
+  const [isSessionCompleted, setIsSessionCompleted] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
+  const [selectedTechnique, setSelectedTechnique] = useState("box");
+  const [affirmationDuration, setAffirmationDuration] = useState(60);
   const bounceAnim = useMemo(() => new Animated.Value(0), []);
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
@@ -70,7 +79,9 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const showBreathing = FORCE_BOX_BREATHING || isAnxiety;
 
-  const [secondsRemaining, setSecondsRemaining] = useState(SESSION_SECONDS);
+  const [secondsRemaining, setSecondsRemaining] = useState(
+    DEFAULT_SESSION_SECONDS
+  );
   const timerPulseAnim = useMemo(() => new Animated.Value(1), []);
   // Progress animation for timer bar
   const timerProgressAnim = useMemo(() => new Animated.Value(1), []);
@@ -81,6 +92,48 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   );
   const [copingLoading, setCopingLoading] = useState(false);
   const [copingError, setCopingError] = useState(null);
+  const [recommendedTechnique, setRecommendedTechnique] = useState(
+    typeof techniqueFromRoute === "string" ? techniqueFromRoute : null
+  );
+  const [recommendedDuration, setRecommendedDuration] = useState(
+    Number.isFinite(Number(durationFromRoute))
+      ? Number(durationFromRoute)
+      : null
+  );
+
+  const mapTechniqueKey = (rawTechnique) => {
+    const key = String(rawTechnique || "")
+      .trim()
+      .toLowerCase();
+    if (key === "movement_break") return "movement";
+    if (key === "box_breathing") return "box";
+    if (key === "grounding") return "grounding";
+    if (key === "self_compassion") return "self_compassion";
+    if (key === "calmtimer") return "affirmation";
+    return null;
+  };
+
+  const activeSessionSeconds = useMemo(() => {
+    if (selectedTechnique === "affirmation") {
+      return Number.isFinite(Number(affirmationDuration)) &&
+        Number(affirmationDuration) > 0
+        ? Number(affirmationDuration)
+        : DEFAULT_SESSION_SECONDS;
+    }
+    if (selectedTechnique === "movement") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : MOVEMENT_BREAK_SECONDS;
+    }
+    if (selectedTechnique === "self_compassion") {
+      return Number.isFinite(Number(recommendedDuration)) &&
+        Number(recommendedDuration) > 0
+        ? Number(recommendedDuration)
+        : SELF_COMPASSION_SECONDS;
+    }
+    return DEFAULT_SESSION_SECONDS;
+  }, [affirmationDuration, recommendedDuration, selectedTechnique]);
 
   // Fetch or resolve coping strategy based on emotion and confidence
   useEffect(() => {
@@ -110,6 +163,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           const result = await fetchCopingStrategy(emotion, numericConfidence);
           if (!active) return;
           setCopingStrategy(result?.strategy || null);
+          setRecommendedTechnique(result?.technique || null);
+          setRecommendedDuration(result?.duration_seconds ?? null);
         } catch (e) {
           if (!active) return;
           setCopingError(
@@ -174,25 +229,36 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   useEffect(() => {
     if (!showBreathing) return;
     const fraction =
-      SESSION_SECONDS > 0 ? secondsRemaining / SESSION_SECONDS : 0;
+      activeSessionSeconds > 0 ? secondsRemaining / activeSessionSeconds : 0;
     Animated.timing(timerProgressAnim, {
       toValue: fraction,
       duration: 220,
       useNativeDriver: false,
     }).start();
-  }, [showBreathing, secondsRemaining, timerProgressAnim]);
+  }, [
+    activeSessionSeconds,
+    showBreathing,
+    secondsRemaining,
+    timerProgressAnim,
+  ]);
 
   // Start or restart the calm session
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
+    setIsSessionCompleted(false);
     setStarted(true);
-    setSecondsRemaining(SESSION_SECONDS);
+    setSecondsRemaining(activeSessionSeconds);
     bounceAnim.setValue(0);
     Animated.spring(bounceAnim, {
       toValue: 1,
       friction: 5,
       useNativeDriver: true,
     }).start();
+  };
+
+  const handleStop = () => {
+    setStarted(false);
+    setIsSessionCompleted(false);
   };
 
   const emotionLabel = useMemo(() => {
@@ -224,6 +290,14 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const headerTitle = "Calm Session";
 
+  const headerTechniqueLabel = useMemo(() => {
+    if (selectedTechnique === "self_compassion") return "Self Compassion";
+    if (selectedTechnique === "movement") return "Movement Break";
+    if (selectedTechnique === "grounding") return "Grounding";
+    if (selectedTechnique === "box") return "Box Breathing";
+    return "Calm Timer";
+  }, [selectedTechnique]);
+
   const anxietyExercise = useMemo(() => {
     if (FORCE_BOX_BREATHING) return "box";
     if (!isAnxiety) return null;
@@ -231,6 +305,82 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     if (anxietyBand === "medium") return "box";
     return "grounding";
   }, [anxietyBand, isAnxiety]);
+
+  useEffect(() => {
+    const mapped = mapTechniqueKey(recommendedTechnique);
+    if (mapped) {
+      setSelectedTechnique(mapped);
+      return;
+    }
+
+    if (anxietyExercise === "grounding") {
+      setSelectedTechnique("grounding");
+      return;
+    }
+    if (anxietyExercise === "box") {
+      setSelectedTechnique("box");
+      return;
+    }
+    setSelectedTechnique("affirmation");
+  }, [anxietyExercise, recommendedTechnique]);
+
+  useEffect(() => {
+    if (!started) {
+      setSecondsRemaining(activeSessionSeconds);
+    } else {
+      setSecondsRemaining((prev) => Math.min(prev, activeSessionSeconds));
+    }
+  }, [activeSessionSeconds, started]);
+
+  // Transition to completed state when the session timer reaches zero.
+  useEffect(() => {
+    if (!started) return;
+    if (secondsRemaining > 0) return;
+    setStarted(false);
+    setIsSessionCompleted(true);
+  }, [secondsRemaining, started]);
+
+  const sessionState = isSessionCompleted
+    ? "completed"
+    : started
+      ? "active"
+      : "ready";
+
+  const techniqueOptions = useMemo(
+    () => [
+      {
+        key: "affirmation",
+        label: "Calm Timer",
+        icon: "🌟",
+        caption: "Gentle positive guidance",
+      },
+      {
+        key: "box",
+        label: "Box Breathing",
+        icon: "🫁",
+        caption: "Steady 4-step rhythm",
+      },
+      {
+        key: "grounding",
+        label: "Grounding",
+        icon: "🌿",
+        caption: "Anchor with your senses",
+      },
+      {
+        key: "self_compassion",
+        label: "Self Compassion",
+        icon: "💗",
+        caption: "Pause, speak kindly, and repeat slowly",
+      },
+      {
+        key: "movement",
+        label: "Movement Break",
+        icon: "🚶",
+        caption: "Stand, stretch, and walk for 5 minutes",
+      },
+    ],
+    []
+  );
 
   // Do not show this screen if anxiety is very low
   if (!FORCE_BOX_BREATHING && isAnxiety && anxietyBand === "low") {
@@ -241,16 +391,29 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     <View style={styles.screen}>
       <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
         {/* Header with navigation and title */}
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
-          <View style={{ width: 64 }} />
+        <View style={styles.headerShell}>
+          <View style={styles.headerAuraOne} />
+          <View style={styles.headerAuraTwo} />
+
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backArrow}>←</Text>
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerKicker}>GUIDED RESET</Text>
+              <Text style={styles.headerTitle}>{headerTitle}</Text>
+            </View>
+
+            <View style={styles.headerMeta}>
+              <Text style={styles.headerMetaText}>{headerTechniqueLabel}</Text>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -264,7 +427,17 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         </View>
 
         <View style={styles.strategyCard}>
-          <Text style={styles.strategyTitle}>Coping Strategy</Text>
+          <View style={styles.strategyGlow} />
+
+          <View style={styles.strategyTopRow}>
+            <View style={styles.strategyBadge}>
+              <Text style={styles.strategyBadgeText}>PERSONALIZED</Text>
+            </View>
+            <Text style={styles.strategyEmoji}>💡</Text>
+          </View>
+
+          <Text style={styles.strategyTitle}>Your Coping Strategy</Text>
+          <Text style={styles.strategyLead}>Take this one small step now:</Text>
 
           {copingLoading ? (
             <Text style={styles.strategyTextMuted}>
@@ -281,19 +454,33 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           )}
         </View>
 
-        {anxietyExercise === "box" ? (
+        {selectedTechnique === "box" ? (
           <BoxBreathingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
           />
-        ) : anxietyExercise === "grounding" ? (
+        ) : selectedTechnique === "grounding" ? (
           <GroundingCard
             secondsRemaining={secondsRemaining}
             progressAnim={timerProgressAnim}
             pulseAnim={timerPulseAnim}
-            sessionSeconds={SESSION_SECONDS}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "movement" ? (
+          <MovementBreakCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
+          />
+        ) : selectedTechnique === "self_compassion" ? (
+          <SelfCompassionCard
+            secondsRemaining={secondsRemaining}
+            progressAnim={timerProgressAnim}
+            pulseAnim={timerPulseAnim}
+            sessionSeconds={activeSessionSeconds}
           />
         ) : (
           <Animated.View
@@ -314,22 +501,167 @@ export default function VisualAffirmationScreen({ route, navigation }) {
               severity={severity}
               start={started}
               autoStart={false}
-              durationSeconds={60}
+              durationSeconds={affirmationDuration}
+              onDurationChange={setAffirmationDuration}
             />
           </Animated.View>
         )}
 
-        {/* Start/Restart button for the session */}
-        <View style={styles.ctaRow}>
-          <TouchableOpacity
-            style={[styles.startButton, started && styles.startButtonActive]}
-            activeOpacity={0.9}
-            onPress={handleStart}
-          >
-            <Text style={styles.startButtonText}>
-              {started ? "Restart 1:00" : "Start 1:00 Calm"}
+        {/* Start/Restart and Stop controls */}
+        <View style={styles.ctaPanel}>
+          <View style={styles.progressStateRow}>
+            {[
+              { key: "ready", label: "Ready" },
+              { key: "active", label: "Active" },
+              { key: "completed", label: "Completed" },
+            ].map((state) => {
+              const isCurrent = sessionState === state.key;
+              return (
+                <View
+                  key={state.key}
+                  style={[
+                    styles.progressStateChip,
+                    isCurrent && styles.progressStateChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.progressStateText,
+                      isCurrent && styles.progressStateTextActive,
+                    ]}
+                  >
+                    {state.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.sessionStatusRow}>
+            <Text style={styles.sessionStatusText}>
+              {sessionState === "completed"
+                ? "Session Completed"
+                : sessionState === "active"
+                  ? "Session Active"
+                  : "Session Ready"}
             </Text>
-          </TouchableOpacity>
+            <Text style={styles.sessionStatusTime}>
+              {sessionState === "active"
+                ? `${secondsRemaining}s left`
+                : sessionState === "completed"
+                  ? "Great job"
+                  : "Press start"}
+            </Text>
+          </View>
+
+          <View style={styles.ctaRow}>
+            <TouchableOpacity
+              style={[styles.startButton, started && styles.startButtonActive]}
+              activeOpacity={0.9}
+              onPress={handleStart}
+            >
+              <Text style={styles.startButtonText}>
+                {sessionState === "completed"
+                  ? "↻ Start Again"
+                  : started
+                    ? "↻ Restart"
+                    : "▶ Start Calm"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.stopButton, !started && styles.stopButtonDisabled]}
+              activeOpacity={0.9}
+              onPress={handleStop}
+              disabled={!started}
+            >
+              <Text
+                style={[
+                  styles.stopButtonText,
+                  !started && styles.stopButtonTextDisabled,
+                ]}
+              >
+                ⏹ Stop
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {isSessionCompleted ? (
+          <View style={styles.completionCard}>
+            <View style={styles.completionTopRow}>
+              <Text style={styles.completionIcon}>✅</Text>
+              <Text style={styles.completionTitle}>
+                You completed this session
+              </Text>
+            </View>
+            <Text style={styles.completionSubtitle}>
+              Capture how you feel now to strengthen your progress tracking.
+            </Text>
+            <TouchableOpacity
+              style={styles.completionActionButton}
+              activeOpacity={0.88}
+              onPress={() => navigation.navigate("DailyCheckInScreen")}
+            >
+              <Text style={styles.completionActionText}>
+                Next Action: Log Check-in
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={styles.techniqueCard}>
+          <View style={styles.techniqueHeaderRow}>
+            <Text style={styles.techniqueTitle}>
+              Try Other Coping Techniques
+            </Text>
+            <Text style={styles.techniqueHeaderIcon}>🎛️</Text>
+          </View>
+          <Text style={styles.techniqueSubtitle}>
+            Pick the support style that feels best right now.
+          </Text>
+
+          {techniqueOptions.map((option) => {
+            const isActive = selectedTechnique === option.key;
+            return (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.techniqueButton,
+                  isActive && styles.techniqueButtonActive,
+                ]}
+                activeOpacity={0.88}
+                onPress={() => {
+                  setSelectedTechnique(option.key);
+                  setStarted(false);
+                  setIsSessionCompleted(false);
+                }}
+              >
+                <Text style={styles.techniqueButtonIcon}>{option.icon}</Text>
+                <View style={styles.techniqueTextWrap}>
+                  <Text
+                    style={[
+                      styles.techniqueButtonLabel,
+                      isActive && styles.techniqueButtonLabelActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.techniqueButtonCaption,
+                      isActive && styles.techniqueButtonCaptionActive,
+                    ]}
+                  >
+                    {option.caption}
+                  </Text>
+                </View>
+                {isActive ? (
+                  <Text style={styles.techniqueSelected}>Selected</Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Emotion-specific breathing tip */}
@@ -356,28 +688,103 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerShell: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    overflow: "hidden",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  headerAuraOne: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#DBEAFE",
+    top: -46,
+    right: -24,
+    opacity: 0.72,
+  },
+  headerAuraTwo: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#E0E7FF",
+    bottom: -34,
+    left: -14,
+    opacity: 0.66,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
-    paddingTop: 6,
+    gap: 10,
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFFAA",
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    minWidth: 76,
+  },
+  backArrow: {
+    fontSize: 14,
+    color: "#1E3A8A",
+    fontWeight: "900",
+    marginRight: 4,
   },
   backText: {
     fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "700",
+    color: "#1E3A8A",
+    fontWeight: "800",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerKicker: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: "#2563EB",
+    fontWeight: "900",
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
     color: "#0F172A",
+  },
+  headerMeta: {
+    minWidth: 76,
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  headerMetaText: {
+    fontSize: 10,
+    color: "#3730A3",
+    fontWeight: "900",
+    textAlign: "center",
   },
   hero: {
     marginBottom: 18,
@@ -394,44 +801,227 @@ const styles = StyleSheet.create({
     color: "#374151",
     lineHeight: 22,
   },
-  ctaRow: {
+  ctaPanel: {
     marginTop: 6,
     marginBottom: 12,
+    backgroundColor: "#F8FAFF",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    borderRadius: 16,
+    padding: 12,
+  },
+  progressStateRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  progressStateChip: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#EAF2FF",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressStateChipActive: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#93C5FD",
+  },
+  progressStateText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  progressStateTextActive: {
+    color: "#1D4ED8",
+    fontWeight: "800",
+  },
+  sessionStatusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sessionStatusText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sessionStatusTime: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  ctaRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   strategyCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 12,
+    position: "relative",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  strategyGlow: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#DBEAFE",
+    top: -58,
+    right: -48,
+    opacity: 0.75,
+  },
+  strategyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  strategyBadge: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  strategyBadgeText: {
+    fontSize: 11,
+    color: "#1D4ED8",
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  strategyEmoji: {
+    fontSize: 20,
   },
   strategyTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "800",
     color: "#0F172A",
+    marginBottom: 6,
+  },
+  strategyLead: {
+    fontSize: 13,
+    color: "#1D4ED8",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
     marginBottom: 10,
   },
   strategyText: {
-    fontSize: 15,
-    color: "#111827",
-    lineHeight: 22,
+    fontSize: 16,
+    color: "#0F172A",
+    lineHeight: 24,
     fontWeight: "600",
   },
   strategyTextMuted: {
     fontSize: 14,
-    color: "#4B5563",
-    lineHeight: 20,
+    color: "#475569",
+    lineHeight: 21,
     fontWeight: "600",
+  },
+  techniqueCard: {
+    backgroundColor: "#F8FAFF",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#D1E4FF",
+  },
+  techniqueHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  techniqueTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  techniqueHeaderIcon: {
+    fontSize: 18,
+  },
+  techniqueSubtitle: {
+    fontSize: 13,
+    color: "#475569",
+    marginBottom: 10,
+  },
+  techniqueButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDEAFE",
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  techniqueButtonActive: {
+    borderColor: "#60A5FA",
+    backgroundColor: "#EFF6FF",
+    shadowColor: "#60A5FA",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  techniqueButtonIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  techniqueTextWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  techniqueButtonLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 2,
+  },
+  techniqueButtonLabelActive: {
+    color: "#1D4ED8",
+  },
+  techniqueButtonCaption: {
+    fontSize: 12,
+    color: "#64748B",
+  },
+  techniqueButtonCaptionActive: {
+    color: "#334155",
+  },
+  techniqueSelected: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   startButton: {
     backgroundColor: "#3B82F6",
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
     shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -444,8 +1034,71 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: "#FFFFFF",
     fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+  stopButton: {
+    width: 120,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    paddingVertical: 16,
+  },
+  stopButtonDisabled: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#E2E8F0",
+  },
+  stopButtonText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#475569",
+    letterSpacing: 0.2,
+  },
+  stopButtonTextDisabled: {
+    color: "#94A3B8",
+  },
+  completionCard: {
+    backgroundColor: "#ECFDF3",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+    padding: 14,
+    marginBottom: 12,
+  },
+  completionTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  completionIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  completionTitle: {
     fontSize: 16,
-    letterSpacing: 0.4,
+    fontWeight: "800",
+    color: "#14532D",
+  },
+  completionSubtitle: {
+    fontSize: 13,
+    color: "#166534",
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  completionActionButton: {
+    backgroundColor: "#16A34A",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  completionActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   footerNote: {
     marginTop: 4,

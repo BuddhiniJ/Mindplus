@@ -19,6 +19,9 @@ export default function MessageList({
   moodOptions,
   showMoodOptions,
   onSelectMood,
+  onPressVoice,
+  speakingMessageId,
+  onPressHelpfulResources,
 }) {
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0));
@@ -88,6 +91,22 @@ export default function MessageList({
                 {msg.text}
               </Text>
 
+              {!isUser && !!msg.text && (
+                <View style={styles.voiceRow}>
+                  <Pressable
+                    onPress={() => onPressVoice && onPressVoice(msg)}
+                    style={styles.voiceButton}
+                  >
+                    <Text style={styles.voiceButtonIcon}>
+                      {speakingMessageId === msg.id ? "⏹" : "🔊"}
+                    </Text>
+                    <Text style={styles.voiceButtonLabel}>
+                      {speakingMessageId === msg.id ? "Stop" : "Listen"}
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
               {msg.from === "bot" &&
                 msg.isMoodPrompt &&
                 moodOptions &&
@@ -156,6 +175,22 @@ export default function MessageList({
                         </Text>
                       </Pressable>
                     )}
+                  </View>
+                )}
+
+              {msg.from === "bot" &&
+                msg.meta &&
+                (msg.meta.overallStatus || msg.meta.stressLevel) &&
+                onPressHelpfulResources && (
+                  <View style={{ marginTop: 8 }}>
+                    <Pressable
+                      style={styles.commandsButton}
+                      onPress={() => onPressHelpfulResources(msg.meta)}
+                    >
+                      <Text style={styles.commandsButtonText}>
+                        View helpful resources
+                      </Text>
+                    </Pressable>
                   </View>
                 )}
             </View>

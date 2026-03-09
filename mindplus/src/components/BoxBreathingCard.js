@@ -37,16 +37,51 @@ export default function BoxBreathingCard({
 
     return {
       ...(phases[phaseIndex] || phases[0]),
+      phaseIndex,
       remainingInPhase,
     };
   }, [secondsRemaining, sessionSeconds]);
 
+  const phaseSteps = ["Inhale", "Hold", "Exhale", "Hold"];
+
   return (
     <View style={styles.card}>
+      <View style={styles.glowOrb} />
+
+      <View style={styles.topRow}>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>Stress Reset</Text>
+        </View>
+        <Text style={styles.miniTimer}>{formatTime(secondsRemaining)}</Text>
+      </View>
+
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>
-        {phase.label} — {phase.remainingInPhase}s
-      </Text>
+
+      <View style={styles.phaseCard}>
+        <Text style={styles.phaseLabel}>Current Phase</Text>
+        <Text style={styles.subtitle}>
+          {phase.label} - {phase.remainingInPhase}s
+        </Text>
+      </View>
+
+      <View style={styles.stepperRow}>
+        {phaseSteps.map((step, index) => {
+          const isActive = index === phase.phaseIndex;
+          return (
+            <View
+              key={`${step}-${index}`}
+              style={[styles.stepChip, isActive && styles.stepChipActive]}
+            >
+              <Text
+                style={[styles.stepChipText, isActive && styles.stepChipTextActive]}
+              >
+                {step}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+
       <Text style={styles.text}>{phase.note}</Text>
       <Text style={styles.helper}>
         Helpful for anxiety: keep the exhale soft and steady.
@@ -58,7 +93,7 @@ export default function BoxBreathingCard({
         remainingLabel={formatTime(secondsRemaining)}
         ringColor="#C4B5FD"
         textColor="#1F1147"
-        note="1-minute box breathing"
+        note="Box breathing"
       />
     </View>
   );
@@ -67,37 +102,119 @@ export default function BoxBreathingCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 22,
+    padding: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    position: "relative",
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  glowOrb: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: "#EDE9FE",
+    top: -75,
+    right: -60,
+    opacity: 0.8,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  tag: {
+    backgroundColor: "#F5F3FF",
+    borderWidth: 1,
+    borderColor: "#C4B5FD",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  tagText: {
+    color: "#5B21B6",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  miniTimer: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#4C1D95",
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "900",
     color: "#0F172A",
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  phaseCard: {
+    backgroundColor: "#FAF5FF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E9D5FF",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  phaseLabel: {
+    fontSize: 11,
+    color: "#6D28D9",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "800",
-    color: "#111827",
-    marginBottom: 6,
+    color: "#2E1065",
+  },
+  stepperRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  stepChip: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  stepChipActive: {
+    backgroundColor: "#DDD6FE",
+    borderColor: "#A78BFA",
+  },
+  stepChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  stepChipTextActive: {
+    color: "#4C1D95",
   },
   text: {
-    fontSize: 14,
-    color: "#4B5563",
-    lineHeight: 20,
-    fontWeight: "600",
+    fontSize: 15,
+    color: "#374151",
+    lineHeight: 22,
+    fontWeight: "700",
     marginBottom: 8,
   },
   helper: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "#5B6270",
     lineHeight: 18,
     fontWeight: "600",
     marginBottom: 10,

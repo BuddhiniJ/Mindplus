@@ -3,25 +3,38 @@ import { View, Text, TouchableOpacity, Image } from "react-native";
 import styles from "./chatbotStyles";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ChatHeader({ onBack }) {
+export default function ChatHeader({ onBack, onSettings }) {
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        onPress={onBack}
-        activeOpacity={0.7}
-        style={styles.backButton}
-        hitSlop={{ top: 10, bottom: 20, left: 0, right: 10 }}
-      >
-        <View style={styles.backContent}>
-          <Ionicons
-            name="chevron-back"
-            size={14}
-            style={{ marginLeft: -4 }}
-            color="#000000ff"
-          />
-          <Text style={styles.backText}>Back</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.headerTopRow}>
+        <TouchableOpacity
+          onPress={onBack}
+          activeOpacity={0.7}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 20, left: 0, right: 10 }}
+        >
+          <View style={styles.backContent}>
+            <Ionicons
+              name="chevron-back"
+              size={14}
+              style={{ marginLeft: -4 }}
+              color="#000000ff"
+            />
+            <Text style={styles.backText}>Back</Text>
+          </View>
+        </TouchableOpacity>
+
+        {onSettings && (
+          <TouchableOpacity
+            onPress={onSettings}
+            activeOpacity={0.7}
+            style={styles.settingsButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="settings-outline" size={18} color="#1E3A8A" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.headerRow}>
         <View style={styles.headerTextContainer}>

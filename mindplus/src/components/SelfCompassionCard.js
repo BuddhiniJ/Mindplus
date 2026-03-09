@@ -1,4 +1,4 @@
-// Grounding card component - displays 5-4-3-2-1 sensory awareness exercise
+// Self-compassion card component - displays a 1-minute guided kindness reset
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import CalmTimer from "./CalmTimer";
@@ -10,38 +10,56 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
-export default function GroundingCard({
+export default function SelfCompassionCard({
   secondsRemaining,
   progressAnim,
   pulseAnim,
   sessionSeconds = 60,
-  title = "Grounding (5–4–3–2–1)",
+  title = "Self Compassion (1 Minute)",
 }) {
-  // Calculate current grounding step (1-5) based on elapsed time, 12 seconds per step
-  const grounding = useMemo(() => {
+  const flow = useMemo(() => {
     const elapsed = sessionSeconds - secondsRemaining;
     const clampedElapsed = Math.max(0, Math.min(sessionSeconds, elapsed));
-    const stepDuration = 12;
-    const step = Math.min(5, Math.floor(clampedElapsed / stepDuration) + 1);
-    // Five sensory awareness steps for grounding technique
+
     const steps = [
-      "Name 5 things you can see",
-      "Name 4 things you can touch",
-      "Name 3 things you can hear",
-      "Name 2 things you can smell",
-      "Name 1 thing you can taste",
+      {
+        title: "Pause and breathe",
+        note: "Place one hand on your chest and take one slow inhale, longer exhale.",
+        mantra: "I can soften this moment.",
+      },
+      {
+        title: "Think of something kind to say to yourself",
+        note: "Use the same words you would offer to a close friend.",
+        mantra: "I deserve patience and care.",
+      },
+      {
+        title: "Repeat it slowly",
+        note: "Whisper your kind phrase 3 times while breathing steadily.",
+        mantra: "I am doing my best, and that is enough.",
+      },
     ];
-    return { step, steps };
+
+    const segment = sessionSeconds / steps.length;
+    const stepIndex = Math.min(
+      steps.length - 1,
+      Math.floor(clampedElapsed / segment)
+    );
+
+    return {
+      stepNumber: stepIndex + 1,
+      totalSteps: steps.length,
+      current: steps[stepIndex],
+      steps,
+    };
   }, [secondsRemaining, sessionSeconds]);
 
-  // Display grounding steps list, progress indicator, and countdown timer
   return (
     <View style={styles.card}>
       <View style={styles.glowOrb} />
 
       <View style={styles.topRow}>
         <View style={styles.tag}>
-          <Text style={styles.tagText}>Sensory Reset</Text>
+          <Text style={styles.tagText}>Kindness Reset</Text>
         </View>
         <Text style={styles.miniTimer}>{formatTime(secondsRemaining)}</Text>
       </View>
@@ -49,26 +67,35 @@ export default function GroundingCard({
       <Text style={styles.title}>{title}</Text>
 
       <View style={styles.progressCard}>
-        <Text style={styles.progressLabel}>Progress</Text>
-        <Text style={styles.subtitle}>{`${grounding.step}/5`}</Text>
+        <Text style={styles.progressLabel}>Now Practicing</Text>
+        <Text style={styles.subtitle}>
+          Step {flow.stepNumber}/{flow.totalSteps}
+        </Text>
+        <Text style={styles.currentMantra}>{flow.current.mantra}</Text>
       </View>
 
-      <Text style={styles.helper}>
-        Helpful for anxiety: name items out loud if you can.
-      </Text>
-
       <View style={styles.list}>
-        {grounding.steps.map((text, index) => {
-          const stepNumber = index + 1;
-          const active = stepNumber === grounding.step;
+        {flow.steps.map((step, index) => {
+          const stepNo = index + 1;
+          const active = stepNo === flow.stepNumber;
           return (
-            <View key={text} style={[styles.row, active && styles.rowActive]}>
+            <View
+              key={step.title}
+              style={[styles.row, active && styles.rowActive]}
+            >
               <Text style={[styles.index, active && styles.indexActive]}>
-                {stepNumber}
+                {stepNo}
               </Text>
-              <Text style={[styles.rowText, active && styles.rowTextActive]}>
-                {text}
-              </Text>
+              <View style={styles.rowTextWrap}>
+                <Text
+                  style={[styles.rowTitle, active && styles.rowTitleActive]}
+                >
+                  {step.title}
+                </Text>
+                <Text style={[styles.rowText, active && styles.rowTextActive]}>
+                  {step.note}
+                </Text>
+              </View>
             </View>
           );
         })}
@@ -78,9 +105,9 @@ export default function GroundingCard({
         progressAnim={progressAnim}
         pulseAnim={pulseAnim}
         remainingLabel={formatTime(secondsRemaining)}
-        ringColor="#7DD3FC"
-        textColor="#0B1E34"
-        note="Grounding"
+        ringColor="#F9A8D4"
+        textColor="#4A044E"
+        note="Self-compassion"
       />
     </View>
   );
@@ -93,7 +120,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#BAE6FD",
+    borderColor: "#FBCFE8",
     position: "relative",
     overflow: "hidden",
     shadowColor: "#000",
@@ -107,10 +134,10 @@ const styles = StyleSheet.create({
     width: 170,
     height: 170,
     borderRadius: 85,
-    backgroundColor: "#E0F2FE",
-    top: -78,
-    right: -58,
-    opacity: 0.75,
+    backgroundColor: "#FCE7F3",
+    top: -74,
+    right: -56,
+    opacity: 0.8,
   },
   topRow: {
     flexDirection: "row",
@@ -119,15 +146,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tag: {
-    backgroundColor: "#F0F9FF",
+    backgroundColor: "#FDF2F8",
     borderWidth: 1,
-    borderColor: "#7DD3FC",
+    borderColor: "#F9A8D4",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   tagText: {
-    color: "#0369A1",
+    color: "#9D174D",
     fontSize: 11,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -136,7 +163,7 @@ const styles = StyleSheet.create({
   miniTimer: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#0C4A6E",
+    color: "#831843",
   },
   title: {
     fontSize: 17,
@@ -145,9 +172,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   progressCard: {
-    backgroundColor: "#F0F9FF",
+    backgroundColor: "#FDF2F8",
     borderWidth: 1,
-    borderColor: "#BAE6FD",
+    borderColor: "#FBCFE8",
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -156,22 +183,21 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#0369A1",
+    color: "#9D174D",
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 2,
   },
   subtitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#0C4A6E",
+    color: "#831843",
   },
-  helper: {
-    fontSize: 14,
-    color: "#475569",
-    lineHeight: 20,
-    fontWeight: "600",
-    marginBottom: 10,
+  currentMantra: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#9D174D",
+    fontWeight: "700",
   },
   list: {
     gap: 9,
@@ -179,19 +205,19 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingVertical: 11,
     paddingHorizontal: 12,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FDF2F8",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FBCFE8",
   },
   rowActive: {
-    backgroundColor: "#ECFEFF",
-    borderColor: "#38BDF8",
-    shadowColor: "#38BDF8",
-    shadowOpacity: 0.12,
+    backgroundColor: "#FCE7F3",
+    borderColor: "#EC4899",
+    shadowColor: "#EC4899",
+    shadowOpacity: 0.14,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
@@ -202,22 +228,34 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     textAlign: "center",
     textAlignVertical: "center",
-    backgroundColor: "#E2E8F0",
-    color: "#0F172A",
+    backgroundColor: "#FBCFE8",
+    color: "#831843",
     fontWeight: "900",
     marginRight: 10,
   },
   indexActive: {
-    backgroundColor: "#0EA5E9",
+    backgroundColor: "#DB2777",
     color: "#FFFFFF",
   },
-  rowText: {
+  rowTextWrap: {
     flex: 1,
+  },
+  rowTitle: {
     fontSize: 14,
-    color: "#1E293B",
-    fontWeight: "700",
+    color: "#831843",
+    fontWeight: "800",
+    marginBottom: 2,
+  },
+  rowTitleActive: {
+    color: "#9D174D",
+  },
+  rowText: {
+    fontSize: 13,
+    color: "#9D174D",
+    lineHeight: 18,
+    fontWeight: "600",
   },
   rowTextActive: {
-    color: "#0C4A6E",
+    color: "#831843",
   },
 });

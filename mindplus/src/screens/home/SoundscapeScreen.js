@@ -38,16 +38,27 @@ export default function SoundscapeScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Soundscape</Text>
-          <View style={{ width: 64 }} />
+        <View style={styles.headerShell}>
+          <View style={styles.headerAuraOne} />
+          <View style={styles.headerAuraTwo} />
+
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backArrow}>←</Text>
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerKicker}>IMMERSIVE AUDIO</Text>
+              <Text style={styles.headerTitle}>Soundscape</Text>
+            </View>
+
+            <View style={styles.headerSideSpacer} />
+          </View>
         </View>
       </SafeAreaView>
 
@@ -70,11 +81,22 @@ export default function SoundscapeScreen({ navigation }) {
                 { backgroundColor: selected?.accent || "#EEF2FF" },
               ]}
             >
-              <Text style={styles.nowPlayingEmoji}>{selected?.emoji || "🎧"}</Text>
+              <Text style={styles.nowPlayingEmoji}>
+                {selected?.emoji || "🎧"}
+              </Text>
             </View>
             <View style={styles.nowPlayingText}>
-              <Text style={styles.nowPlayingTitle}>{selected?.title || "Track"}</Text>
-              <Text style={styles.nowPlayingSubtitle}>{selected?.subtitle || ""}</Text>
+              <Text style={styles.nowPlayingTitle}>
+                {selected?.title || "Track"}
+              </Text>
+              <Text style={styles.nowPlayingSubtitle}>
+                {selected?.subtitle || ""}
+              </Text>
+              <View style={styles.categoryChip}>
+                <Text style={styles.categoryChipText}>
+                  {selected?.category || "Stress Relief"}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -157,6 +179,9 @@ export default function SoundscapeScreen({ navigation }) {
                     <Text style={styles.tileEmoji}>{s.emoji}</Text>
                   </View>
                   <Text style={styles.tileTitle}>{s.title}</Text>
+                  <Text style={styles.tileCategory}>
+                    {s.category || "Stress Relief"}
+                  </Text>
                   <Text style={styles.tileSubtitle}>{s.subtitle}</Text>
                 </TouchableOpacity>
               );
@@ -187,28 +212,105 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerShell: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    overflow: "hidden",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  headerAuraOne: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "#DBEAFE",
+    top: -44,
+    right: -22,
+    opacity: 0.7,
+  },
+  headerAuraTwo: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#E0E7FF",
+    bottom: -36,
+    left: -18,
+    opacity: 0.65,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
-    paddingTop: 6,
+    gap: 10,
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFFAA",
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    minWidth: 70,
+  },
+  backArrow: {
+    fontSize: 14,
+    color: "#111827",
+    fontWeight: "900",
+    marginRight: 4,
   },
   backText: {
     fontSize: 14,
     color: "#1F2937",
-    fontWeight: "700",
+    fontWeight: "800",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSideSpacer: {
+    minWidth: 70,
+  },
+  headerKicker: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: "#2563EB",
+    fontWeight: "900",
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
     color: "#0F172A",
+  },
+  headerMeta: {
+    minWidth: 52,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  headerMetaText: {
+    fontSize: 12,
+    color: "#3730A3",
+    fontWeight: "900",
   },
   scrollContent: {
     paddingBottom: 24,
@@ -269,6 +371,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#6B7280",
+  },
+  categoryChip: {
+    marginTop: 7,
+    alignSelf: "flex-start",
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  categoryChipText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    letterSpacing: 0.3,
   },
   progressTrack: {
     height: 10,
@@ -403,6 +521,14 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#0F172A",
     marginBottom: 2,
+  },
+  tileCategory: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#2563EB",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 4,
   },
   tileSubtitle: {
     fontSize: 12,
