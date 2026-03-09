@@ -10,9 +10,17 @@ import {
   TouchableOpacity,
   Animated,
   useWindowDimensions,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { fetchCopingStrategy } from "../../services/api";
 import BottomNavigation from "../../components/BottomNavigation";
+import ScreenHeaderCard from "../../components/ScreenHeaderCard";
+import {
+  playBotMessageVoice,
+  stopBotMessageVoice,
+  cleanupTTS,
+} from "../../services/textToSpeechService";
 
 // Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
@@ -62,14 +70,26 @@ export default function CopingStrategyScreen({ route, navigation }) {
   const [copingData, setCopingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSpeakingStrategy, setIsSpeakingStrategy] = useState(false);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
   const ctaPulseAnim = React.useRef(new Animated.Value(1)).current;
   const { width } = useWindowDimensions();
   const isCompactScreen = width < 380;
+  const topPadding =
+    Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
+  const headerKicker = route?.params?.headerKicker || "PERSONALIZED SUPPORT";
+  const headerTitle = route?.params?.headerTitle || "Your Coping Strategy";
 
   useEffect(() => {
     loadCopingStrategy();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      setIsSpeakingStrategy(false);
+      cleanupTTS();
+    };
   }, []);
 
   const normalizedEmotion = String(copingData?.emotion || "")
@@ -179,7 +199,11 @@ export default function CopingStrategyScreen({ route, navigation }) {
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerBackground} />
+        <ScreenHeaderCard
+          topPadding={topPadding}
+          kicker={headerKicker}
+          title={headerTitle}
+        />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -212,27 +236,38 @@ export default function CopingStrategyScreen({ route, navigation }) {
     : "1-minute";
   const recommendedTechnique = copingData.technique || "Guided affirmation";
 
+  const handleToggleStrategyTTS = async () => {
+    const strategyText = String(copingData?.strategy || "").trim();
+    if (!strategyText) return;
+
+    if (isSpeakingStrategy) {
+      await stopBotMessageVoice();
+      setIsSpeakingStrategy(false);
+      return;
+    }
+
+    setIsSpeakingStrategy(true);
+    await playBotMessageVoice(strategyText, {
+      onFinish: () => setIsSpeakingStrategy(false),
+      rate: 0.52,
+    });
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header Background */}
-      <View
-        style={[
-          styles.headerBackground,
-          { backgroundColor: emotionInfo.color + "15" },
-        ]}
+      <ScreenHeaderCard
+        topPadding={topPadding}
+        kicker={headerKicker}
+        title={headerTitle}
       />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-          <Text style={styles.headerTitle}>Your Coping Strategy</Text>
-          <Text style={styles.headerSubtitle}>
-            Personalized guidance based on your emotional state
-          </Text>
-        </Animated.View>
+        <Text style={styles.sectionSubtitle}>
+          Personalized guidance based on your emotional state
+        </Text>
 
         {/* Emotion Summary Card */}
         <Animated.View
@@ -374,6 +409,16 @@ export default function CopingStrategyScreen({ route, navigation }) {
           >
             <Text style={styles.strategyLead}>Right now, try this:</Text>
             <Text style={styles.strategyText}>{copingData.strategy}</Text>
+
+            <TouchableOpacity
+              style={styles.ttsButton}
+              activeOpacity={0.85}
+              onPress={handleToggleStrategyTTS}
+            >
+              <Text style={styles.ttsButtonText}>
+                {isSpeakingStrategy ? "⏹ Stop audio" : "🔊 Listen"}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.strategyFooter}>
@@ -524,14 +569,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
-  headerBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    backgroundColor: "#EEF2FF",
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -547,23 +584,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   scrollContent: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  header: {
-    marginBottom: 24,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
+  sectionSubtitle: {
     fontSize: 15,
     color: "#6B7280",
+    marginBottom: 24,
+    paddingHorizontal: 2,
   },
   emotionSummaryCard: {
     backgroundColor: "#FFFFFF",
@@ -776,6 +804,22 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     lineHeight: 28,
     fontWeight: "600",
+  },
+  ttsButton: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  ttsButtonText: {
+    color: "#3730A3",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   strategyFooter: {
     paddingTop: 14,

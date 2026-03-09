@@ -9,8 +9,11 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
+  Platform,
+  StatusBar,
 } from "react-native";
 import BottomNavigation from "../../components/BottomNavigation";
+import ScreenHeaderCard from "../../components/ScreenHeaderCard";
 
 // Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
@@ -87,6 +90,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
   const [overallEmotion, setOverallEmotion] = useState(null);
   const [loading, setLoading] = useState(true);
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
+  const topPadding =
+    Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
+  const headerKicker = route?.params?.headerKicker || "EMOTION INSIGHT";
+  const headerTitle = route?.params?.headerTitle || "Today's Overall Emotion";
 
   // Calculate overall emotion from daily check-in answers and trigger animation
   useEffect(() => {
@@ -118,7 +125,6 @@ export default function OverallEmotionScreen({ route, navigation }) {
   if (!overallEmotion) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerBackground} />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -140,25 +146,19 @@ export default function OverallEmotionScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header Background */}
-      <View
-        style={[
-          styles.headerBackground,
-          { backgroundColor: overallEmotion.colorCode + "20" },
-        ]}
+      <ScreenHeaderCard
+        topPadding={topPadding}
+        kicker={headerKicker}
+        title={headerTitle}
       />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Today's Overall Emotion</Text>
-          <Text style={styles.headerSubtitle}>
-            Based on your 4 daily check-in responses
-          </Text>
-        </View>
+        <Text style={styles.sectionSubtitle}>
+          Based on your 4 daily check-in responses
+        </Text>
 
         {/* Main Emotion Card */}
         <Animated.View
@@ -339,14 +339,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
-  headerBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    backgroundColor: "#EEF2FF",
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -360,23 +352,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   scrollContent: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  header: {
-    marginBottom: 24,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
+  sectionSubtitle: {
     fontSize: 15,
     color: "#6B7280",
+    marginBottom: 24,
+    paddingHorizontal: 2,
   },
   mainEmotionCard: {
     backgroundColor: "#FFFFFF",

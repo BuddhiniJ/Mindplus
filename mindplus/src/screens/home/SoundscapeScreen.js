@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,10 +13,13 @@ import {
   useGlobalAudioPlayer,
 } from "../../context/GlobalAudioPlayerContext";
 import BottomNavigation from "../../components/BottomNavigation";
+import ScreenHeaderCard from "../../components/ScreenHeaderCard";
 
-export default function SoundscapeScreen({ navigation }) {
+export default function SoundscapeScreen({ navigation, route }) {
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
+  const headerKicker = route?.params?.headerKicker || "IMMERSIVE AUDIO";
+  const headerTitle = route?.params?.headerTitle || "Soundscape";
 
   const {
     selectedTrack,
@@ -38,30 +40,11 @@ export default function SoundscapeScreen({ navigation }) {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView style={[styles.safe, { paddingTop: topPadding }]}>
-        <View style={styles.headerShell}>
-          <View style={styles.headerAuraOne} />
-          <View style={styles.headerAuraTwo} />
-
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.backArrow}>←</Text>
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerKicker}>IMMERSIVE AUDIO</Text>
-              <Text style={styles.headerTitle}>Soundscape</Text>
-            </View>
-
-            <View style={styles.headerSideSpacer} />
-          </View>
-        </View>
-      </SafeAreaView>
+      <ScreenHeaderCard
+        topPadding={topPadding}
+        kicker={headerKicker}
+        title={headerTitle}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -210,112 +193,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
     paddingTop: 6,
-  },
-  safe: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 18,
-  },
-  headerShell: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  headerAuraOne: {
-    position: "absolute",
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "#DBEAFE",
-    top: -44,
-    right: -22,
-    opacity: 0.7,
-  },
-  headerAuraTwo: {
-    position: "absolute",
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#E0E7FF",
-    bottom: -36,
-    left: -18,
-    opacity: 0.65,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    minWidth: 70,
-  },
-  backArrow: {
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "900",
-    marginRight: 4,
-  },
-  backText: {
-    fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "800",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerSideSpacer: {
-    minWidth: 70,
-  },
-  headerKicker: {
-    fontSize: 10,
-    letterSpacing: 1,
-    color: "#2563EB",
-    fontWeight: "900",
-    marginBottom: 2,
-  },
-  headerTitle: {
-    fontSize: 19,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  headerMeta: {
-    minWidth: 52,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#EEF2FF",
-    borderWidth: 1,
-    borderColor: "#C7D2FE",
-  },
-  headerMetaText: {
-    fontSize: 12,
-    color: "#3730A3",
-    fontWeight: "900",
   },
   scrollContent: {
     paddingHorizontal: 18,
