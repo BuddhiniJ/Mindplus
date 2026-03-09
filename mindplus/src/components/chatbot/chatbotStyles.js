@@ -356,6 +356,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: 260,
   },
+  instructionsCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "#E0F2FE",
+    borderWidth: 1,
+    borderColor: "#7DD3FC",
+  },
+  instructionsTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0369A1",
+    marginBottom: 4,
+  },
+  instructionsText: {
+    fontSize: 13,
+    color: "#0F172A",
+    lineHeight: 19,
+  },
   messageBubble: {
     maxWidth: "75%",
     borderRadius: 22,
@@ -515,7 +537,7 @@ const styles = StyleSheet.create({
   autoVoiceRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     marginBottom: 4,
   },
@@ -1010,6 +1032,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  settingsScroll: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  settingsScrollContent: {
+    paddingBottom: 8,
+  },
+  settingsActionButton: {
+    alignSelf: "stretch",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+    marginHorizontal: 4,
+  },
+  settingsActionButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "center",
+  },
+  settingsDangerButton: {
+    alignSelf: "stretch",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "#FEE2E2",
+    marginHorizontal: 4,
+  },
+  settingsDangerButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#B91C1C",
+    textAlign: "center",
   },
 });
 

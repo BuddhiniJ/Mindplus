@@ -25,6 +25,7 @@ export default function MessageList({
   compactMode = false,
   showTimestamps = false,
   largeText = false,
+  hideLabels = false,
 }) {
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0));
@@ -99,11 +100,13 @@ export default function MessageList({
                     : styles.botBubble,
               ]}
             >
-              <Text
-                style={[styles.messageLabel, isUser && { color: "#E5E7EB" }]}
-              >
-                {msg.label}
-              </Text>
+              {!hideLabels && (
+                <Text
+                  style={[styles.messageLabel, isUser && { color: "#E5E7EB" }]}
+                >
+                  {msg.label}
+                </Text>
+              )}
               <Text
                 style={[
                   styles.messageText,

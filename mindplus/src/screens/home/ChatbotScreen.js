@@ -11,6 +11,7 @@ import {
   Linking,
   Modal,
   ScrollView,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
@@ -21,10 +22,12 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { startChatSession, sendChatMessage } from "../../services/chatApi";
 import {
   loadChatConversation,
   appendChatMessages,
+  clearChatHistory,
 } from "../../services/chatHistoryService";
 import {
   playBotMessageVoice,
@@ -279,9 +282,77 @@ export default function ChatbotScreen({ navigation }) {
   const [compactMessages, setCompactMessages] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(false);
   const [largeText, setLargeText] = useState(false);
+  const [hideLabels, setHideLabels] = useState(false);
+  const [anonymousMode, setAnonymousMode] = useState(false);
+  const [simplifiedMode, setSimplifiedMode] = useState(false);
+  const [slowInteractionMode, setSlowInteractionMode] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
+
+  const SETTINGS_KEY = "chatbot_settings_v1";
+
+  const loadSettings = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+
+      if (typeof data.autoVoiceEnabled === "boolean") {
+        setAutoVoiceEnabled(data.autoVoiceEnabled);
+      }
+      if (typeof data.showStressCard === "boolean") {
+        setShowStressCard(data.showStressCard);
+      }
+      if (typeof data.chatTheme === "string") {
+        setChatTheme(data.chatTheme);
+      }
+      if (typeof data.compactMessages === "boolean") {
+        setCompactMessages(data.compactMessages);
+      }
+      if (typeof data.showTimestamps === "boolean") {
+        setShowTimestamps(data.showTimestamps);
+      }
+      if (typeof data.largeText === "boolean") {
+        setLargeText(data.largeText);
+      }
+      if (typeof data.hideLabels === "boolean") {
+        setHideLabels(data.hideLabels);
+      }
+      if (typeof data.anonymousMode === "boolean") {
+        setAnonymousMode(data.anonymousMode);
+      }
+      if (typeof data.simplifiedMode === "boolean") {
+        setSimplifiedMode(data.simplifiedMode);
+      }
+      if (typeof data.slowInteractionMode === "boolean") {
+        setSlowInteractionMode(data.slowInteractionMode);
+      }
+    } catch (e) {
+      console.log("Failed to load chatbot settings", e);
+    }
+  };
+
+  const persistSettings = async (overrides = {}) => {
+    try {
+      const current = {
+        autoVoiceEnabled,
+        showStressCard,
+        chatTheme,
+        compactMessages,
+        showTimestamps,
+        largeText,
+        hideLabels,
+        anonymousMode,
+        simplifiedMode,
+        slowInteractionMode,
+      };
+      const payload = { ...current, ...overrides };
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.log("Failed to save chatbot settings", e);
+    }
+  };
 
   const handleAppAction = async (appAction, meta = {}) => {
     if (!appAction) return;
@@ -405,6 +476,8 @@ export default function ChatbotScreen({ navigation }) {
   useEffect(() => {
     const init = async () => {
       try {
+        await loadSettings();
+
         const user = auth.currentUser;
         let resolvedUserId = null;
 
@@ -463,8 +536,8 @@ export default function ChatbotScreen({ navigation }) {
             // inside the same message bubble.
             setMessages((prev) => [...prev, uiMessage]);
 
-            // Persist the full initial message text for this user (if logged in)
-            if (resolvedUserId && fullText) {
+            // Persist the full initial message text for this user (if logged in and not in anonymous mode)
+            if (resolvedUserId && fullText && !anonymousMode) {
               const storedMessage = {
                 ...uiMessage,
                 text: fullText,
@@ -476,7 +549,7 @@ export default function ChatbotScreen({ navigation }) {
               );
             }
 
-            const typingSpeed = 18; // ms per character
+            const typingSpeed = slowInteractionMode ? 28 : 18; // ms per character
             const chars = fullText.split("");
             chars.forEach((_, index) => {
               setTimeout(() => {
@@ -697,7 +770,7 @@ export default function ChatbotScreen({ navigation }) {
       },
     ]);
 
-    if (userId) {
+    if (userId && !anonymousMode) {
       appendChatMessages(
         userId,
         [
@@ -771,7 +844,7 @@ export default function ChatbotScreen({ navigation }) {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    if (userId) {
+    if (userId && !anonymousMode) {
       appendChatMessages(
         userId,
         [
@@ -806,7 +879,8 @@ export default function ChatbotScreen({ navigation }) {
           sourceText: text,
         });
       }
-      const delayMs = 1500 + Math.random() * 1500;
+      const baseDelay = 1500 + Math.random() * 1500;
+      const delayMs = slowInteractionMode ? baseDelay + 2000 : baseDelay;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       // After a short "thinking" delay, show a typing effect for the bot message
       setBotTyping(false);
@@ -835,7 +909,7 @@ export default function ChatbotScreen({ navigation }) {
 
       setMessages((prev) => [...prev, uiBotMessage]);
 
-      if (userId && fullText) {
+      if (userId && fullText && !anonymousMode) {
         const storedBotMessage = {
           ...uiBotMessage,
           text: fullText,
@@ -843,7 +917,7 @@ export default function ChatbotScreen({ navigation }) {
         appendChatMessages(userId, [storedBotMessage], sessionId);
       }
 
-      const typingSpeed = 18; // ms per character
+      const typingSpeed = slowInteractionMode ? 28 : 18; // ms per character
       const chars = fullText.split("");
       chars.forEach((_, index) => {
         setTimeout(() => {
@@ -914,7 +988,7 @@ export default function ChatbotScreen({ navigation }) {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    if (userId) {
+    if (userId && !anonymousMode) {
       appendChatMessages(
         userId,
         [
@@ -939,7 +1013,8 @@ export default function ChatbotScreen({ navigation }) {
         overallStatus: raw.overall_status,
         techniques: raw.techniques || [],
       };
-      const delayMs = 1500 + Math.random() * 1500;
+      const baseDelay = 1500 + Math.random() * 1500;
+      const delayMs = slowInteractionMode ? baseDelay + 2000 : baseDelay;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       setBotTyping(false);
 
@@ -967,7 +1042,7 @@ export default function ChatbotScreen({ navigation }) {
 
       setMessages((prev) => [...prev, uiBotMessage]);
 
-      if (userId && fullText) {
+      if (userId && fullText && !anonymousMode) {
         const storedBotMessage = {
           ...uiBotMessage,
           text: fullText,
@@ -975,7 +1050,7 @@ export default function ChatbotScreen({ navigation }) {
         appendChatMessages(userId, [storedBotMessage], sessionId);
       }
 
-      const typingSpeed = 18; // ms per character
+      const typingSpeed = slowInteractionMode ? 28 : 18; // ms per character
       const chars = fullText.split("");
       chars.forEach((_, index) => {
         setTimeout(() => {
@@ -1035,6 +1110,254 @@ export default function ChatbotScreen({ navigation }) {
       setSending(false);
       setBotTyping(false);
     }
+  };
+
+  const handleClearChatHistory = () => {
+    if (!userId) {
+      Alert.alert(
+        "Not available",
+        "You need to be logged in to clear stored chat history.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Clear chat history",
+      "This will remove your saved chatbot conversation from this device. Your current screen will stay as is.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearChatHistory(userId);
+              Alert.alert("Done", "Chat history cleared on this device.");
+            } catch (e) {
+              console.log("Failed to clear chat history", e);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDownloadData = async () => {
+    if (!userId) {
+      Alert.alert(
+        "Not available",
+        "You need to be logged in to download your data.",
+      );
+      return;
+    }
+
+    try {
+      const convo = await loadChatConversation(userId);
+      if (!convo || !convo.messages || convo.messages.length === 0) {
+        Alert.alert("No data", "We couldn't find any saved chatbot data.");
+        return;
+      }
+
+      const exportPayload = {
+        source: "MindPlus chatbot",
+        exportedAt: new Date().toISOString(),
+        userId,
+        sessionId: convo.sessionId,
+        startedAt: convo.startedAt,
+        messages: convo.messages,
+      };
+
+      await Share.share({
+        title: "My MindPlus chatbot data",
+        message: JSON.stringify(exportPayload, null, 2),
+      });
+    } catch (e) {
+      console.log("Failed to export data", e);
+      Alert.alert(
+        "Error",
+        "Something went wrong while preparing your data. Please try again.",
+      );
+    }
+  };
+
+  const handleDeleteAllData = () => {
+    if (!userId) {
+      Alert.alert(
+        "Not available",
+        "You need to be logged in to delete saved data.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete all chatbot data",
+      "This will remove your saved chatbot history and local chatbot preferences from this device. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearChatHistory(userId);
+              await AsyncStorage.removeItem(SETTINGS_KEY);
+
+              setMessages([]);
+              setSessionId(null);
+
+              // Reset in-memory preferences to defaults
+              setAutoVoiceEnabled(false);
+              setShowStressCard(true);
+              setChatTheme("calm");
+              setCompactMessages(false);
+              setShowTimestamps(false);
+              setLargeText(false);
+              setHideLabels(false);
+              setAnonymousMode(false);
+              setSimplifiedMode(false);
+              setSlowInteractionMode(false);
+
+              Alert.alert("Done", "All local chatbot data has been deleted.");
+            } catch (e) {
+              console.log("Failed to delete all chatbot data", e);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleResetPreferences = () => {
+    Alert.alert(
+      "Reset chatbot preferences",
+      "This will restore chatbot appearance and behavior settings to their original defaults.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const defaults = {
+                autoVoiceEnabled: false,
+                showStressCard: true,
+                chatTheme: "calm",
+                compactMessages: false,
+                showTimestamps: false,
+                largeText: false,
+                hideLabels: false,
+                anonymousMode: false,
+                simplifiedMode: false,
+                slowInteractionMode: false,
+              };
+
+              setAutoVoiceEnabled(defaults.autoVoiceEnabled);
+              setShowStressCard(defaults.showStressCard);
+              setChatTheme(defaults.chatTheme);
+              setCompactMessages(defaults.compactMessages);
+              setShowTimestamps(defaults.showTimestamps);
+              setLargeText(defaults.largeText);
+              setHideLabels(defaults.hideLabels);
+              setAnonymousMode(defaults.anonymousMode);
+              setSimplifiedMode(defaults.simplifiedMode);
+              setSlowInteractionMode(defaults.slowInteractionMode);
+
+              await AsyncStorage.removeItem(SETTINGS_KEY);
+              await persistSettings(defaults);
+
+              Alert.alert("Done", "Chatbot preferences were reset.");
+            } catch (e) {
+              console.log("Failed to reset preferences", e);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const startFreshConversation = async () => {
+    try {
+      setLoading(true);
+      setMessages([]);
+      setInitialPrompt(null);
+      setMoodOptions([]);
+      setShowMoodOptions(false);
+
+      const start = await startChatSession();
+      setSessionId(start.session_id);
+
+      if (start.initial_message) {
+        setInitialPrompt(start.initial_message);
+        setMoodOptions(start.mood_options || []);
+        setShowMoodOptions(false);
+
+        const fullText = start.initial_message || "";
+        const createdAt = Date.now();
+        const botId = `${createdAt}-init`;
+
+        const uiMessage = {
+          id: botId,
+          from: "bot",
+          text: "",
+          label: "MindPlus Bot",
+          isMoodPrompt: true,
+          timestamp: createdAt,
+        };
+
+        setMessages((prev) => [...prev, uiMessage]);
+
+        if (userId && fullText && !anonymousMode) {
+          const storedMessage = {
+            ...uiMessage,
+            text: fullText,
+          };
+          appendChatMessages(userId, [storedMessage], start.session_id);
+        }
+
+        const typingSpeed = slowInteractionMode ? 28 : 18; // ms per character
+        const chars = fullText.split("");
+        chars.forEach((_, index) => {
+          setTimeout(() => {
+            const nextText = fullText.slice(0, index + 1);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === botId
+                  ? {
+                      ...m,
+                      text: nextText,
+                    }
+                  : m,
+              ),
+            );
+          }, typingSpeed * index);
+        });
+
+        const totalDuration = typingSpeed * chars.length + 150;
+        setTimeout(() => {
+          setShowMoodOptions(true);
+        }, totalDuration);
+      }
+    } catch (e) {
+      console.log("Failed to start fresh conversation", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartFreshConversation = () => {
+    Alert.alert(
+      "Start fresh conversation",
+      "This will clear the current chat on this screen and start a new session with the assistant.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Start",
+          onPress: () => {
+            startFreshConversation();
+          },
+        },
+      ],
+    );
   };
 
   if (loading) {
@@ -1157,105 +1480,239 @@ export default function ChatbotScreen({ navigation }) {
                 Adjust how MindPlus Assistant behaves.
               </Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.commandsButton,
-                  { alignSelf: "flex-start", marginBottom: 12 },
-                ]}
-                onPress={() => {
-                  setShowSettingsPanel(false);
-                  setShowCommands(true);
-                }}
+              <ScrollView
+                style={styles.settingsScroll}
+                contentContainerStyle={styles.settingsScrollContent}
+                showsVerticalScrollIndicator
               >
-                <Text style={styles.commandsButtonText}>
-                  View available commands
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.commandsButton,
+                    { alignSelf: "flex-start", marginBottom: 12 },
+                  ]}
+                  onPress={() => {
+                    setShowSettingsPanel(false);
+                    setShowCommands(true);
+                  }}
+                >
+                  <Text style={styles.commandsButtonText}>
+                    View available commands
+                  </Text>
+                </TouchableOpacity>
 
-              <View style={{ marginTop: 4, marginBottom: 4 }}>
-                <Text style={styles.settingsSectionTitle}>Assistant</Text>
-              </View>
+                <View style={{ marginTop: 4, marginBottom: 4 }}>
+                  <Text style={styles.settingsSectionTitle}>Assistant</Text>
+                </View>
 
-              <View style={styles.autoVoiceRow}>
-                <Text style={styles.autoVoiceLabel}>Auto voice</Text>
-                <Switch
-                  value={autoVoiceEnabled}
-                  onValueChange={setAutoVoiceEnabled}
-                />
-              </View>
+                <View style={styles.autoVoiceRow}>
+                  <Text style={styles.autoVoiceLabel}>Auto voice</Text>
+                  <Switch
+                    value={autoVoiceEnabled}
+                    onValueChange={(value) => {
+                      setAutoVoiceEnabled(value);
+                      persistSettings({ autoVoiceEnabled: value });
+                    }}
+                  />
+                </View>
 
-              <View style={{ marginTop: 12, marginBottom: 4 }}>
-                <Text style={styles.settingsSectionTitle}>Insights</Text>
-              </View>
+                <View style={{ marginTop: 12, marginBottom: 4 }}>
+                  <Text style={styles.settingsSectionTitle}>Insights</Text>
+                </View>
 
-              <View style={styles.autoVoiceRow}>
-                <Text style={styles.autoVoiceLabel}>
-                  Show stress insight card
-                </Text>
-                <Switch
-                  value={showStressCard}
-                  onValueChange={setShowStressCard}
-                />
-              </View>
+                <View style={styles.autoVoiceRow}>
+                  <Text style={styles.autoVoiceLabel}>
+                    Show stress insight card
+                  </Text>
+                  <Switch
+                    value={showStressCard}
+                    onValueChange={(value) => {
+                      setShowStressCard(value);
+                      persistSettings({ showStressCard: value });
+                    }}
+                  />
+                </View>
 
-              <View style={{ marginTop: 12, marginBottom: 6 }}>
-                <Text style={styles.settingsSectionTitle}>Chat appearance</Text>
-              </View>
+                <View style={{ marginTop: 12, marginBottom: 6 }}>
+                  <Text style={styles.settingsSectionTitle}>
+                    Chat appearance
+                  </Text>
+                </View>
 
-              <View style={styles.settingsThemeRow}>
-                {CHAT_THEMES.map((theme) => {
-                  const isActive = chatTheme === theme.id;
-                  return (
-                    <TouchableOpacity
-                      key={theme.id}
-                      style={[
-                        styles.settingsThemePill,
-                        isActive && styles.settingsThemePillActive,
-                      ]}
-                      onPress={() => setChatTheme(theme.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
+                <View style={styles.settingsThemeRow}>
+                  {CHAT_THEMES.map((theme) => {
+                    const isActive = chatTheme === theme.id;
+                    return (
+                      <TouchableOpacity
+                        key={theme.id}
                         style={[
-                          styles.settingsThemePillLabel,
-                          isActive && styles.settingsThemePillLabelActive,
+                          styles.settingsThemePill,
+                          isActive && styles.settingsThemePillActive,
                         ]}
+                        onPress={() => {
+                          setChatTheme(theme.id);
+                          persistSettings({ chatTheme: theme.id });
+                        }}
+                        activeOpacity={0.8}
                       >
-                        {theme.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                        <Text
+                          style={[
+                            styles.settingsThemePillLabel,
+                            isActive && styles.settingsThemePillLabelActive,
+                          ]}
+                        >
+                          {theme.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-              <View style={[styles.autoVoiceRow, { marginTop: 10 }]}>
-                <Text style={styles.autoVoiceLabel}>
-                  Compact message layout
-                </Text>
-                <Switch
-                  value={compactMessages}
-                  onValueChange={setCompactMessages}
-                />
-              </View>
+                <View style={[styles.autoVoiceRow, { marginTop: 10 }]}>
+                  <Text style={styles.autoVoiceLabel}>
+                    Compact message layout
+                  </Text>
+                  <Switch
+                    value={compactMessages}
+                    onValueChange={(value) => {
+                      setCompactMessages(value);
+                      persistSettings({ compactMessages: value });
+                    }}
+                  />
+                </View>
 
-              <View style={{ marginTop: 16, marginBottom: 4 }}>
-                <Text style={styles.settingsSectionTitle}>
-                  Details & accessibility
-                </Text>
-              </View>
+                <View style={{ marginTop: 16, marginBottom: 4 }}>
+                  <Text style={styles.settingsSectionTitle}>
+                    Details & accessibility
+                  </Text>
+                </View>
 
-              <View style={styles.autoVoiceRow}>
-                <Text style={styles.autoVoiceLabel}>Show message time</Text>
-                <Switch
-                  value={showTimestamps}
-                  onValueChange={setShowTimestamps}
-                />
-              </View>
+                <View style={styles.autoVoiceRow}>
+                  <Text style={styles.autoVoiceLabel}>Show message time</Text>
+                  <Switch
+                    value={showTimestamps}
+                    onValueChange={(value) => {
+                      setShowTimestamps(value);
+                      persistSettings({ showTimestamps: value });
+                    }}
+                  />
+                </View>
 
-              <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
-                <Text style={styles.autoVoiceLabel}>Larger chat text</Text>
-                <Switch value={largeText} onValueChange={setLargeText} />
-              </View>
+                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                  <Text style={styles.autoVoiceLabel}>Larger chat text</Text>
+                  <Switch
+                    value={largeText}
+                    onValueChange={(value) => {
+                      setLargeText(value);
+                      persistSettings({ largeText: value });
+                    }}
+                  />
+                </View>
+
+                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                  <Text style={styles.autoVoiceLabel}>Hide sender labels</Text>
+                  <Switch
+                    value={hideLabels}
+                    onValueChange={(value) => {
+                      setHideLabels(value);
+                      persistSettings({ hideLabels: value });
+                    }}
+                  />
+                </View>
+
+                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                  <Text style={styles.autoVoiceLabel}>
+                    Simplified instructions
+                  </Text>
+                  <Switch
+                    value={simplifiedMode}
+                    onValueChange={(value) => {
+                      setSimplifiedMode(value);
+                      persistSettings({ simplifiedMode: value });
+                    }}
+                  />
+                </View>
+
+                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                  <Text style={styles.autoVoiceLabel}>
+                    Slow interaction mode
+                  </Text>
+                  <Switch
+                    value={slowInteractionMode}
+                    onValueChange={(value) => {
+                      setSlowInteractionMode(value);
+                      persistSettings({ slowInteractionMode: value });
+                    }}
+                  />
+                </View>
+
+                <View style={{ marginTop: 18, marginBottom: 4 }}>
+                  <Text style={styles.settingsSectionTitle}>
+                    Privacy & data
+                  </Text>
+                </View>
+
+                <View style={styles.autoVoiceRow}>
+                  <Text style={styles.autoVoiceLabel}>
+                    Anonymous mode (don’t save chats)
+                  </Text>
+                  <Switch
+                    value={anonymousMode}
+                    onValueChange={(value) => {
+                      setAnonymousMode(value);
+                      persistSettings({ anonymousMode: value });
+                    }}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.settingsActionButton, { marginTop: 10 }]}
+                  onPress={handleClearChatHistory}
+                >
+                  <Text style={styles.settingsActionButtonText}>
+                    Clear chat history
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.settingsActionButton, { marginTop: 6 }]}
+                  onPress={handleDownloadData}
+                >
+                  <Text style={styles.settingsActionButtonText}>
+                    Download personal data
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.settingsDangerButton, { marginTop: 6 }]}
+                  onPress={handleDeleteAllData}
+                >
+                  <Text style={styles.settingsDangerButtonText}>
+                    Delete all data
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={{ marginTop: 18, marginBottom: 4 }}>
+                  <Text style={styles.settingsSectionTitle}>Session</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.settingsActionButton, { marginTop: 4 }]}
+                  onPress={handleStartFreshConversation}
+                >
+                  <Text style={styles.settingsActionButtonText}>
+                    Start fresh conversation
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.settingsActionButton, { marginTop: 6 }]}
+                  onPress={handleResetPreferences}
+                >
+                  <Text style={styles.settingsActionButtonText}>
+                    Reset preferences
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
 
               <TouchableOpacity
                 style={[styles.commandsCloseButton, { marginTop: 16 }]}
@@ -1408,6 +1865,18 @@ export default function ChatbotScreen({ navigation }) {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
+          {simplifiedMode && (
+            <View style={styles.instructionsCard}>
+              <Text style={styles.instructionsTitle}>
+                How to talk to MindPlus
+              </Text>
+              <Text style={styles.instructionsText}>
+                Use short, simple sentences like "I feel stressed about exams"
+                and I’ll respond with step-by-step support.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.chatArea}>
             <MessageList
               messages={messages}
@@ -1424,6 +1893,7 @@ export default function ChatbotScreen({ navigation }) {
               compactMode={compactMessages}
               showTimestamps={showTimestamps}
               largeText={largeText}
+              hideLabels={hideLabels}
             />
           </View>
 
