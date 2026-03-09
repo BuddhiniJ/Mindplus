@@ -18,6 +18,12 @@ import GroundingCard from "../../components/GroundingCard";
 import MovementBreakCard from "../../components/MovementBreakCard";
 import SelfCompassionCard from "../../components/SelfCompassionCard";
 import { fetchCopingStrategy } from "../../services/api";
+import BottomNavigation from "../../components/BottomNavigation";
+import {
+  playBotMessageVoice,
+  stopBotMessageVoice,
+  cleanupTTS,
+} from "../../services/textToSpeechService";
 
 const DEFAULT_SESSION_SECONDS = 60;
 const MOVEMENT_BREAK_SECONDS = 300;
@@ -92,6 +98,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   );
   const [copingLoading, setCopingLoading] = useState(false);
   const [copingError, setCopingError] = useState(null);
+  const [isSpeakingStrategy, setIsSpeakingStrategy] = useState(false);
   const [recommendedTechnique, setRecommendedTechnique] = useState(
     typeof techniqueFromRoute === "string" ? techniqueFromRoute : null
   );
@@ -191,6 +198,13 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     if (!isAnxiety || anxietyBand !== "low") return;
     navigation.goBack();
   }, [anxietyBand, isAnxiety, navigation]);
+
+  useEffect(() => {
+    return () => {
+      setIsSpeakingStrategy(false);
+      cleanupTTS();
+    };
+  }, []);
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -382,6 +396,23 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     []
   );
 
+  const handleToggleStrategyTTS = async () => {
+    const strategyText = String(copingStrategy || "").trim();
+    if (!strategyText) return;
+
+    if (isSpeakingStrategy) {
+      await stopBotMessageVoice();
+      setIsSpeakingStrategy(false);
+      return;
+    }
+
+    setIsSpeakingStrategy(true);
+    await playBotMessageVoice(strategyText, {
+      onFinish: () => setIsSpeakingStrategy(false),
+      rate: 0.52,
+    });
+  };
+
   // Do not show this screen if anxiety is very low
   if (!FORCE_BOX_BREATHING && isAnxiety && anxietyBand === "low") {
     return null;
@@ -396,15 +427,6 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           <View style={styles.headerAuraTwo} />
 
           <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.backArrow}>←</Text>
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-
             <View style={styles.headerCenter}>
               <Text style={styles.headerKicker}>GUIDED RESET</Text>
               <Text style={styles.headerTitle}>{headerTitle}</Text>
@@ -446,7 +468,18 @@ export default function VisualAffirmationScreen({ route, navigation }) {
           ) : copingError ? (
             <Text style={styles.strategyTextMuted}>{copingError}</Text>
           ) : copingStrategy ? (
-            <Text style={styles.strategyText}>{copingStrategy}</Text>
+            <>
+              <Text style={styles.strategyText}>{copingStrategy}</Text>
+              <TouchableOpacity
+                style={styles.ttsButton}
+                activeOpacity={0.85}
+                onPress={handleToggleStrategyTTS}
+              >
+                <Text style={styles.ttsButtonText}>
+                  {isSpeakingStrategy ? "⏹ Stop audio" : "🔊 Listen"}
+                </Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <Text style={styles.strategyTextMuted}>
               Take 5 slow breaths. Inhale softly and exhale a little longer.
@@ -668,7 +701,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         <View style={styles.footerNote}>
           <Text style={styles.footerText}>{footerTip}</Text>
         </View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -677,16 +714,17 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#EAF2FF",
-    paddingHorizontal: 18,
     paddingTop: 6,
   },
   scrollContent: {
+    paddingHorizontal: 18,
     paddingBottom: 18,
   },
   safe: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 18,
   },
   headerShell: {
     width: "100%",
@@ -727,33 +765,10 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#D6E6FF",
-    minWidth: 76,
-  },
-  backArrow: {
-    fontSize: 14,
-    color: "#1E3A8A",
-    fontWeight: "900",
-    marginRight: 4,
-  },
-  backText: {
-    fontSize: 14,
-    color: "#1E3A8A",
-    fontWeight: "800",
+    justifyContent: "center",
+    position: "relative",
   },
   headerCenter: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -770,6 +785,8 @@ const styles = StyleSheet.create({
     color: "#0F172A",
   },
   headerMeta: {
+    position: "absolute",
+    right: 0,
     minWidth: 76,
     paddingVertical: 7,
     paddingHorizontal: 9,
@@ -930,6 +947,22 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     lineHeight: 24,
     fontWeight: "600",
+  },
+  ttsButton: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  ttsButtonText: {
+    color: "#3730A3",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   strategyTextMuted: {
     fontSize: 14,
@@ -1110,5 +1143,8 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     textAlign: "center",
     lineHeight: 20,
+  },
+  bottomSpacer: {
+    height: 88,
   },
 });
