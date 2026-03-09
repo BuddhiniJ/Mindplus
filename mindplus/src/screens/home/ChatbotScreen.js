@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -287,6 +287,7 @@ export default function ChatbotScreen({ navigation }) {
   const [simplifiedMode, setSimplifiedMode] = useState(false);
   const [slowInteractionMode, setSlowInteractionMode] = useState(false);
   const [soundFeedbackEnabled, setSoundFeedbackEnabled] = useState(false);
+  const uiSoundRef = useRef({});
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -481,12 +482,48 @@ export default function ChatbotScreen({ navigation }) {
   const playUiSound = async (event) => {
     if (!soundFeedbackEnabled) return;
     try {
-      // Placeholder for gentle UI sounds (e.g. send click, soft chime).
-      // Wire an Audio.Sound here with a calming asset when available.
+      let soundKey = "send";
+      if (event === "message_received") soundKey = "received";
+
+      const cache = uiSoundRef.current || {};
+
+      if (!cache[soundKey]) {
+        let source;
+        if (soundKey === "received") {
+          source = require("../../../assets/soundscapes/receving.mp3");
+        } else {
+          source = require("../../../assets/soundscapes/sending.mp3");
+        }
+
+        const { sound } = await Audio.Sound.createAsync(source, {
+          volume: 0.18,
+          shouldPlay: false,
+        });
+        cache[soundKey] = sound;
+        uiSoundRef.current = cache;
+      }
+
+      const sound = uiSoundRef.current[soundKey];
+      if (!sound) return;
+      await sound.setPositionAsync(0);
+      await sound.playAsync();
     } catch (e) {
       // Fail silently to avoid disrupting the conversation.
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (uiSoundRef.current) {
+        Object.values(uiSoundRef.current).forEach((sound) => {
+          if (sound && typeof sound.unloadAsync === "function") {
+            sound.unloadAsync().catch(() => {});
+          }
+        });
+        uiSoundRef.current = {};
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -953,6 +990,11 @@ export default function ChatbotScreen({ navigation }) {
       });
 
       const totalTypingDuration = typingSpeed * chars.length;
+      if (fullText) {
+        setTimeout(() => {
+          playUiSound("message_received");
+        }, totalTypingDuration + 50);
+      }
 
       // Auto voice playback once the bot has finished "typing"
       if (autoVoiceEnabled && fullText) {
@@ -1088,6 +1130,12 @@ export default function ChatbotScreen({ navigation }) {
       });
 
       const totalTypingDuration = typingSpeed * chars.length;
+
+      if (fullText) {
+        setTimeout(() => {
+          playUiSound("message_received");
+        }, totalTypingDuration + 50);
+      }
 
       // Auto voice playback for mood-based replies
       if (autoVoiceEnabled && fullText) {
@@ -1947,6 +1995,7 @@ export default function ChatbotScreen({ navigation }) {
           <ChatInputBar
             input={input}
             onChangeInput={setInput}
+            onTyping={undefined}
             onSend={handleSend}
             sending={sending}
           />

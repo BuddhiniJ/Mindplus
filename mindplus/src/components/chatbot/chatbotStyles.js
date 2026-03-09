@@ -992,6 +992,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     alignItems: "flex-end",
   },
+  userTypingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingHorizontal: 18,
+    paddingBottom: 4,
+  },
+  userTypingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#9CA3AF",
+    marginRight: 4,
+  },
+  userTypingLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+  },
   commandsButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,

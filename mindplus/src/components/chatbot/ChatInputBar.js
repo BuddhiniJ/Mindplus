@@ -18,11 +18,13 @@ import { speechToText } from "../../services/speechToText";
 // - onChangeInput: (text) => {} Updates the parent input state.
 // - onSend: (text?) => {}       Sends a message; if text is provided it
 //                                should be sent instead of the current input.
+// - onTyping: () => {}          Optional callback fired when user types.
 // - sending: boolean            Whether a message is currently being sent.
 export default function ChatInputBar({
   input,
   onChangeInput,
   onSend,
+  onTyping,
   sending,
 }) {
   const [listening, setListening] = useState(false);
@@ -182,7 +184,12 @@ export default function ChatInputBar({
             borderColor: isFocused ? "#3B82F6" : "transparent",
           }}
           value={input}
-          onChangeText={onChangeInput}
+          onChangeText={(text) => {
+            onChangeInput(text);
+            if (text && text.length > 0) {
+              onTyping?.();
+            }
+          }}
           placeholder="Type how you're feeling…"
           placeholderTextColor="#94A3B8"
           multiline
