@@ -161,6 +161,7 @@ export default function ChatInputBar({
         shadowOpacity: isFocused ? 0.08 : 0.04,
         shadowRadius: 8,
         elevation: isFocused ? 4 : 2,
+        marginBottom: 4,
       }}
     >
       <View

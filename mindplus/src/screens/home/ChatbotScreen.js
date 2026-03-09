@@ -1468,13 +1468,16 @@ export default function ChatbotScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    <SafeAreaView
+      style={[styles.container, themeContainerStyle]}
+      edges={["top", "left", "right"]}
     >
-      <View style={[styles.container, themeContainerStyle]}>
-        <SafeAreaView style={[styles.container, themeContainerStyle]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <View style={[styles.container, themeContainerStyle]}>
           <ChatHeader
             onBack={() => navigation.goBack()}
             onSettings={() => setShowSettingsPanel(true)}
@@ -2081,8 +2084,8 @@ export default function ChatbotScreen({ navigation }) {
             onSend={handleSend}
             sending={sending}
           />
-        </SafeAreaView>
-      </View>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
