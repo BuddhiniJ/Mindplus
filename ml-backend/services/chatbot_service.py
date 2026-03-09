@@ -1132,7 +1132,7 @@ def chat_start_service() -> ChatStartResponse:
         MoodOption(id="happy", label="Happy", emoji="😊", value="happy"),
         MoodOption(id="calm", label="Calm", emoji="😌", value="calm"),
         MoodOption(id="neutral", label="Neutral", emoji="😐", value="neutral"),
-        MoodOption(id="stressed", label="Stressed", emoji="😟", value="stressed"),
+        MoodOption(id="stressed", label="Stress", emoji="😟", value="stressed"),
         MoodOption(id="sad", label="Sad", emoji="😢", value="sad"),
         MoodOption(id="angry", label="Angry", emoji="😡", value="angry"),
     ]

@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, Pressable, Linking, Animated } from "react-native";
 import styles from "./chatbotStyles";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -40,7 +40,7 @@ export default function TechniqueDetailCard({
   const normalized = String(technique).trim().toLowerCase();
   const isEmergencyService = /call\s*emergency/.test(normalized);
   const isContactTrusted = /contact\s*(some\s*)?one\s*you\s*trust/.test(
-    normalized
+    normalized,
   );
 
   const handleCall = async (phoneNumber) => {
@@ -54,6 +54,24 @@ export default function TechniqueDetailCard({
     } catch (e) {
       // No-op: if device can't place calls, silently ignore.
     }
+  };
+
+  const completionAnim = useRef(new Animated.Value(0)).current;
+
+  const triggerStartAnimation = () => {
+    completionAnim.setValue(0);
+    Animated.timing(completionAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      completionAnim.setValue(0);
+    });
+  };
+
+  const handleStartPress = () => {
+    triggerStartAnimation();
+    onStart?.();
   };
 
   return (
@@ -73,6 +91,29 @@ export default function TechniqueDetailCard({
           <Ionicons name="close" size={24} color="#ff0000ff" />
         </Pressable>
       </View>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.techCompletionOverlay,
+          {
+            opacity: completionAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.9],
+            }),
+            transform: [
+              {
+                scale: completionAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1.1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Text style={styles.techCompletionCheck}>✓</Text>
+      </Animated.View>
 
       {isEmergencyService && (
         <>
@@ -114,7 +155,7 @@ export default function TechniqueDetailCard({
 
           {onStart && (
             <Pressable
-              onPress={onStart}
+              onPress={handleStartPress}
               accessibilityRole="button"
               accessibilityLabel="Start this technique now"
               style={({ pressed }) => [

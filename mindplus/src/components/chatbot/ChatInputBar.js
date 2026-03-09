@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
   Alert,
@@ -18,17 +18,40 @@ import { speechToText } from "../../services/speechToText";
 // - onChangeInput: (text) => {} Updates the parent input state.
 // - onSend: (text?) => {}       Sends a message; if text is provided it
 //                                should be sent instead of the current input.
+// - onTyping: () => {}          Optional callback fired when user types.
 // - sending: boolean            Whether a message is currently being sent.
 export default function ChatInputBar({
   input,
   onChangeInput,
   onSend,
+  onTyping,
   sending,
 }) {
   const [listening, setListening] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
   const [recording, setRecording] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
+  const voiceErrorTimeoutRef = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const showVoiceError = (message) => {
+    setVoiceError(message);
+    if (voiceErrorTimeoutRef.current) {
+      clearTimeout(voiceErrorTimeoutRef.current);
+    }
+    voiceErrorTimeoutRef.current = setTimeout(() => {
+      setVoiceError(null);
+      voiceErrorTimeoutRef.current = null;
+    }, 10000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (voiceErrorTimeoutRef.current) {
+        clearTimeout(voiceErrorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Start recording the user's voice using expo-av, then
   // send it to the existing Google Speech-to-Text helper.
@@ -40,9 +63,9 @@ export default function ChatInputBar({
       if (!permission.granted) {
         Alert.alert(
           "Microphone permission required",
-          "Please enable microphone access in Settings to use voice input."
+          "Please enable microphone access in Settings to use voice input.",
         );
-        setVoiceError("Microphone permission is required to use voice input.");
+        showVoiceError("Microphone permission is required to use voice input.");
         return;
       }
 
@@ -77,7 +100,7 @@ export default function ChatInputBar({
     } catch (error) {
       console.log("startRecording error", error);
       setListening(false);
-      setVoiceError("Sorry, I couldn't start recording. Please try again.");
+      showVoiceError("Sorry, I couldn't start recording. Please try again.");
     }
   };
 
@@ -97,8 +120,8 @@ export default function ChatInputBar({
 
       if (!uri) {
         setTranscribing(false);
-        setVoiceError(
-          "Sorry, I couldn't capture your voice. Please try again."
+        showVoiceError(
+          "Sorry, I couldn't capture your voice. Please try again.",
         );
         return;
       }
@@ -108,7 +131,9 @@ export default function ChatInputBar({
       setTranscribing(false);
 
       if (!text || text.startsWith("No speech detected")) {
-        setVoiceError("Sorry, I couldn't hear that clearly. Please try again.");
+        showVoiceError(
+          "Sorry, I couldn't hear that clearly. Please try again.",
+        );
         return;
       }
 
@@ -117,8 +142,8 @@ export default function ChatInputBar({
     } catch (error) {
       console.log("stopRecording error", error);
       setTranscribing(false);
-      setVoiceError(
-        "Sorry, something went wrong while processing your voice. Please try again."
+      showVoiceError(
+        "Sorry, something went wrong while processing your voice. Please try again.",
       );
     }
   };
@@ -132,6 +157,11 @@ export default function ChatInputBar({
         borderTopWidth: 1,
         borderColor: "#E2E8F0",
         backgroundColor: "#FFFFFF",
+        shadowColor: "#000",
+        shadowOpacity: isFocused ? 0.08 : 0.04,
+        shadowRadius: 8,
+        elevation: isFocused ? 4 : 2,
+        marginBottom: 4,
       }}
     >
       <View
@@ -143,26 +173,36 @@ export default function ChatInputBar({
         <TextInput
           style={{
             flex: 1,
-            minHeight: 44,
+            minHeight: 40,
             maxHeight: 120,
             paddingHorizontal: 12,
             paddingVertical: 10,
             borderRadius: 20,
             backgroundColor: "#F1F5F9",
             color: "#0F172A",
+            fontWeight: "600",
+            borderWidth: isFocused ? 1 : 0,
+            borderColor: isFocused ? "#3B82F6" : "transparent",
           }}
           value={input}
-          onChangeText={onChangeInput}
-          placeholder="Type how you're feeling… or tap the mic"
+          onChangeText={(text) => {
+            onChangeInput(text);
+            if (text && text.length > 0) {
+              onTyping?.();
+            }
+          }}
+          placeholder="Type how you're feeling…"
           placeholderTextColor="#94A3B8"
           multiline
           blurOnSubmit={false}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
 
         {/* Microphone button for voice input */}
-        <TouchableOpacity
+        <Pressable
           onPress={listening ? stopRecording : startRecording}
-          style={{
+          style={({ pressed }) => ({
             marginLeft: 8,
             width: 40,
             height: 40,
@@ -170,34 +210,37 @@ export default function ChatInputBar({
             backgroundColor: listening ? "#F97373" : "#E5E7EB",
             alignItems: "center",
             justifyContent: "center",
-          }}
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          })}
         >
           <Ionicons
             name={listening ? "mic" : "mic-outline"}
             size={22}
-            color={listening ? "#FFFFFF" : "#4B5563"}
+            color={listening ? "#FFFFFF" : "#1d77f5"}
           />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Send button for manual text input */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => onSend?.()}
           disabled={!canSend}
-          style={{
+          style={({ pressed }) => ({
             marginLeft: 8,
-            backgroundColor: canSend ? "#6366F1" : "#CBD5E1",
+            backgroundColor: canSend ? "#3B82F6" : "#d9dde2",
             paddingHorizontal: 16,
             borderRadius: 20,
             justifyContent: "center",
             height: 40,
-          }}
+            opacity: !canSend ? 1 : pressed ? 0.85 : 1,
+            transform: [{ scale: pressed && canSend ? 0.97 : 1 }],
+          })}
         >
           {sending ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Send</Text>
+            <Text style={{ color: "#ffffff", fontWeight: "600" }}>Send</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Voice UX indicators */}

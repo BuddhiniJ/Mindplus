@@ -3,9 +3,16 @@ import { View, Text, TouchableOpacity, Image } from "react-native";
 import styles from "./chatbotStyles";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ChatHeader({ onBack, onSettings }) {
+export default function ChatHeader({ onBack, onSettings, theme = "calm" }) {
+  const headerThemeStyle =
+    theme === "dark"
+      ? styles.headerDark
+      : theme === "forest"
+        ? styles.headerForest
+        : null;
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, headerThemeStyle]}>
       <View style={styles.headerTopRow}>
         <TouchableOpacity
           onPress={onBack}
