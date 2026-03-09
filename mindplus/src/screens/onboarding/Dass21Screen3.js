@@ -176,7 +176,7 @@ export default function Dass21Screen3({ route, navigation }) {
         <View style={styles.instructionsCard}>
           <Text style={styles.instructionsTitle}>Instructions</Text>
           <Text style={styles.instructionsText}>
-            Please read each statement and select a number that indicates how much the statement applied to you over the past week.
+            Please read each statement and select a number that indicates how much the statement applied to you over the <Text style={{ fontWeight: 'bold' }}>past week.</Text>
           </Text>
         </View>
 
