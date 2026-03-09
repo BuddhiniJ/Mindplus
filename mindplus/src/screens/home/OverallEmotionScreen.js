@@ -9,8 +9,11 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
+  Platform,
+  StatusBar,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import BottomNavigation from "../../components/BottomNavigation";
+import ScreenHeaderCard from "../../components/ScreenHeaderCard";
 
 // Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
@@ -87,6 +90,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
   const [overallEmotion, setOverallEmotion] = useState(null);
   const [loading, setLoading] = useState(true);
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
+  const topPadding =
+    Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
+  const headerKicker = route?.params?.headerKicker || "EMOTION INSIGHT";
+  const headerTitle = route?.params?.headerTitle || "Today's Overall Emotion";
 
   // Calculate overall emotion from daily check-in answers and trigger animation
   useEffect(() => {
@@ -118,7 +125,6 @@ export default function OverallEmotionScreen({ route, navigation }) {
   if (!overallEmotion) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerBackground} />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -140,25 +146,19 @@ export default function OverallEmotionScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header Background */}
-      <View
-        style={[
-          styles.headerBackground,
-          { backgroundColor: overallEmotion.colorCode + "20" },
-        ]}
+      <ScreenHeaderCard
+        topPadding={topPadding}
+        kicker={headerKicker}
+        title={headerTitle}
       />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Today's Overall Emotion</Text>
-          <Text style={styles.headerSubtitle}>
-            Based on your 4 daily check-in responses
-          </Text>
-        </View>
+        <Text style={styles.sectionSubtitle}>
+          Based on your 4 daily check-in responses
+        </Text>
 
         {/* Main Emotion Card */}
         <Animated.View
@@ -212,10 +212,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
               {confidencePercentage >= 80
                 ? "Very clear emotional pattern today"
                 : confidencePercentage >= 60
-                ? "Mostly clear emotional pattern"
-                : confidencePercentage >= 40
-                ? "A balanced mix of emotional signals"
-                : "A gentle mix of different emotions"}
+                  ? "Mostly clear emotional pattern"
+                  : confidencePercentage >= 40
+                    ? "A balanced mix of emotional signals"
+                    : "A gentle mix of different emotions"}
             </Text>
           </View>
         </Animated.View>
@@ -296,8 +296,8 @@ export default function OverallEmotionScreen({ route, navigation }) {
             {confidencePercentage >= 80
               ? "very consistent across all questions"
               : confidencePercentage >= 60
-              ? "mostly consistent with a little variation"
-              : "naturally varied across different moments"}
+                ? "mostly consistent with a little variation"
+                : "naturally varied across different moments"}
             .
           </Text>
         </View>
@@ -326,30 +326,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
           <Text style={styles.copingStrategyArrow}>→</Text>
         </TouchableOpacity>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              { backgroundColor: overallEmotion.colorCode },
-            ]}
-            onPress={() => navigation.navigate("HomeDashboardScreen")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.primaryButtonText}>Go to Dashboard</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -358,14 +338,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
-  },
-  headerBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    backgroundColor: "#EEF2FF",
   },
   loadingContainer: {
     flex: 1,
@@ -380,23 +352,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   scrollContent: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  header: {
-    marginBottom: 24,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
+  sectionSubtitle: {
     fontSize: 15,
     color: "#6B7280",
+    marginBottom: 24,
+    paddingHorizontal: 2,
   },
   mainEmotionCard: {
     backgroundColor: "#FFFFFF",
@@ -597,42 +560,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  primaryButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  secondaryButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E5E7EB",
-  },
-  secondaryButtonText: {
-    color: "#111827",
-    fontWeight: "700",
-    fontSize: 15,
-  },
   bottomSpacer: {
-    height: 20,
+    height: 10,
   },
   centerContent: {
     alignItems: "center",
