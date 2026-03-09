@@ -80,6 +80,10 @@ const CHAT_THEMES = [
   { id: "dark", label: "Dark" },
 ];
 
+const SETTINGS_SWITCH_TRACK = { false: "#D1D5DB", true: "#6366F1" };
+const SETTINGS_SWITCH_THUMB_ON = "#EEF2FF";
+const SETTINGS_SWITCH_THUMB_OFF = "#F9FAFB";
+
 const QUICK_COMMANDS = [
   // Core wellbeing flows
   {
@@ -1541,7 +1545,7 @@ export default function ChatbotScreen({ navigation }) {
           onRequestClose={() => setShowSettingsPanel(false)}
         >
           <View style={styles.commandsModalOverlay}>
-            <View style={styles.commandsModalCard}>
+            <View style={styles.settingsModalCard}>
               <Text style={styles.commandsModalTitle}>Chatbot settings</Text>
               <Text style={styles.commandsModalSubtitle}>
                 Adjust how MindPlus Assistant behaves.
@@ -1555,7 +1559,11 @@ export default function ChatbotScreen({ navigation }) {
                 <TouchableOpacity
                   style={[
                     styles.commandsButton,
-                    { alignSelf: "flex-start", marginBottom: 12 },
+                    {
+                      alignSelf: "flex-start",
+                      marginBottom: 12,
+                      marginLeft: 16,
+                    },
                   ]}
                   onPress={() => {
                     setShowSettingsPanel(false);
@@ -1567,7 +1575,7 @@ export default function ChatbotScreen({ navigation }) {
                   </Text>
                 </TouchableOpacity>
 
-                <View style={{ marginTop: 4, marginBottom: 4 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 4 }]}>
                   <Text style={styles.settingsSectionTitle}>Assistant</Text>
                 </View>
 
@@ -1579,6 +1587,13 @@ export default function ChatbotScreen({ navigation }) {
                       setAutoVoiceEnabled(value);
                       persistSettings({ autoVoiceEnabled: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      autoVoiceEnabled
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1590,10 +1605,17 @@ export default function ChatbotScreen({ navigation }) {
                       setSoundFeedbackEnabled(value);
                       persistSettings({ soundFeedbackEnabled: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      soundFeedbackEnabled
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
-                <View style={{ marginTop: 12, marginBottom: 4 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 12 }]}>
                   <Text style={styles.settingsSectionTitle}>Insights</Text>
                 </View>
 
@@ -1607,10 +1629,17 @@ export default function ChatbotScreen({ navigation }) {
                       setShowStressCard(value);
                       persistSettings({ showStressCard: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      showStressCard
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
-                <View style={{ marginTop: 12, marginBottom: 6 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 12 }]}>
                   <Text style={styles.settingsSectionTitle}>
                     Chat appearance
                   </Text>
@@ -1655,10 +1684,17 @@ export default function ChatbotScreen({ navigation }) {
                       setCompactMessages(value);
                       persistSettings({ compactMessages: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      compactMessages
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
-                <View style={{ marginTop: 16, marginBottom: 4 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 16 }]}>
                   <Text style={styles.settingsSectionTitle}>
                     Details & accessibility
                   </Text>
@@ -1672,6 +1708,13 @@ export default function ChatbotScreen({ navigation }) {
                       setShowTimestamps(value);
                       persistSettings({ showTimestamps: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      showTimestamps
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1683,6 +1726,13 @@ export default function ChatbotScreen({ navigation }) {
                       setLargeText(value);
                       persistSettings({ largeText: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      largeText
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1694,6 +1744,13 @@ export default function ChatbotScreen({ navigation }) {
                       setHideLabels(value);
                       persistSettings({ hideLabels: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      hideLabels
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1707,6 +1764,13 @@ export default function ChatbotScreen({ navigation }) {
                       setSimplifiedMode(value);
                       persistSettings({ simplifiedMode: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      simplifiedMode
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1720,10 +1784,17 @@ export default function ChatbotScreen({ navigation }) {
                       setSlowInteractionMode(value);
                       persistSettings({ slowInteractionMode: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      slowInteractionMode
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
-                <View style={{ marginTop: 18, marginBottom: 4 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 18 }]}>
                   <Text style={styles.settingsSectionTitle}>
                     Privacy & data
                   </Text>
@@ -1739,6 +1810,13 @@ export default function ChatbotScreen({ navigation }) {
                       setAnonymousMode(value);
                       persistSettings({ anonymousMode: value });
                     }}
+                    trackColor={SETTINGS_SWITCH_TRACK}
+                    thumbColor={
+                      anonymousMode
+                        ? SETTINGS_SWITCH_THUMB_ON
+                        : SETTINGS_SWITCH_THUMB_OFF
+                    }
+                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                   />
                 </View>
 
@@ -1769,7 +1847,7 @@ export default function ChatbotScreen({ navigation }) {
                   </Text>
                 </TouchableOpacity>
 
-                <View style={{ marginTop: 18, marginBottom: 4 }}>
+                <View style={[styles.settingsSectionHeader, { marginTop: 18 }]}>
                   <Text style={styles.settingsSectionTitle}>Session</Text>
                 </View>
 
@@ -1793,10 +1871,10 @@ export default function ChatbotScreen({ navigation }) {
               </ScrollView>
 
               <TouchableOpacity
-                style={[styles.commandsCloseButton, { marginTop: 16 }]}
+                style={styles.settingsCloseButton}
                 onPress={() => setShowSettingsPanel(false)}
               >
-                <Text style={styles.commandsCloseButtonText}>Close</Text>
+                <Text style={styles.settingsCloseButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
