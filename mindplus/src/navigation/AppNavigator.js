@@ -27,6 +27,7 @@ import HistoryScreen from "../components/Voice/HistoryScreen.js";
 import GreetingContainer from "../components/GreetingContainer.js";
 import CommunityScreen from "../components/Voice/CommunityScreen.js";
 import ChatScreen from "../components/Voice/ChatScreen.js";
+import ChatListScreen from "../components/Voice/ChatListScreen.js";
 
 const Stack = createStackNavigator();
 
@@ -75,6 +76,7 @@ export default function AppNavigator() {
       <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
       <Stack.Screen name="GreetingContainer" component={GreetingContainer} />
       <Stack.Screen name="CommunityScreen" component={CommunityScreen} />
+      <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
         </Stack.Navigator>
   );

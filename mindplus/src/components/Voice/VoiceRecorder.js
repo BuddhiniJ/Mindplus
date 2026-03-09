@@ -15,8 +15,8 @@ import { analyzeStress } from '../../services/stressService';
 import { saveAudioFile, initializeStorage } from '../../services/localStorageService';
 import { saveAnalysisLocally } from '../../services/historyStorageService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously as firebaseSignInAnonymously } from 'firebase/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import GreetingContainer from "../../components/GreetingContainer";
 
@@ -41,9 +41,18 @@ export default function VoiceRecorder({ navigation }) {
   const rippleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    loadUserId();
-    initializeStorage();
-    signInAnonymously();
+    const initializeApp = async () => {
+      try {
+        await initializeStorage();
+        await signInAnonymously(); // Sign in first to ensure auth.currentUser exists
+        await loadUserId();        // Then get and resolve the UID
+        loadLastAnalysis();        // Then load last analysis
+      } catch (error) {
+        console.error('[VoiceRecorder] Initialization error:', error);
+      }
+    };
+    
+    initializeApp();
     
     // Gentle breathing animation
     Animated.loop(
@@ -76,29 +85,89 @@ export default function VoiceRecorder({ navigation }) {
         }),
       ])
     ).start();
-  }, []);
+
+    // Reload last analysis when navigating back to this screen
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadLastAnalysis();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const ensureAuthReady = async (timeout = 3000) => {
+    const start = Date.now();
+    while (!auth.currentUser && Date.now() - start < timeout) {
+      console.log('[VoiceRecorder] Waiting for auth to be ready...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (!auth.currentUser) {
+      throw new Error('Authentication not available after timeout');
+    }
+  };
 
   const signInAnonymously = async () => {
     try {
-      const { signInAnonymously: signIn } = await import('../../firebase/firebaseConfig');
-      await signIn();
-      console.log('✅ Signed in to Firebase anonymously');
+      if (!auth.currentUser) {
+        await firebaseSignInAnonymously(auth);
+        console.log('✅ Signed in to Firebase anonymously');
+      } else {
+        console.log('✅ Already authenticated as:', auth.currentUser.uid);
+      }
     } catch (error) {
       console.log('⚠️ Firebase sign-in failed (community features disabled):', error.message);
     }
   };
 
+  const saveUserProfileToFirebase = async (userId, analysis) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, {
+        userId: userId,
+        nickname: `User_${userId.slice(-4)}`, // Simple nickname, can be customized
+        dominantType: analysis.dominant_type,
+        overallScore: analysis.overall_score || 0,
+        lastAnalysis: serverTimestamp(),
+        stressScores: analysis.stress_scores,
+        keywordCounts: analysis.keyword_counts,
+        lastStressAnalysisId: analysis.id || Date.now().toString(), // Track latest analysis
+      }, { merge: true });
+      console.log('✅ Saved user profile to Firebase');
+    } catch (error) {
+      console.log('⚠️ Failed to save to Firebase:', error.message);
+    }
+  };
+
   const loadUserId = async () => {
     try {
-      // prefer authenticated firebase uid
-      let id = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
+      // Step 1: Ensure auth is ready (wait for anonymous sign-in if needed)
+      await ensureAuthReady();
+      
+      // Step 2: Use Firebase auth UID (now guaranteed to exist)
+      const id = auth.currentUser?.uid;
       if (!id) {
-        id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        throw new Error('Failed to establish user identity');
       }
+      
+      console.log('[VoiceRecorder] Resolved userId:', id);
+      
+      // Step 3: Sync to AsyncStorage for consistency
       await AsyncStorage.setItem('userId', id);
       setUserId(id);
     } catch (error) {
-      console.error('Error loading user ID:', error);
+      console.error('❌ Error loading user ID:', error);
+      Alert.alert('Authentication Error', 'Failed to establish user identity. Please restart the app.');
+    }
+  };
+
+  const loadLastAnalysis = async () => {
+    try {
+      const lastAnalysisJson = await AsyncStorage.getItem('lastStressAnalysis');
+      if (lastAnalysisJson) {
+        const lastAnalysis = JSON.parse(lastAnalysisJson);
+        setStressAnalysis(lastAnalysis);
+        console.log('✅ Loaded last analysis from storage');
+      }
+    } catch (error) {
+      console.error('Error loading last analysis:', error);
     }
   };
 
@@ -233,13 +302,18 @@ export default function VoiceRecorder({ navigation }) {
         return;
       }
 
-      // Determine current user ID (prefer firebase auth)
-      let currentUserId = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
+      // Use the authenticated Firebase UID (should already be set by loadUserId init)
+      let currentUserId = userId || auth.currentUser?.uid;
       if (!currentUserId) {
-        // fall back to random id as before
-        currentUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Critical: Should not reach here if loadUserId ran successfully
+        currentUserId = await AsyncStorage.getItem('userId');
+        if (!currentUserId) {
+          Alert.alert('Error', 'User identity could not be established');
+          return;
+        }
       }
-      await AsyncStorage.setItem('userId', currentUserId);
+      console.log('🔍 [VoiceRecorder] Using userId for saving:', currentUserId);
+      setUserId(currentUserId);
 
       // Save audio file locally with user ID
       const savedAudio = await saveAudioFile(uri, currentUserId);
@@ -263,6 +337,12 @@ export default function VoiceRecorder({ navigation }) {
       }, currentUserId);
 
       console.log('✅ Saved stress analysis locally for user:', currentUserId);
+
+      // Save last analysis to AsyncStorage for quick access on screen
+      await AsyncStorage.setItem('lastStressAnalysis', JSON.stringify(analysis));
+
+      // Save user profile to Firebase for community features
+      await saveUserProfileToFirebase(currentUserId, analysis);
 
       // Show confirmation dialog asking about stress level
       const overallLevel = analysis.overall_level || 'Unknown';
