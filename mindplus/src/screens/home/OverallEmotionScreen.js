@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   Animated,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import BottomNavigation from "../../components/BottomNavigation";
 
 // Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
@@ -212,10 +212,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
               {confidencePercentage >= 80
                 ? "Very clear emotional pattern today"
                 : confidencePercentage >= 60
-                ? "Mostly clear emotional pattern"
-                : confidencePercentage >= 40
-                ? "A balanced mix of emotional signals"
-                : "A gentle mix of different emotions"}
+                  ? "Mostly clear emotional pattern"
+                  : confidencePercentage >= 40
+                    ? "A balanced mix of emotional signals"
+                    : "A gentle mix of different emotions"}
             </Text>
           </View>
         </Animated.View>
@@ -296,8 +296,8 @@ export default function OverallEmotionScreen({ route, navigation }) {
             {confidencePercentage >= 80
               ? "very consistent across all questions"
               : confidencePercentage >= 60
-              ? "mostly consistent with a little variation"
-              : "naturally varied across different moments"}
+                ? "mostly consistent with a little variation"
+                : "naturally varied across different moments"}
             .
           </Text>
         </View>
@@ -326,30 +326,10 @@ export default function OverallEmotionScreen({ route, navigation }) {
           <Text style={styles.copingStrategyArrow}>→</Text>
         </TouchableOpacity>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>Back</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              { backgroundColor: overallEmotion.colorCode },
-            ]}
-            onPress={() => navigation.navigate("HomeDashboardScreen")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.primaryButtonText}>Go to Dashboard</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -597,42 +577,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  primaryButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  secondaryButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E5E7EB",
-  },
-  secondaryButtonText: {
-    color: "#111827",
-    fontWeight: "700",
-    fontSize: 15,
-  },
   bottomSpacer: {
-    height: 20,
+    height: 10,
   },
   centerContent: {
     alignItems: "center",

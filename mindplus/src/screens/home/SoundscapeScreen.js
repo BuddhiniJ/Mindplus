@@ -13,6 +13,7 @@ import {
   SOUNDSCAPE_LIBRARY,
   useGlobalAudioPlayer,
 } from "../../context/GlobalAudioPlayerContext";
+import BottomNavigation from "../../components/BottomNavigation";
 
 export default function SoundscapeScreen({ navigation }) {
   const topPadding =
@@ -195,7 +196,11 @@ export default function SoundscapeScreen({ navigation }) {
             Breathe in for 4 seconds, out for 6 seconds. Repeat 5 times.
           </Text>
         </View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -204,13 +209,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#F9FAFB",
-    paddingHorizontal: 18,
     paddingTop: 6,
   },
   safe: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 18,
   },
   headerShell: {
     width: "100%",
@@ -313,6 +318,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   scrollContent: {
+    paddingHorizontal: 18,
     paddingBottom: 24,
   },
   hero: {
@@ -552,5 +558,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#374151",
     lineHeight: 18,
+  },
+  bottomSpacer: {
+    height: 88,
   },
 });

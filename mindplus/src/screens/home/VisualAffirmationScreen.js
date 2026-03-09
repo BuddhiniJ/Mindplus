@@ -18,6 +18,7 @@ import GroundingCard from "../../components/GroundingCard";
 import MovementBreakCard from "../../components/MovementBreakCard";
 import SelfCompassionCard from "../../components/SelfCompassionCard";
 import { fetchCopingStrategy } from "../../services/api";
+import BottomNavigation from "../../components/BottomNavigation";
 
 const DEFAULT_SESSION_SECONDS = 60;
 const MOVEMENT_BREAK_SECONDS = 300;
@@ -668,7 +669,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
         <View style={styles.footerNote}>
           <Text style={styles.footerText}>{footerTip}</Text>
         </View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -677,16 +682,17 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#EAF2FF",
-    paddingHorizontal: 18,
     paddingTop: 6,
   },
   scrollContent: {
+    paddingHorizontal: 18,
     paddingBottom: 18,
   },
   safe: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 18,
   },
   headerShell: {
     width: "100%",
@@ -1110,5 +1116,8 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     textAlign: "center",
     lineHeight: 20,
+  },
+  bottomSpacer: {
+    height: 88,
   },
 });

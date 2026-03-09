@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { fetchCopingStrategy } from "../../services/api";
+import BottomNavigation from "../../components/BottomNavigation";
 
 // Emotion type mappings with colors, emojis, and display labels
 const EMOTION_COLORS = {
@@ -489,7 +490,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
         </Animated.View>
 
         {/* Action Buttons */}
-        <View style={styles.actionButtons}>
+        {/* <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => navigation.goBack()}
@@ -508,10 +509,12 @@ export default function CopingStrategyScreen({ route, navigation }) {
           >
             <Text style={styles.primaryButtonText}>Dashboard</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
 }
@@ -1035,7 +1038,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   bottomSpacer: {
-    height: 20,
+    height: 88,
   },
   centerContent: {
     alignItems: "center",
