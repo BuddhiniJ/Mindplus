@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeDashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -61,6 +68,61 @@ export default function HomeDashboardScreen({ navigation }) {
     }
   };
 
+  const handleCopingStrategy = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const checkInRef = doc(db, "users", user.uid, "dailyCheckIns", todayKey);
+      const checkInSnap = await getDoc(checkInRef);
+
+      if (checkInSnap.exists() && checkInSnap.data().answers) {
+        const answers = checkInSnap.data().answers;
+
+        const emotionScores = {};
+        let totalConfidence = 0;
+
+        answers.forEach((answer) => {
+          const emotion = answer.emotion?.toLowerCase() || "unknown";
+          const confidence = answer.confidence || 0;
+
+          if (!emotionScores[emotion]) {
+            emotionScores[emotion] = { count: 0, totalConfidence: 0 };
+          }
+          emotionScores[emotion].count += 1;
+          emotionScores[emotion].totalConfidence += confidence;
+          totalConfidence += confidence;
+        });
+
+        let dominantEmotion = "unknown";
+        let maxCount = 0;
+
+        Object.entries(emotionScores).forEach(([emotion, scores]) => {
+          if (scores.count > maxCount) {
+            maxCount = scores.count;
+            dominantEmotion = emotion;
+          }
+        });
+
+        const overallConfidence =
+          totalConfidence > 0 ? totalConfidence / answers.length : 0;
+
+        navigation.navigate("CopingStrategyScreen", {
+          emotion: dominantEmotion,
+          confidence: overallConfidence,
+        });
+      } else {
+        alert(
+          "No check-in data found for today. Please complete the daily check-in first."
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching coping strategy:", error);
+      alert("Unable to load coping strategy. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -74,26 +136,91 @@ export default function HomeDashboardScreen({ navigation }) {
 
   const nickname = profile?.nickname || "User";
   const avatarKey = profile?.avatar || "avatar1";
+  const quickActions = [
+    {
+      key: "emotion",
+      title: "Today's Emotion",
+      subtitle: "See your emotional snapshot",
+      icon: "💭",
+      color: "#FCE7F3",
+      featured: false,
+      cta: "View snapshot",
+      onPress: handleViewTodayEmotion,
+    },
+    {
+      key: "coping",
+      title: "Coping Plan",
+      subtitle: "Get your personalized support",
+      icon: "💡",
+      color: "#DDD6FE",
+      featured: false,
+      cta: "Start support plan",
+      onPress: handleCopingStrategy,
+    },
+    {
+      key: "story",
+      title: "Tell Your Story",
+      subtitle: "Let your voice carry the weight",
+      icon: "🎙️",
+      color: "#DBF4D6",
+      featured: false,
+      cta: "Record now",
+      onPress: () => navigation.navigate("VoiceRecorderScreen"),
+    },
+    {
+      key: "heatmap",
+      title: "Calendar Heatmap",
+      subtitle: "See how your stress shifts",
+      icon: "📅",
+      color: "#EEF2FF",
+      featured: false,
+      cta: "Open calendar",
+      onPress: () => navigation.navigate("HeatmapScreen"),
+    },
+    {
+      key: "chatbot",
+      title: "Chatbot",
+      subtitle: "Talk with your AI companion",
+      icon: "💬",
+      color: "#FEF3C7",
+      featured: false,
+      cta: "Start chat",
+      onPress: () => navigation.navigate("ChatbotScreen"),
+    },
+    {
+      key: "soundscape",
+      title: "Soundscape",
+      subtitle: "Step into calming sound layers",
+      icon: "🎧",
+      color: "#E0F2FE",
+      featured: false,
+      cta: "Listen now",
+      onPress: () => navigation.navigate("SoundscapeScreen"),
+    },
+  ];
+  const spotlightActions = quickActions.filter((action) => action.featured);
+  const regularActions = quickActions.filter((action) => !action.featured);
 
   return (
     <View style={styles.container}>
-      {/* Header Background */}
       <LinearGradient
-        colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']}
+        colors={["#E9EAEB", "#D4E4F7", "#FFFFFF", "#E1F5FE"]}
         style={styles.gradientBackground}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <View style={styles.backgroundOrbOne} />
+          <View style={styles.backgroundOrbTwo} />
 
-          
-          {/* Header Section */}
           <View style={styles.header}>
+            <View style={styles.titleWrap}>
+              <Text style={styles.headerPill}>MindPlus Home</Text>
+            </View>
             <View style={styles.profileSection}>
               <View style={styles.avatarContainer}>
                 <TouchableOpacity
@@ -107,218 +234,80 @@ export default function HomeDashboardScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
               <View style={styles.greetingContainer}>
-                <Text style={styles.greeting}>Hi, {nickname}! 👋</Text>
+                <Text style={styles.greeting}>Hi, {nickname}</Text>
                 <Text style={styles.subGreeting}>
-                  Welcome back to your dashboard
+                  You are safe here. Pick what feels right now.
                 </Text>
               </View>
             </View>
-          </View>
+          </View>          
 
-          {/* Quick Actions */}
           <View style={styles.actionsSection}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>Choose Your Calm Path</Text>
+            <Text style={styles.sectionSubtitle}>
+              One tap begins a small reset. Pick what feels right in this
+              moment.
+            </Text>
 
-            {/*Today's Emotion*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleViewTodayEmotion}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#FCE7F3" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>💭</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>View Today's Emotion</Text>
-                <Text style={styles.actionDescription}>
-                  See your overall emotional analysis
-                </Text>
-              </View>
+            <View style={styles.spotlightStack}>
+              {spotlightActions.map((action) => (
+                <TouchableOpacity
+                  key={action.key}
+                  style={styles.spotlightCard}
+                  onPress={action.onPress}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.spotlightGlow} />
+                  <View style={styles.spotlightTopRow}>
+                    <View
+                      style={[
+                        styles.spotlightIconWrap,
+                        { backgroundColor: action.color },
+                      ]}
+                    >
+                      <Text style={styles.spotlightIcon}>{action.icon}</Text>
+                    </View>
+                    <Text style={styles.spotlightTag}>Quick Relief</Text>
+                  </View>
+                  <Text style={styles.spotlightTitle}>{action.title}</Text>
+                  <Text style={styles.spotlightSubtitle}>{action.subtitle}</Text>
+                  <View style={styles.spotlightButton}>
+                    <Text style={styles.spotlightButtonText}>{action.cta}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            </TouchableOpacity>
+            <View style={styles.actionsGrid}>
+              {regularActions.map((action) => (
+                <TouchableOpacity
+                  key={action.key}
+                  style={styles.actionCard}
+                  onPress={action.onPress}
+                  activeOpacity={0.86}
+                >
+                  <View
+                    style={[
+                      styles.actionIconContainer,
+                      { backgroundColor: action.color },
+                    ]}
+                  >
+                    <Text style={styles.actionIcon}>{action.icon}</Text>
+                  </View>
 
-            {/*Coping Stratergy*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={async () => {
-                try {
-                  const user = auth.currentUser;
-                  if (!user) return;
+                  <Text style={styles.actionTitle}>{action.title}</Text>
+                  <Text style={styles.actionDescription}>
+                    {action.subtitle}
+                  </Text>
 
-                  const todayKey = new Date().toISOString().slice(0, 10);
-                  const checkInRef = doc(
-                    db,
-                    "users",
-                    user.uid,
-                    "dailyCheckIns",
-                    todayKey
-                  );
-                  const checkInSnap = await getDoc(checkInRef);
-
-                  if (checkInSnap.exists() && checkInSnap.data().answers) {
-                    const answers = checkInSnap.data().answers;
-
-                    // Calculate overall emotion
-                    const emotionScores = {};
-                    let totalConfidence = 0;
-
-                    answers.forEach((answer) => {
-                      const emotion = answer.emotion?.toLowerCase() || "unknown";
-                      const confidence = answer.confidence || 0;
-
-                      if (!emotionScores[emotion]) {
-                        emotionScores[emotion] = { count: 0, totalConfidence: 0 };
-                      }
-                      emotionScores[emotion].count += 1;
-                      emotionScores[emotion].totalConfidence += confidence;
-                      totalConfidence += confidence;
-                    });
-
-                    let dominantEmotion = "unknown";
-                    let maxCount = 0;
-
-                    Object.entries(emotionScores).forEach(([emotion, scores]) => {
-                      if (scores.count > maxCount) {
-                        maxCount = scores.count;
-                        dominantEmotion = emotion;
-                      }
-                    });
-
-                    const overallConfidence =
-                      totalConfidence > 0 ? totalConfidence / answers.length : 0;
-
-                    navigation.navigate("CopingStrategyScreen", {
-                      emotion: dominantEmotion,
-                      confidence: overallConfidence,
-                    });
-                  } else {
-                    alert(
-                      "No check-in data found for today. Please complete the daily check-in first."
-                    );
-                  }
-                } catch (error) {
-                  console.error("Error fetching coping strategy:", error);
-                  alert("Unable to load coping strategy. Please try again.");
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#DDD6FE" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>💡</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Coping Strategy</Text>
-                <Text style={styles.actionDescription}>
-                  Get personalized emotional guidance
-                </Text>
-              </View>
-
-            </TouchableOpacity>
-
-            {/*Voice*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation.navigate("VoiceRecorderScreen")}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#89a0072a" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>💆🏽‍♀️</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Tell Your Story</Text>
-                <Text style={styles.actionDescription}>
-                  Let your thoughts settle
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/*Heatmap*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation.navigate("HeatmapScreen")}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#EEF2FF" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>📅</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Calander Heatmap</Text>
-                <Text style={styles.actionDescription}>
-                  Explore your stress patterns
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/*Chatbot*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation.navigate("ChatbotScreen")}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#FEF3C7" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>💬</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Call Chatbot</Text>
-                <Text style={styles.actionDescription}>
-                  Chat with your AI companion
-                </Text>
-              </View>
-
-            </TouchableOpacity>
-
-            {/*Soundscape*/}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation.navigate("SoundscapeScreen")}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: "#E0F2FE" },
-                ]}
-              >
-                <Text style={styles.actionIcon}>🎧</Text>
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Soundscape</Text>
-                <Text style={styles.actionDescription}>
-                  Relax with calming sounds
-                </Text>
-              </View>
-
-            </TouchableOpacity>
-
-
+                  <View style={styles.actionFooterPill}>
+                    <Text style={styles.actionFooterText}>Open</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          {/* Bottom Spacing */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </LinearGradient>
@@ -362,9 +351,42 @@ const styles = {
   scrollContent: {
     paddingTop: 60,
     paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  backgroundOrbOne: {
+    position: "absolute",
+    top: 15,
+    right: 5,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.35)",
+  },
+  backgroundOrbTwo: {
+    position: "absolute",
+    top: 110,
+    left: -26,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "rgba(180, 215, 255, 0.28)",
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 18,
+  },
+  titleWrap: {
+    marginBottom: 14,
+  },
+  headerPill: {
+    alignSelf: "flex-start",
+    fontSize: 12,
+    color: "#33587A",
+    fontWeight: "700",
+    letterSpacing: 1.1,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   profileSection: {
     flexDirection: "row",
@@ -403,14 +425,76 @@ const styles = {
     flex: 1,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 29,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 4,
   },
   subGreeting: {
+    fontSize: 15,
+    color: "#46566A",
+    lineHeight: 22,
+  },
+  calmCard: {
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.75)",
+    shadowColor: "#5C86B0",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  calmLabel: {
+    fontSize: 11,
+    letterSpacing: 1.1,
+    color: "#5D7490",
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  calmTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#102940",
+    marginBottom: 8,
+  },
+  calmSubtitle: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#4C6073",
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  calmActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  calmPrimaryButton: {
+    flex: 1,
+    backgroundColor: "#2A5F8D",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  calmPrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  calmSecondaryButton: {
+    flex: 1,
+    backgroundColor: "#E5F2FF",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#CFE3F9",
+  },
+  calmSecondaryText: {
+    color: "#2A5F8D",
+    fontSize: 13,
+    fontWeight: "700",
   },
   mainCard: {
     backgroundColor: "#FFFFFF",
@@ -536,55 +620,150 @@ const styles = {
   actionsSection: {
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 16,
+  spotlightStack: {
+    marginBottom: 14,
+    gap: 12,
   },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  spotlightCard: {
     backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#DFEBF7",
     padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    overflow: "hidden",
+    shadowColor: "#3F6283",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  actionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  spotlightGlow: {
+    position: "absolute",
+    top: -18,
+    right: -10,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(212, 228, 247, 0.46)",
+  },
+  spotlightTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  spotlightIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+  },
+  spotlightIcon: {
+    fontSize: 26,
+  },
+  spotlightTag: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    color: "#33587A",
+    backgroundColor: "#EDF5FF",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  spotlightTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#102940",
+    marginBottom: 4,
+  },
+  spotlightSubtitle: {
+    fontSize: 13,
+    color: "#4C6073",
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  spotlightButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#2A5F8D",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 11,
+  },
+  spotlightButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#55687C",
+    marginBottom: 14,
+  },
+  actionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
+  actionCard: {
+    width: "48.2%",
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5EEF7",
+    minHeight: 168,
+    shadowColor: "#4F6B89",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  actionIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
   },
   actionIcon: {
-    fontSize: 24,
-  },
-  actionTextContainer: {
-    flex: 1,
+    fontSize: 25,
   },
   actionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#111827",
-    marginBottom: 2,
+    marginBottom: 6,
+    lineHeight: 20,
   },
   actionDescription: {
-    fontSize: 13,
-    color: "#6B7280",
+    fontSize: 12,
+    color: "#6A7888",
+    lineHeight: 18,
+    marginBottom: 14,
   },
-  actionArrow: {
-    fontSize: 20,
-    color: "#9CA3AF",
+  actionFooterPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#EEF7FF",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  actionFooterText: {
+    color: "#2D5D88",
+    fontSize: 11,
     fontWeight: "600",
   },
   bottomSpacer: {
-    height: 40,
+    height: 22,
   },
 };
