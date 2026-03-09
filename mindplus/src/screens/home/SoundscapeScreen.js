@@ -92,6 +92,11 @@ export default function SoundscapeScreen({ navigation }) {
               <Text style={styles.nowPlayingSubtitle}>
                 {selected?.subtitle || ""}
               </Text>
+              <View style={styles.categoryChip}>
+                <Text style={styles.categoryChipText}>
+                  {selected?.category || "Stress Relief"}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -174,6 +179,9 @@ export default function SoundscapeScreen({ navigation }) {
                     <Text style={styles.tileEmoji}>{s.emoji}</Text>
                   </View>
                   <Text style={styles.tileTitle}>{s.title}</Text>
+                  <Text style={styles.tileCategory}>
+                    {s.category || "Stress Relief"}
+                  </Text>
                   <Text style={styles.tileSubtitle}>{s.subtitle}</Text>
                 </TouchableOpacity>
               );
@@ -364,6 +372,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#6B7280",
   },
+  categoryChip: {
+    marginTop: 7,
+    alignSelf: "flex-start",
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  categoryChipText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    letterSpacing: 0.3,
+  },
   progressTrack: {
     height: 10,
     borderRadius: 10,
@@ -497,6 +521,14 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#0F172A",
     marginBottom: 2,
+  },
+  tileCategory: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#2563EB",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 4,
   },
   tileSubtitle: {
     fontSize: 12,
