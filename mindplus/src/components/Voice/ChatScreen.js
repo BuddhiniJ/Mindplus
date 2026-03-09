@@ -241,7 +241,7 @@ export default function ChatScreen({ route, navigation }) {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const getStressIcon = (type) =>
-    ({ Academic: '📚', Financial: '💰', Social: '👥', Emotional: '💭' }[type] || '🌟');
+    ({ Academic: '👽', Financial: '👽', Social: '👽', Emotional: '👽' }[type] || '👽');
 
   const formatTime = (date) => {
     if (!date) return '';
@@ -270,10 +270,10 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={styles.headerAvatarEmoji}>{getStressIcon(user.stressType)}</Text>
             </View>
             <View style={styles.headerInfo}>
-              <Text style={styles.headerName}>{theirNickname || user.name}</Text>
-              <Text style={styles.headerStatus}>
+              <Text style={styles.headerName}>🟢 {theirNickname || user.name}</Text>
+              {/* <Text style={styles.headerStatus}>
                 🟢 {messages.length} message{messages.length !== 1 ? 's' : ''}
-              </Text>
+              </Text> */}
             </View>
           </LinearGradient>
         </Animated.View>
@@ -317,7 +317,7 @@ export default function ChatScreen({ route, navigation }) {
                       <Text style={styles.senderName}>{theirNickname || user.name}</Text>
                     )}
                     {isMe ? (
-                      <LinearGradient colors={['#7CB9E8', '#5777AD']} style={styles.bubbleGradient}>
+                      <LinearGradient colors={['#a0c3ff', '#a0c3ff']} style={styles.bubbleGradient}>
                         <Text style={styles.messageTextRight}>{message.text}</Text>
                         <Text style={styles.messageTimeRight}>{formatTime(message.timestamp)}</Text>
                       </LinearGradient>
@@ -331,7 +331,7 @@ export default function ChatScreen({ route, navigation }) {
 
                   {isMe && (
                     <View style={styles.currentUserAvatar}>
-                      <Text style={styles.currentUserAvatarText}>📤</Text>
+                      <Text style={styles.currentUserAvatarText}>👻</Text>
                     </View>
                   )}
                 </View>
@@ -359,11 +359,11 @@ export default function ChatScreen({ route, navigation }) {
               disabled={!inputText.trim() || sending}
             >
               <LinearGradient
-                colors={!inputText.trim() || sending ? ['#B8D8E8', '#D4E4F7'] : ['#7CB9E8', '#5777AD']}
+                colors={!inputText.trim() || sending ? ['#48b7ee', '#5ea4fa'] : ['#5fbaff', '#5777AD']}
                 style={styles.sendButtonGradient}
               >
                 {sending
-                  ? <ActivityIndicator size="small" color="#FFFFFF" />
+                  ? <ActivityIndicator size="small" color="#ffffff" />
                   : <Text style={styles.sendButtonText}>Send</Text>
                 }
               </LinearGradient>
