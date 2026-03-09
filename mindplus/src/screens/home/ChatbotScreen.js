@@ -80,7 +80,7 @@ const CHAT_THEMES = [
   { id: "dark", label: "Dark" },
 ];
 
-const SETTINGS_SWITCH_TRACK = { false: "#D1D5DB", true: "#6366F1" };
+const SETTINGS_SWITCH_TRACK = { false: "#CBD5F5", true: "#4F46E5" };
 const SETTINGS_SWITCH_THUMB_ON = "#EEF2FF";
 const SETTINGS_SWITCH_THUMB_OFF = "#F9FAFB";
 
@@ -1767,26 +1767,6 @@ export default function ChatbotScreen({ navigation }) {
                     trackColor={SETTINGS_SWITCH_TRACK}
                     thumbColor={
                       simplifiedMode
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
-                  <Text style={styles.autoVoiceLabel}>
-                    Slow interaction mode
-                  </Text>
-                  <Switch
-                    value={slowInteractionMode}
-                    onValueChange={(value) => {
-                      setSlowInteractionMode(value);
-                      persistSettings({ slowInteractionMode: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      slowInteractionMode
                         ? SETTINGS_SWITCH_THUMB_ON
                         : SETTINGS_SWITCH_THUMB_OFF
                     }

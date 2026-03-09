@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#E0E7FF",
+    backgroundColor: "#ffffff",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
   commandsButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#3730A3",
+    color: "#6b61fb",
   },
   commandsModalOverlay: {
     flex: 1,
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
   settingsModalCard: {
     maxHeight: "80%",
     borderRadius: 24,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#d1e3f5",
     paddingHorizontal: 18,
     paddingVertical: 18,
     borderWidth: 1,
@@ -1122,13 +1122,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#000202",
     marginHorizontal: 4,
   },
   settingsActionButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#111827",
+    color: "#e6e6e6",
     textAlign: "center",
   },
   settingsDangerButton: {
@@ -1136,13 +1136,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "#f51414",
     marginHorizontal: 4,
   },
   settingsDangerButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#B91C1C",
+    color: "#ffffff",
     textAlign: "center",
   },
   settingsCloseButton: {
@@ -1151,13 +1151,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#3B82F6",
     marginHorizontal: 4,
   },
   settingsCloseButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: "#ffffff",
     textAlign: "center",
   },
 });
