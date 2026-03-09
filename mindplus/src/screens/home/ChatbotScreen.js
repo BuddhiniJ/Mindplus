@@ -1468,539 +1468,563 @@ export default function ChatbotScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, themeContainerStyle]}>
-      <SafeAreaView style={[styles.container, themeContainerStyle]}>
-        <ChatHeader
-          onBack={() => navigation.goBack()}
-          onSettings={() => setShowSettingsPanel(true)}
-          theme={chatTheme}
-        />
-
-        {dailyQuote && (
-          <View style={styles.dailyQuoteCard}>
-            <Text style={styles.dailyQuoteLabel}>Today’s reminder</Text>
-            <Text style={styles.dailyQuoteText}>“{dailyQuote.text}”</Text>
-            {dailyQuote.author ? (
-              <Text style={styles.dailyQuoteAuthor}>— {dailyQuote.author}</Text>
-            ) : null}
-          </View>
-        )}
-
-        {showStressCard && (
-          <ChatStatusCard
-            statusTheme={statusTheme}
-            overallLabel={overallLabel}
-            stressPercent={stressPercent}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <View style={[styles.container, themeContainerStyle]}>
+        <SafeAreaView style={[styles.container, themeContainerStyle]}>
+          <ChatHeader
+            onBack={() => navigation.goBack()}
+            onSettings={() => setShowSettingsPanel(true)}
+            theme={chatTheme}
           />
-        )}
 
-        <Modal
-          visible={showCommands}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setShowCommands(false)}
-        >
-          <View style={styles.commandsModalOverlay}>
-            <View style={styles.commandsModalCard}>
-              <Text style={styles.commandsModalTitle}>Quick commands</Text>
-              <Text style={styles.commandsModalSubtitle}>
-                Tap a command to open the related feature.
-              </Text>
-
-              <ScrollView style={styles.commandsList}>
-                {QUICK_COMMANDS.map((cmd) => (
-                  <TouchableOpacity
-                    key={cmd.id}
-                    style={styles.commandItem}
-                    onPress={async () => {
-                      setShowCommands(false);
-                      await handleAppAction(cmd.appAction);
-                    }}
-                  >
-                    <Text style={styles.commandItemTitle}>{cmd.label}</Text>
-                    {cmd.description ? (
-                      <Text style={styles.commandItemDescription}>
-                        {cmd.description}
-                      </Text>
-                    ) : null}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <TouchableOpacity
-                style={styles.commandsCloseButton}
-                onPress={() => setShowCommands(false)}
-              >
-                <Text style={styles.commandsCloseButtonText}>Close</Text>
-              </TouchableOpacity>
+          {dailyQuote && (
+            <View style={styles.dailyQuoteCard}>
+              <Text style={styles.dailyQuoteLabel}>Today’s reminder</Text>
+              <Text style={styles.dailyQuoteText}>“{dailyQuote.text}”</Text>
+              {dailyQuote.author ? (
+                <Text style={styles.dailyQuoteAuthor}>
+                  — {dailyQuote.author}
+                </Text>
+              ) : null}
             </View>
-          </View>
-        </Modal>
+          )}
 
-        {/* Chatbot settings panel opened from header */}
-        <Modal
-          visible={showSettingsPanel}
-          animationType="fade"
-          transparent
-          onRequestClose={() => setShowSettingsPanel(false)}
-        >
-          <View style={styles.commandsModalOverlay}>
-            <View style={styles.settingsModalCard}>
-              <Text style={styles.commandsModalTitle}>Chatbot settings</Text>
-              <Text style={styles.commandsModalSubtitle}>
-                Adjust how MindPlus Assistant behaves.
-              </Text>
+          {showStressCard && (
+            <ChatStatusCard
+              statusTheme={statusTheme}
+              overallLabel={overallLabel}
+              stressPercent={stressPercent}
+            />
+          )}
 
-              <ScrollView
-                style={styles.settingsScroll}
-                contentContainerStyle={styles.settingsScrollContent}
-                showsVerticalScrollIndicator
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.commandsButton,
-                    {
-                      alignSelf: "flex-start",
-                      marginBottom: 12,
-                      marginLeft: 16,
-                    },
-                  ]}
-                  onPress={() => {
-                    setShowSettingsPanel(false);
-                    setShowCommands(true);
-                  }}
-                >
-                  <Text style={styles.commandsButtonText}>
-                    View available commands
-                  </Text>
-                </TouchableOpacity>
+          <Modal
+            visible={showCommands}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowCommands(false)}
+          >
+            <View style={styles.commandsModalOverlay}>
+              <View style={styles.commandsModalCard}>
+                <Text style={styles.commandsModalTitle}>Quick commands</Text>
+                <Text style={styles.commandsModalSubtitle}>
+                  Tap a command to open the related feature.
+                </Text>
 
-                <View style={[styles.settingsSectionHeader, { marginTop: 4 }]}>
-                  <Text style={styles.settingsSectionTitle}>Assistant</Text>
-                </View>
-
-                <View style={styles.autoVoiceRow}>
-                  <Text style={styles.autoVoiceLabel}>Auto voice</Text>
-                  <Switch
-                    value={autoVoiceEnabled}
-                    onValueChange={(value) => {
-                      setAutoVoiceEnabled(value);
-                      persistSettings({ autoVoiceEnabled: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      autoVoiceEnabled
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={styles.autoVoiceRow}>
-                  <Text style={styles.autoVoiceLabel}>Sound feedback</Text>
-                  <Switch
-                    value={soundFeedbackEnabled}
-                    onValueChange={(value) => {
-                      setSoundFeedbackEnabled(value);
-                      persistSettings({ soundFeedbackEnabled: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      soundFeedbackEnabled
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.settingsSectionHeader, { marginTop: 12 }]}>
-                  <Text style={styles.settingsSectionTitle}>Insights</Text>
-                </View>
-
-                <View style={styles.autoVoiceRow}>
-                  <Text style={styles.autoVoiceLabel}>
-                    Show stress insight card
-                  </Text>
-                  <Switch
-                    value={showStressCard}
-                    onValueChange={(value) => {
-                      setShowStressCard(value);
-                      persistSettings({ showStressCard: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      showStressCard
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.settingsSectionHeader, { marginTop: 12 }]}>
-                  <Text style={styles.settingsSectionTitle}>
-                    Chat appearance
-                  </Text>
-                </View>
-
-                <View style={styles.settingsThemeRow}>
-                  {CHAT_THEMES.map((theme) => {
-                    const isActive = chatTheme === theme.id;
-                    return (
-                      <TouchableOpacity
-                        key={theme.id}
-                        style={[
-                          styles.settingsThemePill,
-                          isActive && styles.settingsThemePillActive,
-                        ]}
-                        onPress={() => {
-                          setChatTheme(theme.id);
-                          persistSettings({ chatTheme: theme.id });
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text
-                          style={[
-                            styles.settingsThemePillLabel,
-                            isActive && styles.settingsThemePillLabelActive,
-                          ]}
-                        >
-                          {theme.label}
+                <ScrollView style={styles.commandsList}>
+                  {QUICK_COMMANDS.map((cmd) => (
+                    <TouchableOpacity
+                      key={cmd.id}
+                      style={styles.commandItem}
+                      onPress={async () => {
+                        setShowCommands(false);
+                        await handleAppAction(cmd.appAction);
+                      }}
+                    >
+                      <Text style={styles.commandItemTitle}>{cmd.label}</Text>
+                      {cmd.description ? (
+                        <Text style={styles.commandItemDescription}>
+                          {cmd.description}
                         </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <View style={[styles.autoVoiceRow, { marginTop: 10 }]}>
-                  <Text style={styles.autoVoiceLabel}>
-                    Compact message layout
-                  </Text>
-                  <Switch
-                    value={compactMessages}
-                    onValueChange={(value) => {
-                      setCompactMessages(value);
-                      persistSettings({ compactMessages: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      compactMessages
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.settingsSectionHeader, { marginTop: 16 }]}>
-                  <Text style={styles.settingsSectionTitle}>
-                    Details & accessibility
-                  </Text>
-                </View>
-
-                <View style={styles.autoVoiceRow}>
-                  <Text style={styles.autoVoiceLabel}>Show message time</Text>
-                  <Switch
-                    value={showTimestamps}
-                    onValueChange={(value) => {
-                      setShowTimestamps(value);
-                      persistSettings({ showTimestamps: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      showTimestamps
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
-                  <Text style={styles.autoVoiceLabel}>Larger chat text</Text>
-                  <Switch
-                    value={largeText}
-                    onValueChange={(value) => {
-                      setLargeText(value);
-                      persistSettings({ largeText: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      largeText
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
-                  <Text style={styles.autoVoiceLabel}>Hide sender labels</Text>
-                  <Switch
-                    value={hideLabels}
-                    onValueChange={(value) => {
-                      setHideLabels(value);
-                      persistSettings({ hideLabels: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      hideLabels
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
-                  <Text style={styles.autoVoiceLabel}>
-                    Simplified instructions
-                  </Text>
-                  <Switch
-                    value={simplifiedMode}
-                    onValueChange={(value) => {
-                      setSimplifiedMode(value);
-                      persistSettings({ simplifiedMode: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      simplifiedMode
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
-
-                <View style={[styles.settingsSectionHeader, { marginTop: 18 }]}>
-                  <Text style={styles.settingsSectionTitle}>
-                    Privacy & data
-                  </Text>
-                </View>
-
-                <View style={styles.autoVoiceRow}>
-                  <Text style={styles.autoVoiceLabel}>
-                    Anonymous mode (don’t save chats)
-                  </Text>
-                  <Switch
-                    value={anonymousMode}
-                    onValueChange={(value) => {
-                      setAnonymousMode(value);
-                      persistSettings({ anonymousMode: value });
-                    }}
-                    trackColor={SETTINGS_SWITCH_TRACK}
-                    thumbColor={
-                      anonymousMode
-                        ? SETTINGS_SWITCH_THUMB_ON
-                        : SETTINGS_SWITCH_THUMB_OFF
-                    }
-                    ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
-                  />
-                </View>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
                 <TouchableOpacity
-                  style={[styles.settingsActionButton, { marginTop: 10 }]}
-                  onPress={handleClearChatHistory}
+                  style={styles.commandsCloseButton}
+                  onPress={() => setShowCommands(false)}
                 >
-                  <Text style={styles.settingsActionButtonText}>
-                    Clear chat history
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.settingsActionButton, { marginTop: 6 }]}
-                  onPress={handleDownloadData}
-                >
-                  <Text style={styles.settingsActionButtonText}>
-                    Download personal data
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.settingsDangerButton, { marginTop: 6 }]}
-                  onPress={handleDeleteAllData}
-                >
-                  <Text style={styles.settingsDangerButtonText}>
-                    Delete all data
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={[styles.settingsSectionHeader, { marginTop: 18 }]}>
-                  <Text style={styles.settingsSectionTitle}>Session</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.settingsActionButton, { marginTop: 4 }]}
-                  onPress={handleStartFreshConversation}
-                >
-                  <Text style={styles.settingsActionButtonText}>
-                    Start fresh conversation
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.settingsActionButton, { marginTop: 6 }]}
-                  onPress={handleResetPreferences}
-                >
-                  <Text style={styles.settingsActionButtonText}>
-                    Reset preferences
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-
-              <TouchableOpacity
-                style={styles.settingsCloseButton}
-                onPress={() => setShowSettingsPanel(false)}
-              >
-                <Text style={styles.settingsCloseButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal
-          visible={showResources}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setShowResources(false)}
-        >
-          <View style={styles.commandsModalOverlay}>
-            <View style={styles.commandsModalCard}>
-              <Text style={styles.commandsModalTitle}>Helpful resources</Text>
-              <Text style={styles.commandsModalSubtitle}>
-                Based on your recent stress level and emotions, here are some
-                guides, videos, and quick tips you can view or save for later.
-              </Text>
-
-              <ScrollView style={styles.commandsList}>
-                {(resourcesMeta || lastStatusMeta) && (
-                  <HelpfulResourcesSection
-                    emotion={(resourcesMeta || lastStatusMeta).emotion}
-                    stressLevel={(resourcesMeta || lastStatusMeta).stressLevel}
-                    overallStatus={
-                      (resourcesMeta || lastStatusMeta).overallStatus
-                    }
-                  />
-                )}
-              </ScrollView>
-
-              <TouchableOpacity
-                style={styles.commandsCloseButton}
-                onPress={() => setShowResources(false)}
-              >
-                <Text style={styles.commandsCloseButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        {criticalAlert && (
-          <View style={styles.criticalAlertCard}>
-            <Text style={styles.criticalAlertTitle}>
-              ⚠️ Critical Alert: Your message indicates a serious concern. Help
-              is available immediately.
-            </Text>
-            <Text style={styles.criticalAlertBody}>
-              You are not alone. You can reach the official helpline or someone
-              you trust right now.
-            </Text>
-
-            <View style={styles.criticalContactSection}>
-              <Text style={styles.criticalContactLabel}>
-                Official emergency line
-              </Text>
-              <Text style={styles.criticalContactValue}>1926</Text>
-              <View style={styles.criticalButtonsRow}>
-                <TouchableOpacity
-                  style={styles.criticalButtonPrimary}
-                  onPress={() => handleCallNumber("1926")}
-                >
-                  <Text style={styles.criticalButtonPrimaryText}>Call Now</Text>
+                  <Text style={styles.commandsCloseButtonText}>Close</Text>
                 </TouchableOpacity>
               </View>
             </View>
+          </Modal>
 
-            {emergencyContact && (
+          {/* Chatbot settings panel opened from header */}
+          <Modal
+            visible={showSettingsPanel}
+            animationType="fade"
+            transparent
+            onRequestClose={() => setShowSettingsPanel(false)}
+          >
+            <View style={styles.commandsModalOverlay}>
+              <View style={styles.settingsModalCard}>
+                <Text style={styles.commandsModalTitle}>Chatbot settings</Text>
+                <Text style={styles.commandsModalSubtitle}>
+                  Adjust how MindPlus Assistant behaves.
+                </Text>
+
+                <ScrollView
+                  style={styles.settingsScroll}
+                  contentContainerStyle={styles.settingsScrollContent}
+                  showsVerticalScrollIndicator
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.commandsButton,
+                      {
+                        alignSelf: "flex-start",
+                        marginBottom: 12,
+                        marginLeft: 16,
+                      },
+                    ]}
+                    onPress={() => {
+                      setShowSettingsPanel(false);
+                      setShowCommands(true);
+                    }}
+                  >
+                    <Text style={styles.commandsButtonText}>
+                      View available commands
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 4 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>Assistant</Text>
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>Auto voice</Text>
+                    <Switch
+                      value={autoVoiceEnabled}
+                      onValueChange={(value) => {
+                        setAutoVoiceEnabled(value);
+                        persistSettings({ autoVoiceEnabled: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        autoVoiceEnabled
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>Sound feedback</Text>
+                    <Switch
+                      value={soundFeedbackEnabled}
+                      onValueChange={(value) => {
+                        setSoundFeedbackEnabled(value);
+                        persistSettings({ soundFeedbackEnabled: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        soundFeedbackEnabled
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 12 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>Insights</Text>
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>
+                      Show stress insight card
+                    </Text>
+                    <Switch
+                      value={showStressCard}
+                      onValueChange={(value) => {
+                        setShowStressCard(value);
+                        persistSettings({ showStressCard: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        showStressCard
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 12 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>
+                      Chat appearance
+                    </Text>
+                  </View>
+
+                  <View style={styles.settingsThemeRow}>
+                    {CHAT_THEMES.map((theme) => {
+                      const isActive = chatTheme === theme.id;
+                      return (
+                        <TouchableOpacity
+                          key={theme.id}
+                          style={[
+                            styles.settingsThemePill,
+                            isActive && styles.settingsThemePillActive,
+                          ]}
+                          onPress={() => {
+                            setChatTheme(theme.id);
+                            persistSettings({ chatTheme: theme.id });
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={[
+                              styles.settingsThemePillLabel,
+                              isActive && styles.settingsThemePillLabelActive,
+                            ]}
+                          >
+                            {theme.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <View style={[styles.autoVoiceRow, { marginTop: 10 }]}>
+                    <Text style={styles.autoVoiceLabel}>
+                      Compact message layout
+                    </Text>
+                    <Switch
+                      value={compactMessages}
+                      onValueChange={(value) => {
+                        setCompactMessages(value);
+                        persistSettings({ compactMessages: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        compactMessages
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 16 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>
+                      Details & accessibility
+                    </Text>
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>Show message time</Text>
+                    <Switch
+                      value={showTimestamps}
+                      onValueChange={(value) => {
+                        setShowTimestamps(value);
+                        persistSettings({ showTimestamps: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        showTimestamps
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                    <Text style={styles.autoVoiceLabel}>Larger chat text</Text>
+                    <Switch
+                      value={largeText}
+                      onValueChange={(value) => {
+                        setLargeText(value);
+                        persistSettings({ largeText: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        largeText
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                    <Text style={styles.autoVoiceLabel}>
+                      Hide sender labels
+                    </Text>
+                    <Switch
+                      value={hideLabels}
+                      onValueChange={(value) => {
+                        setHideLabels(value);
+                        persistSettings({ hideLabels: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        hideLabels
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View style={[styles.autoVoiceRow, { marginTop: 8 }]}>
+                    <Text style={styles.autoVoiceLabel}>
+                      Simplified instructions
+                    </Text>
+                    <Switch
+                      value={simplifiedMode}
+                      onValueChange={(value) => {
+                        setSimplifiedMode(value);
+                        persistSettings({ simplifiedMode: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        simplifiedMode
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 18 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>
+                      Privacy & data
+                    </Text>
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>
+                      Anonymous mode (don’t save chats)
+                    </Text>
+                    <Switch
+                      value={anonymousMode}
+                      onValueChange={(value) => {
+                        setAnonymousMode(value);
+                        persistSettings({ anonymousMode: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        anonymousMode
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.settingsActionButton, { marginTop: 10 }]}
+                    onPress={handleClearChatHistory}
+                  >
+                    <Text style={styles.settingsActionButtonText}>
+                      Clear chat history
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.settingsActionButton, { marginTop: 6 }]}
+                    onPress={handleDownloadData}
+                  >
+                    <Text style={styles.settingsActionButtonText}>
+                      Download personal data
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.settingsDangerButton, { marginTop: 6 }]}
+                    onPress={handleDeleteAllData}
+                  >
+                    <Text style={styles.settingsDangerButtonText}>
+                      Delete all data
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View
+                    style={[styles.settingsSectionHeader, { marginTop: 18 }]}
+                  >
+                    <Text style={styles.settingsSectionTitle}>Session</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.settingsActionButton, { marginTop: 4 }]}
+                    onPress={handleStartFreshConversation}
+                  >
+                    <Text style={styles.settingsActionButtonText}>
+                      Start fresh conversation
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.settingsActionButton, { marginTop: 6 }]}
+                    onPress={handleResetPreferences}
+                  >
+                    <Text style={styles.settingsActionButtonText}>
+                      Reset preferences
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={styles.settingsCloseButton}
+                  onPress={() => setShowSettingsPanel(false)}
+                >
+                  <Text style={styles.settingsCloseButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={showResources}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowResources(false)}
+          >
+            <View style={styles.commandsModalOverlay}>
+              <View style={styles.commandsModalCard}>
+                <Text style={styles.commandsModalTitle}>Helpful resources</Text>
+                <Text style={styles.commandsModalSubtitle}>
+                  Based on your recent stress level and emotions, here are some
+                  guides, videos, and quick tips you can view or save for later.
+                </Text>
+
+                <ScrollView style={styles.commandsList}>
+                  {(resourcesMeta || lastStatusMeta) && (
+                    <HelpfulResourcesSection
+                      emotion={(resourcesMeta || lastStatusMeta).emotion}
+                      stressLevel={
+                        (resourcesMeta || lastStatusMeta).stressLevel
+                      }
+                      overallStatus={
+                        (resourcesMeta || lastStatusMeta).overallStatus
+                      }
+                    />
+                  )}
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={styles.commandsCloseButton}
+                  onPress={() => setShowResources(false)}
+                >
+                  <Text style={styles.commandsCloseButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {criticalAlert && (
+            <View style={styles.criticalAlertCard}>
+              <Text style={styles.criticalAlertTitle}>
+                ⚠️ Critical Alert: Your message indicates a serious concern.
+                Help is available immediately.
+              </Text>
+              <Text style={styles.criticalAlertBody}>
+                You are not alone. You can reach the official helpline or
+                someone you trust right now.
+              </Text>
+
               <View style={styles.criticalContactSection}>
                 <Text style={styles.criticalContactLabel}>
-                  Personal emergency contact
+                  Official emergency line
                 </Text>
-                <Text style={styles.criticalContactValue}>
-                  {emergencyName
-                    ? `${emergencyName} — ${emergencyContact}`
-                    : emergencyContact}
-                </Text>
+                <Text style={styles.criticalContactValue}>1926</Text>
                 <View style={styles.criticalButtonsRow}>
                   <TouchableOpacity
-                    style={styles.criticalButtonSecondary}
-                    onPress={() => handleCallNumber(emergencyContact)}
+                    style={styles.criticalButtonPrimary}
+                    onPress={() => handleCallNumber("1926")}
                   >
-                    <Text style={styles.criticalButtonSecondaryText}>
+                    <Text style={styles.criticalButtonPrimaryText}>
                       Call Now
                     </Text>
                   </TouchableOpacity>
+                </View>
+              </View>
+
+              {emergencyContact && (
+                <View style={styles.criticalContactSection}>
+                  <Text style={styles.criticalContactLabel}>
+                    Personal emergency contact
+                  </Text>
+                  <Text style={styles.criticalContactValue}>
+                    {emergencyName
+                      ? `${emergencyName} — ${emergencyContact}`
+                      : emergencyContact}
+                  </Text>
+                  <View style={styles.criticalButtonsRow}>
+                    <TouchableOpacity
+                      style={styles.criticalButtonSecondary}
+                      onPress={() => handleCallNumber(emergencyContact)}
+                    >
+                      <Text style={styles.criticalButtonSecondaryText}>
+                        Call Now
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.criticalButtonSecondary}
+                      onPress={() =>
+                        handleSmsNumber(
+                          emergencyContact,
+                          criticalAlert?.condition || "critical",
+                        )
+                      }
+                    >
+                      <Text style={styles.criticalButtonSecondaryText}>
+                        Send Message
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.criticalCopingRow}>
+                <Text style={styles.criticalCopingLabel}>You can also:</Text>
+                <View style={styles.criticalCopingButtons}>
                   <TouchableOpacity
-                    style={styles.criticalButtonSecondary}
+                    style={styles.criticalCopingChip}
                     onPress={() =>
-                      handleSmsNumber(
-                        emergencyContact,
-                        criticalAlert?.condition || "critical",
-                      )
+                      navigation.navigate("VisualAffirmationScreen")
                     }
                   >
-                    <Text style={styles.criticalButtonSecondaryText}>
-                      Send Message
+                    <Text style={styles.criticalCopingChipText}>
+                      Breathing exercise
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.criticalCopingChip}
+                    onPress={() =>
+                      navigation.navigate("CopingStrategyScreen", {
+                        emotion: "anxious",
+                        confidence: 0.9,
+                      })
+                    }
+                  >
+                    <Text style={styles.criticalCopingChipText}>
+                      Coping tips
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            )}
 
-            <View style={styles.criticalCopingRow}>
-              <Text style={styles.criticalCopingLabel}>You can also:</Text>
-              <View style={styles.criticalCopingButtons}>
+              {!alertAcknowledged && (
                 <TouchableOpacity
-                  style={styles.criticalCopingChip}
-                  onPress={() => navigation.navigate("VisualAffirmationScreen")}
+                  style={styles.criticalAcknowledgeButton}
+                  onPress={handleAcknowledgeAlert}
                 >
-                  <Text style={styles.criticalCopingChipText}>
-                    Breathing exercise
+                  <Text style={styles.criticalAcknowledgeText}>
+                    I’m here and I understand
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.criticalCopingChip}
-                  onPress={() =>
-                    navigation.navigate("CopingStrategyScreen", {
-                      emotion: "anxious",
-                      confidence: 0.9,
-                    })
-                  }
-                >
-                  <Text style={styles.criticalCopingChipText}>Coping tips</Text>
-                </TouchableOpacity>
-              </View>
+              )}
             </View>
+          )}
 
-            {!alertAcknowledged && (
-              <TouchableOpacity
-                style={styles.criticalAcknowledgeButton}
-                onPress={handleAcknowledgeAlert}
-              >
-                <Text style={styles.criticalAcknowledgeText}>
-                  I’m here and I understand
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-        >
           {simplifiedMode && (
             <View style={styles.instructionsCard}>
               <Text style={styles.instructionsTitle}>
@@ -2057,8 +2081,8 @@ export default function ChatbotScreen({ navigation }) {
             onSend={handleSend}
             sending={sending}
           />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+        </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
