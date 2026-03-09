@@ -729,6 +729,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "700",
   },
+  promptChipPressed: {
+    transform: [{ scale: 0.97 }],
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   techDetailCard: {
     marginHorizontal: 20,
     marginBottom: 14,
@@ -749,6 +756,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 4,
+  },
+
+  techCompletionOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(56,189,248,0.06)",
+  },
+
+  techCompletionCheck: {
+    fontSize: 40,
+    color: "#22C55E",
+    fontWeight: "700",
   },
 
   /* =======================
@@ -913,6 +938,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 13,
     color: "#6B7280",
+  },
+  typingDotsContainer: {
+    flexDirection: "row",
+    marginLeft: 6,
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#9CA3AF",
+    marginHorizontal: 2,
   },
   emergencyContainer: {
     marginTop: 10,

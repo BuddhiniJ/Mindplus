@@ -1442,12 +1442,23 @@ export default function TechniquePracticeScreen({ route, navigation }) {
 
   const [completed, setCompleted] = useState(false);
   const completedRef = useRef(false);
+  const completionAnim = useRef(new Animated.Value(0)).current;
 
   const handleDone = () => {
     completedRef.current = true;
     setCompleted(true);
     navigation.goBack();
   };
+
+  useEffect(() => {
+    if (!completed) return;
+    completionAnim.setValue(0);
+    Animated.timing(completionAnim, {
+      toValue: 1,
+      duration: 450,
+      useNativeDriver: true,
+    }).start();
+  }, [completed, completionAnim]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
@@ -1538,6 +1549,34 @@ export default function TechniquePracticeScreen({ route, navigation }) {
     <View style={styles.container}>
       <View style={styles.headerBackground} />
 
+      {completed && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.completionOverlay,
+            {
+              opacity: completionAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 1],
+              }),
+              transform: [
+                {
+                  scale: completionAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.96, 1.04],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.completionBadge}>
+            <Text style={styles.completionIcon}>✓</Text>
+            <Text style={styles.completionText}>Nice work</Text>
+          </View>
+        </Animated.View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -1589,6 +1628,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#EEF2FF",
+  },
+  completionOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(15,23,42,0.08)",
+  },
+  completionBadge: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 6,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  completionIcon: {
+    fontSize: 22,
+    color: "#22C55E",
+    marginRight: 8,
+  },
+  completionText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1E293B",
   },
   headerBackground: {
     position: "absolute",

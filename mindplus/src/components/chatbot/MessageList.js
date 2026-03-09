@@ -29,12 +29,32 @@ export default function MessageList({
 }) {
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0));
+  const messageAnimationsRef = useRef({});
+  const typingAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || !lastMessage.id) return;
+
+    if (!messageAnimationsRef.current[lastMessage.id]) {
+      messageAnimationsRef.current[lastMessage.id] = new Animated.Value(0);
+    }
+
+    const anim = messageAnimationsRef.current[lastMessage.id];
+    anim.setValue(0);
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [messages?.length]);
 
   useEffect(() => {
     if (showMoodOptions && moodOptions && moodOptions.length > 0) {
@@ -46,6 +66,31 @@ export default function MessageList({
       }).start();
     }
   }, [showMoodOptions, moodOptions?.length]);
+
+  useEffect(() => {
+    if (!isBotTyping) return;
+
+    typingAnim.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(typingAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(typingAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [isBotTyping, typingAnim]);
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
@@ -82,12 +127,28 @@ export default function MessageList({
         const isUser = msg.from === "user";
         const isCritical = msg.meta && msg.meta.overallStatus === "critical";
 
+        const bubbleAnim = messageAnimationsRef.current[msg.id];
+        const animatedStyle = bubbleAnim
+          ? {
+              opacity: bubbleAnim,
+              transform: [
+                {
+                  translateY: bubbleAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [8, 0],
+                  }),
+                },
+              ],
+            }
+          : null;
+
         return (
-          <View
+          <Animated.View
             key={msg.id}
             style={[
               styles.messageRow,
               { justifyContent: isUser ? "flex-end" : "flex-start" },
+              animatedStyle,
             ]}
           >
             <View
@@ -229,7 +290,7 @@ export default function MessageList({
                 </Text>
               )}
             </View>
-          </View>
+          </Animated.View>
         );
       })}
 
@@ -248,6 +309,41 @@ export default function MessageList({
               <Text style={styles.typingText}>
                 Thinking of the best reply… 🤔
               </Text>
+              <View style={styles.typingDotsContainer}>
+                {[0, 1, 2].map((index) => {
+                  const dotStyle = {
+                    opacity: typingAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange:
+                        index === 0
+                          ? [0.2, 1]
+                          : index === 1
+                            ? [0.2, 0.9]
+                            : [0.2, 0.8],
+                    }),
+                    transform: [
+                      {
+                        translateY: typingAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange:
+                            index === 0
+                              ? [0, -1]
+                              : index === 1
+                                ? [0, -0.5]
+                                : [0, -0.25],
+                        }),
+                      },
+                    ],
+                  };
+
+                  return (
+                    <Animated.View
+                      key={index}
+                      style={[styles.typingDot, dotStyle]}
+                    />
+                  );
+                })}
+              </View>
             </View>
           </View>
         </View>

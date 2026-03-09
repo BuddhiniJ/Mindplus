@@ -286,6 +286,7 @@ export default function ChatbotScreen({ navigation }) {
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [simplifiedMode, setSimplifiedMode] = useState(false);
   const [slowInteractionMode, setSlowInteractionMode] = useState(false);
+  const [soundFeedbackEnabled, setSoundFeedbackEnabled] = useState(false);
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
     useGlobalAudioPlayer();
@@ -328,6 +329,9 @@ export default function ChatbotScreen({ navigation }) {
       if (typeof data.slowInteractionMode === "boolean") {
         setSlowInteractionMode(data.slowInteractionMode);
       }
+      if (typeof data.soundFeedbackEnabled === "boolean") {
+        setSoundFeedbackEnabled(data.soundFeedbackEnabled);
+      }
     } catch (e) {
       console.log("Failed to load chatbot settings", e);
     }
@@ -346,6 +350,7 @@ export default function ChatbotScreen({ navigation }) {
         anonymousMode,
         simplifiedMode,
         slowInteractionMode,
+        soundFeedbackEnabled,
       };
       const payload = { ...current, ...overrides };
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
@@ -470,6 +475,16 @@ export default function ChatbotScreen({ navigation }) {
       }
     } catch (e) {
       console.log("Failed to handle app action", e);
+    }
+  };
+
+  const playUiSound = async (event) => {
+    if (!soundFeedbackEnabled) return;
+    try {
+      // Placeholder for gentle UI sounds (e.g. send click, soft chime).
+      // Wire an Audio.Sound here with a calming asset when available.
+    } catch (e) {
+      // Fail silently to avoid disrupting the conversation.
     }
   };
 
@@ -844,6 +859,8 @@ export default function ChatbotScreen({ navigation }) {
     };
     setMessages((prev) => [...prev, userMessage]);
 
+    playUiSound("message_sent");
+
     if (userId && !anonymousMode) {
       appendChatMessages(
         userId,
@@ -987,6 +1004,8 @@ export default function ChatbotScreen({ navigation }) {
       timestamp: createdAt,
     };
     setMessages((prev) => [...prev, userMessage]);
+
+    playUiSound("mood_selected");
 
     if (userId && !anonymousMode) {
       appendChatMessages(
@@ -1511,6 +1530,17 @@ export default function ChatbotScreen({ navigation }) {
                     onValueChange={(value) => {
                       setAutoVoiceEnabled(value);
                       persistSettings({ autoVoiceEnabled: value });
+                    }}
+                  />
+                </View>
+
+                <View style={styles.autoVoiceRow}>
+                  <Text style={styles.autoVoiceLabel}>Sound feedback</Text>
+                  <Switch
+                    value={soundFeedbackEnabled}
+                    onValueChange={(value) => {
+                      setSoundFeedbackEnabled(value);
+                      persistSettings({ soundFeedbackEnabled: value });
                     }}
                   />
                 </View>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
   Alert,
@@ -30,6 +30,7 @@ export default function ChatInputBar({
   const [recording, setRecording] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
   const voiceErrorTimeoutRef = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const showVoiceError = (message) => {
     setVoiceError(message);
@@ -154,6 +155,10 @@ export default function ChatInputBar({
         borderTopWidth: 1,
         borderColor: "#E2E8F0",
         backgroundColor: "#FFFFFF",
+        shadowColor: "#000",
+        shadowOpacity: isFocused ? 0.08 : 0.04,
+        shadowRadius: 8,
+        elevation: isFocused ? 4 : 2,
       }}
     >
       <View
@@ -173,6 +178,8 @@ export default function ChatInputBar({
             backgroundColor: "#F1F5F9",
             color: "#0F172A",
             fontWeight: "600",
+            borderWidth: isFocused ? 1 : 0,
+            borderColor: isFocused ? "#3B82F6" : "transparent",
           }}
           value={input}
           onChangeText={onChangeInput}
@@ -180,12 +187,14 @@ export default function ChatInputBar({
           placeholderTextColor="#94A3B8"
           multiline
           blurOnSubmit={false}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
 
         {/* Microphone button for voice input */}
-        <TouchableOpacity
+        <Pressable
           onPress={listening ? stopRecording : startRecording}
-          style={{
+          style={({ pressed }) => ({
             marginLeft: 8,
             width: 40,
             height: 40,
@@ -193,34 +202,37 @@ export default function ChatInputBar({
             backgroundColor: listening ? "#F97373" : "#E5E7EB",
             alignItems: "center",
             justifyContent: "center",
-          }}
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          })}
         >
           <Ionicons
             name={listening ? "mic" : "mic-outline"}
             size={22}
             color={listening ? "#FFFFFF" : "#1d77f5"}
           />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Send button for manual text input */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => onSend?.()}
           disabled={!canSend}
-          style={{
+          style={({ pressed }) => ({
             marginLeft: 8,
             backgroundColor: canSend ? "#3B82F6" : "#d9dde2",
             paddingHorizontal: 16,
             borderRadius: 20,
             justifyContent: "center",
             height: 40,
-          }}
+            opacity: !canSend ? 1 : pressed ? 0.85 : 1,
+            transform: [{ scale: pressed && canSend ? 0.97 : 1 }],
+          })}
         >
           {sending ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={{ color: "#ffffff", fontWeight: "600" }}>Send</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Voice UX indicators */}

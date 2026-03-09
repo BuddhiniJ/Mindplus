@@ -15,7 +15,10 @@ export default function PromptChips({ onSelectPrompt }) {
         <Pressable
           key={prompt}
           onPress={() => onSelectPrompt(prompt)}
-          style={styles.promptChip}
+          style={({ pressed }) => [
+            styles.promptChip,
+            pressed && styles.promptChipPressed,
+          ]}
         >
           <Text style={styles.promptChipText}>{prompt}</Text>
         </Pressable>
