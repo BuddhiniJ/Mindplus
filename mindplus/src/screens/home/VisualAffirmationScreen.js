@@ -11,6 +11,7 @@ import {
   Animated,
   Platform,
   StatusBar,
+  Modal,
 } from "react-native";
 import VisualAffirmation from "../../components/VisualAffirmation";
 import BoxBreathingCard from "../../components/BoxBreathingCard";
@@ -60,6 +61,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
   const [started, setStarted] = useState(false);
   const [isSessionCompleted, setIsSessionCompleted] = useState(false);
+  const [postSessionMood, setPostSessionMood] = useState(null);
+  const [completedSessions, setCompletedSessions] = useState(0);
+  const [hasStartedSession, setHasStartedSession] = useState(false);
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
+  const [pendingExitAction, setPendingExitAction] = useState(null);
   const [sessionKey, setSessionKey] = useState(0);
   const [selectedTechnique, setSelectedTechnique] = useState("box");
   const [affirmationDuration, setAffirmationDuration] = useState(60);
@@ -260,6 +266,8 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   const handleStart = () => {
     setSessionKey((prev) => prev + 1);
     setIsSessionCompleted(false);
+    setPostSessionMood(null);
+    setHasStartedSession(true);
     setStarted(true);
     setSecondsRemaining(activeSessionSeconds);
     bounceAnim.setValue(0);
@@ -273,6 +281,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
   const handleStop = () => {
     setStarted(false);
     setIsSessionCompleted(false);
+    setPostSessionMood(null);
   };
 
   const emotionLabel = useMemo(() => {
@@ -352,7 +361,66 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     if (secondsRemaining > 0) return;
     setStarted(false);
     setIsSessionCompleted(true);
+    setCompletedSessions((prev) => prev + 1);
   }, [secondsRemaining, started]);
+
+  const recoveryProgress = useMemo(() => {
+    const completedStep = isSessionCompleted ? 1 : 0;
+    const reflectionStep = postSessionMood ? 1 : 0;
+    const totalSteps = 3;
+    const doneSteps = (started ? 1 : 0) + completedStep + reflectionStep;
+    return Math.round((doneSteps / totalSteps) * 100);
+  }, [isSessionCompleted, postSessionMood, started]);
+
+  const postSessionMessage = useMemo(() => {
+    if (postSessionMood === "normal") {
+      return "You are back to baseline. Great recovery.";
+    }
+    if (postSessionMood === "better") {
+      return "Nice progress. You are moving in the right direction.";
+    }
+    if (postSessionMood === "same") {
+      return "Thanks for checking in. A second short technique can help.";
+    }
+    if (postSessionMood === "worse") {
+      return "Thanks for being honest. Try grounding or ask for support.";
+    }
+    return "Complete your reflection to finish this recovery cycle.";
+  }, [postSessionMood]);
+
+  const shouldBlockExit = useMemo(() => {
+    if (!hasStartedSession) return false;
+    if (started) return true;
+    if (isSessionCompleted && postSessionMood) return false;
+    return true;
+  }, [hasStartedSession, isSessionCompleted, postSessionMood, started]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (!shouldBlockExit) return;
+      e.preventDefault();
+      setPendingExitAction(e.data.action);
+      setShowExitPrompt(true);
+    });
+
+    return unsubscribe;
+  }, [navigation, shouldBlockExit]);
+
+  const handleConfirmExit = () => {
+    setShowExitPrompt(false);
+    if (pendingExitAction) {
+      const action = pendingExitAction;
+      setPendingExitAction(null);
+      navigation.dispatch(action);
+      return;
+    }
+    navigation.goBack();
+  };
+
+  const handleCancelExit = () => {
+    setShowExitPrompt(false);
+    setPendingExitAction(null);
+  };
 
   const sessionState = isSessionCompleted
     ? "completed"
@@ -409,7 +477,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     setIsSpeakingStrategy(true);
     await playBotMessageVoice(strategyText, {
       onFinish: () => setIsSpeakingStrategy(false),
-      rate: 0.52,
+      rate: 0.9,
     });
   };
 
@@ -542,6 +610,28 @@ export default function VisualAffirmationScreen({ route, navigation }) {
 
         {/* Start/Restart and Stop controls */}
         <View style={styles.ctaPanel}>
+          <View style={styles.recoveryPanel}>
+            <View style={styles.recoveryTitleRow}>
+              <Text style={styles.recoveryTitle}>Recovery Progress</Text>
+              <Text style={styles.recoveryPercent}>{recoveryProgress}%</Text>
+            </View>
+            <View style={styles.recoveryTrack}>
+              <View
+                style={[
+                  styles.recoveryFill,
+                  {
+                    width: `${recoveryProgress}%`,
+                  },
+                ]}
+              />
+            </View>
+            <View style={styles.recoveryLabelsRow}>
+              <Text style={styles.recoveryLabel}>Start</Text>
+              <Text style={styles.recoveryLabel}>Complete</Text>
+              <Text style={styles.recoveryLabel}>Reflect</Text>
+            </View>
+          </View>
+
           <View style={styles.progressStateRow}>
             {[
               { key: "ready", label: "Ready" },
@@ -631,7 +721,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
             <Text style={styles.completionSubtitle}>
               Capture how you feel now to strengthen your progress tracking.
             </Text>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.completionActionButton}
               activeOpacity={0.88}
               onPress={() => navigation.navigate("DailyCheckInScreen")}
@@ -639,7 +729,62 @@ export default function VisualAffirmationScreen({ route, navigation }) {
               <Text style={styles.completionActionText}>
                 Next Action: Log Check-in
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+
+            <View style={styles.moodCheckWrap}>
+              <Text style={styles.moodCheckTitle}>
+                How do you feel right now?
+              </Text>
+              <View style={styles.moodOptionsRow}>
+                {[
+                  { key: "normal", label: "Back to normal" },
+                  { key: "better", label: "Better" },
+                  { key: "same", label: "About the same" },
+                  { key: "worse", label: "Worse" },
+                ].map((item) => {
+                  const active = postSessionMood === item.key;
+                  return (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={[styles.moodChip, active && styles.moodChipActive]}
+                      activeOpacity={0.86}
+                      onPress={() => setPostSessionMood(item.key)}
+                    >
+                      <Text
+                        style={[
+                          styles.moodChipText,
+                          active && styles.moodChipTextActive,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.moodFeedbackText}>{postSessionMessage}</Text>
+
+              {postSessionMood === "normal" ? (
+                <View style={styles.normalStateBanner}>
+                  <Text style={styles.normalStateBannerText}>
+                    Recovery milestone unlocked. You completed{" "}
+                    {completedSessions} session
+                    {completedSessions === 1 ? "" : "s"} this visit.
+                  </Text>
+                </View>
+              ) : postSessionMood ? (
+                <TouchableOpacity
+                  style={styles.retryTechniqueButton}
+                  activeOpacity={0.88}
+                  onPress={handleStart}
+                >
+                  <Text style={styles.retryTechniqueButtonText}>
+                    Try One More 60s Cycle
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
@@ -668,6 +813,7 @@ export default function VisualAffirmationScreen({ route, navigation }) {
                   setSelectedTechnique(option.key);
                   setStarted(false);
                   setIsSessionCompleted(false);
+                  setPostSessionMood(null);
                 }}
               >
                 <Text style={styles.techniqueButtonIcon}>{option.icon}</Text>
@@ -706,6 +852,45 @@ export default function VisualAffirmationScreen({ route, navigation }) {
       </ScrollView>
 
       <BottomNavigation navigation={navigation} activeTab="home" />
+
+      <Modal
+        visible={showExitPrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelExit}
+      >
+        <View style={styles.exitModalBackdrop}>
+          <View style={styles.exitModalCard}>
+            <View style={styles.exitModalIconWrap}>
+              <Text style={styles.exitModalIcon}>⚠️</Text>
+            </View>
+
+            <Text style={styles.exitModalTitle}>Leave this calm session?</Text>
+            <Text style={styles.exitModalSubtitle}>
+              Your coping strategy is not finished yet. If you go back now, this
+              progress will not be counted as fully completed.
+            </Text>
+
+            <View style={styles.exitModalButtonRow}>
+              <TouchableOpacity
+                style={styles.exitStayButton}
+                activeOpacity={0.88}
+                onPress={handleCancelExit}
+              >
+                <Text style={styles.exitStayButtonText}>Stay and continue</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.exitLeaveButton}
+                activeOpacity={0.88}
+                onPress={handleConfirmExit}
+              >
+                <Text style={styles.exitLeaveButtonText}>Leave anyway</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -826,6 +1011,53 @@ const styles = StyleSheet.create({
     borderColor: "#D6E6FF",
     borderRadius: 16,
     padding: 12,
+  },
+  recoveryPanel: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D6E6FF",
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 10,
+  },
+  recoveryTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  recoveryTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#1E3A8A",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  recoveryPercent: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#1D4ED8",
+  },
+  recoveryTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "#E5EDFF",
+    overflow: "hidden",
+  },
+  recoveryFill: {
+    height: "100%",
+    backgroundColor: "#3B82F6",
+    borderRadius: 999,
+  },
+  recoveryLabelsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  recoveryLabel: {
+    fontSize: 11,
+    color: "#475569",
+    fontWeight: "700",
   },
   progressStateRow: {
     flexDirection: "row",
@@ -1119,7 +1351,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#166534",
     lineHeight: 20,
-    marginBottom: 10,
   },
   completionActionButton: {
     backgroundColor: "#16A34A",
@@ -1132,6 +1363,161 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     letterSpacing: 0.3,
+  },
+  moodCheckWrap: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#BBF7D0",
+  },
+  moodCheckTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#14532D",
+    marginBottom: 8,
+  },
+  moodOptionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  moodChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+    backgroundColor: "#F0FDF4",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  moodChipActive: {
+    backgroundColor: "#16A34A",
+    borderColor: "#16A34A",
+  },
+  moodChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#166534",
+  },
+  moodChipTextActive: {
+    color: "#FFFFFF",
+  },
+  moodFeedbackText: {
+    marginTop: 9,
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#14532D",
+    fontWeight: "600",
+  },
+  normalStateBanner: {
+    marginTop: 10,
+    backgroundColor: "#DCFCE7",
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  normalStateBannerText: {
+    fontSize: 12,
+    color: "#166534",
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+  retryTechniqueButton: {
+    marginTop: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#4F46E5",
+    backgroundColor: "#EEF2FF",
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryTechniqueButtonText: {
+    fontSize: 13,
+    color: "#3730A3",
+    fontWeight: "800",
+  },
+  exitModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  exitModalCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  exitModalIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EFF6FF",
+    marginBottom: 10,
+  },
+  exitModalIcon: {
+    fontSize: 20,
+  },
+  exitModalTitle: {
+    fontSize: 19,
+    color: "#0F172A",
+    fontWeight: "900",
+    marginBottom: 8,
+  },
+  exitModalSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#334155",
+    marginBottom: 14,
+    fontWeight: "500",
+  },
+  exitModalButtonRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  exitStayButton: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  exitStayButtonText: {
+    fontSize: 13,
+    color: "#FFFFFF",
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
+  exitLeaveButton: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  exitLeaveButtonText: {
+    fontSize: 13,
+    color: "#334155",
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
   footerNote: {
     marginTop: 4,
