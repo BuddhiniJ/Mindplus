@@ -368,9 +368,11 @@ export default function VisualAffirmationScreen({ route, navigation }) {
     const completedStep = isSessionCompleted ? 1 : 0;
     const reflectionStep = postSessionMood ? 1 : 0;
     const totalSteps = 3;
-    const doneSteps = (started ? 1 : 0) + completedStep + reflectionStep;
+    // Keep "Start" completed after the user starts any session at least once.
+    const doneSteps =
+      (hasStartedSession ? 1 : 0) + completedStep + reflectionStep;
     return Math.round((doneSteps / totalSteps) * 100);
-  }, [isSessionCompleted, postSessionMood, started]);
+  }, [hasStartedSession, isSessionCompleted, postSessionMood]);
 
   const postSessionMessage = useMemo(() => {
     if (postSessionMood === "normal") {
