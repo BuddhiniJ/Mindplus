@@ -32,6 +32,7 @@ export default {
       favicon: "./assets/Logo.jpeg",
     },
     plugins: [
+      "expo-font",
       [
         "@react-native-voice/voice",
         {
