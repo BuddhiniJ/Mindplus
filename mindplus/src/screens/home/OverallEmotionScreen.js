@@ -11,6 +11,7 @@ import {
   Animated,
   Platform,
   StatusBar,
+  Modal,
 } from "react-native";
 import BottomNavigation from "../../components/BottomNavigation";
 import ScreenHeaderCard from "../../components/ScreenHeaderCard";
@@ -89,6 +90,7 @@ const calculateOverallEmotion = (answers) => {
 export default function OverallEmotionScreen({ route, navigation }) {
   const [overallEmotion, setOverallEmotion] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAnswersModalVisible, setIsAnswersModalVisible] = useState(false);
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 18 : 14;
@@ -143,6 +145,7 @@ export default function OverallEmotionScreen({ route, navigation }) {
   const emotionInfo =
     EMOTION_COLORS[overallEmotion.emotion] || EMOTION_COLORS.unknown;
   const confidencePercentage = Math.round(overallEmotion.confidence * 100);
+  const checkInAnswers = route?.params?.answers || [];
 
   return (
     <View style={styles.container}>
@@ -159,6 +162,25 @@ export default function OverallEmotionScreen({ route, navigation }) {
         <Text style={styles.sectionSubtitle}>
           Based on your 4 daily check-in responses
         </Text>
+
+        <TouchableOpacity
+          style={styles.viewAnswersButton}
+          onPress={() => setIsAnswersModalVisible(true)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.viewAnswersButtonIconBadge}>
+            <Text style={styles.viewAnswersButtonIcon}>📝</Text>
+          </View>
+          <View style={styles.viewAnswersButtonTextWrap}>
+            <Text style={styles.viewAnswersButtonTitle}>
+              View Today&apos;s Check-In
+            </Text>
+            <Text style={styles.viewAnswersButtonSubtitle}>
+              Tap to see your questions and personal responses
+            </Text>
+          </View>
+          <Text style={styles.viewAnswersButtonArrow}>→</Text>
+        </TouchableOpacity>
 
         {/* Main Emotion Card */}
         <Animated.View
@@ -329,6 +351,91 @@ export default function OverallEmotionScreen({ route, navigation }) {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
+      <Modal
+        animationType="slide"
+        transparent
+        visible={isAnswersModalVisible}
+        onRequestClose={() => setIsAnswersModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalKicker}>DAILY CHECK-IN</Text>
+                <Text style={styles.modalTitle}>Your Questions & Answers</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setIsAnswersModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalCloseButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.modalScrollArea}
+              showsVerticalScrollIndicator={false}
+            >
+              {checkInAnswers.length === 0 ? (
+                <View style={styles.modalEmptyState}>
+                  <Text style={styles.modalEmptyTitle}>
+                    No check-in answers yet
+                  </Text>
+                  <Text style={styles.modalEmptyText}>
+                    Complete your daily check-in to view your questions and
+                    responses here.
+                  </Text>
+                </View>
+              ) : null}
+
+              {checkInAnswers.map((answer, index) => {
+                const emotionMeta =
+                  EMOTION_COLORS[answer?.emotion?.toLowerCase()] ||
+                  EMOTION_COLORS.unknown;
+
+                return (
+                  <View
+                    key={`${answer?.questionId || index}`}
+                    style={styles.qaCard}
+                  >
+                    <View style={styles.qaTopRow}>
+                      <Text style={styles.qaIndex}>Q{index + 1}</Text>
+                      <View
+                        style={[
+                          styles.qaEmotionPill,
+                          { backgroundColor: `${emotionMeta.color}1F` },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.qaEmotionPillText,
+                            { color: emotionMeta.color },
+                          ]}
+                        >
+                          {emotionMeta.emoji} {emotionMeta.label}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.qaQuestionText}>
+                      {answer?.question || "Question not available"}
+                    </Text>
+
+                    <View style={styles.qaAnswerBox}>
+                      <Text style={styles.qaAnswerLabel}>Your answer</Text>
+                      <Text style={styles.qaAnswerText}>
+                        {answer?.response || "No answer captured"}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <BottomNavigation navigation={navigation} activeTab="home" />
     </View>
   );
@@ -360,6 +467,53 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginBottom: 24,
     paddingHorizontal: 2,
+  },
+  viewAnswersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    shadowColor: "#1D4ED8",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  viewAnswersButtonIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    marginRight: 12,
+  },
+  viewAnswersButtonIcon: {
+    fontSize: 20,
+  },
+  viewAnswersButtonTextWrap: {
+    flex: 1,
+  },
+  viewAnswersButtonTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E3A8A",
+    marginBottom: 2,
+  },
+  viewAnswersButtonSubtitle: {
+    fontSize: 12,
+    color: "#475569",
+    lineHeight: 18,
+  },
+  viewAnswersButtonArrow: {
+    fontSize: 22,
+    color: "#1D4ED8",
+    fontWeight: "700",
   },
   mainEmotionCard: {
     backgroundColor: "#FFFFFF",
@@ -562,6 +716,129 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    maxHeight: "84%",
+    backgroundColor: "#F8FAFC",
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 22,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  modalKicker: {
+    fontSize: 11,
+    color: "#64748B",
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E2E8F0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCloseButtonText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  modalScrollArea: {
+    marginTop: 2,
+  },
+  modalEmptyState: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 16,
+    marginBottom: 12,
+  },
+  modalEmptyTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  modalEmptyText: {
+    fontSize: 13,
+    color: "#64748B",
+    lineHeight: 20,
+  },
+  qaCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  qaTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  qaIndex: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#1E293B",
+    backgroundColor: "#E2E8F0",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginRight: 8,
+  },
+  qaEmotionPill: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  qaEmotionPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  qaQuestionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#0F172A",
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  qaAnswerBox: {
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    padding: 10,
+  },
+  qaAnswerLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    marginBottom: 4,
+    letterSpacing: 0.4,
+  },
+  qaAnswerText: {
+    fontSize: 14,
+    color: "#334155",
+    lineHeight: 20,
   },
   centerContent: {
     alignItems: "center",
