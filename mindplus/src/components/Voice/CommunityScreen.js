@@ -267,10 +267,10 @@ export default function CommunityScreen({ route, navigation }) {
           {/* Info Card */}
           <View style={styles.infoCard}>
             <LinearGradient
-              colors={['#91cbf5ff', '#afc9f7ff']}
+              colors={['rgb(79, 96, 255)', 'rgb(68, 136, 253)']}
               style={styles.infoGradient}
             >
-              <Text style={styles.infoEmoji}>🤝</Text>
+              <Text style={styles.infoEmoji}>🤝😌</Text>
               <Text style={styles.infoTitle}>Connect & Heal Together</Text>
               <Text style={styles.infoText}>
                 Share your journey with others who understand. Every conversation is a step toward wellness.
@@ -280,7 +280,7 @@ export default function CommunityScreen({ route, navigation }) {
 
           {/* Community Members */}
           <Text style={styles.sectionTitle}>
-            {users.length} Member{users.length !== 1 ? 's' : ''} Online
+            {users.length} Member{users.length !== 1 ? 's' : ''} To Talk
           </Text>
 
           {users.map((user) => (
@@ -307,11 +307,11 @@ export default function CommunityScreen({ route, navigation }) {
                   <View style={styles.userInfo}>
                     <View style={styles.userInfoTop}>
                       <Text style={styles.userName}>{user.name}</Text>
-                      <View style={[styles.stressTypeBadge, { borderColor: user.color }]}>
+                      {/* <View style={[styles.stressTypeBadge, { borderColor: user.color }]}>
                         <Text style={styles.stressTypeBadgeText}>
                           {getStressIcon(user.stressType)}
                         </Text>
-                      </View>
+                      </View> */}
                     </View>
                     <Text style={styles.userBio}>{user.bio}</Text>
                     <View style={styles.userFooter}>

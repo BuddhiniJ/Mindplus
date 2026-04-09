@@ -344,7 +344,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#a0bef3ff', '#7CB9E8']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.totalRecordings}</Text>
@@ -354,7 +354,7 @@ export default function HistoryScreen({ navigation }) {
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#f5acacff', '#fcc0c0ff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Academic}</Text>
@@ -366,7 +366,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#f5c978ff', '#f1d386ff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Financial}</Text>
@@ -376,7 +376,7 @@ export default function HistoryScreen({ navigation }) {
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#9fc1f7ff', '#60a5fa']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Social}</Text>
@@ -388,7 +388,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={[styles.statsGrid, { marginBottom: 0 }]}>
                   <View style={[styles.statBox, { flex: 1 }]}>
                     <LinearGradient
-                      colors={['#c4b0f3ff', '#b29febff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Emotional}</Text>
@@ -487,7 +487,7 @@ export default function HistoryScreen({ navigation }) {
                     onPress={() => handleViewAnalysis(item)}
                   >
                     <LinearGradient
-                      colors={['#b4cbf3ff', '#99c9eeff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.actionButtonGradient}
                     >
                       {/* <Text style={styles.actionButtonIcon}>✨</Text> */}
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   deleteButtonInner: {
-    backgroundColor: '#d3e9f0ff',
+    backgroundColor: 'rgb(255, 9, 9)',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',

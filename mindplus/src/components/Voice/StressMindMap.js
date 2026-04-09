@@ -151,16 +151,16 @@ export default function StressAnalysisScreen({ route, navigation }) {
             <LinearGradient colors={['#FFFFFF', '#F8FBFF']} style={styles.cardGradient}>
               <Text style={styles.cardTitle}>Stress Breakdown</Text>
               {Object.entries(stress_scores).map(([type, score]) => {
-                const level = stress_levels[type] || 'Low';
+                 const level = stress_levels[type] || 'Low';
                 return (
                   <View key={type} style={styles.stressItem}>
                     <View style={styles.stressHeader}>
                       <Text style={styles.stressTypeLabel}>
                         {getStressTypeIcon(type)} {type}
                       </Text>
-                      <View style={[styles.miniLevelBadge, { backgroundColor: getStressColor(level) }]}>
+                      {/* <View style={[styles.miniLevelBadge, { backgroundColor: getStressColor(level) }]}>
                         <Text style={styles.miniLevelText}>{getStressLevelText(level)}</Text>
-                      </View>
+                      </View> */}
                     </View>
                     <View style={styles.progressBar}>
                       <View

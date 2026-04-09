@@ -249,7 +249,7 @@ export default function CopingStrategyScreen({ route, navigation }) {
     setIsSpeakingStrategy(true);
     await playBotMessageVoice(strategyText, {
       onFinish: () => setIsSpeakingStrategy(false),
-      rate: 0.52,
+      rate: 0.9,
     });
   };
 

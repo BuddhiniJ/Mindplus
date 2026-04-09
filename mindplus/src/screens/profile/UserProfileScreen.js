@@ -9,12 +9,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { clearChatHistory } from "../../services/chatHistoryService";
 import BottomNavigation from "../../components/BottomNavigation";
+import { DEFAULT_USER_TYPE, formatUserType } from "../../utils/userTypes";
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,20 @@ export default function ProfileScreen({ navigation }) {
       const profileSnap = await getDoc(profileRef);
 
       if (profileSnap.exists()) {
-        setProfile(profileSnap.data());
+        const profileData = profileSnap.data();
+        const resolvedUserType = profileData.userType || DEFAULT_USER_TYPE;
+        setProfile({ ...profileData, userType: resolvedUserType });
+
+        if (!profileData.userType) {
+          await setDoc(
+            profileRef,
+            {
+              userType: DEFAULT_USER_TYPE,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
       }
       setLoading(false);
     } catch (error) {
@@ -75,13 +89,12 @@ export default function ProfileScreen({ navigation }) {
       >
         <View style={styles.container1}>
           <LinearGradient
-            colors={['#b3c6ddff', '#4895D0']}
+            colors={["#b3c6ddff", "#4895D0"]}
             style={styles.hheader}
           >
             <View style={styles.headerContent}>
               <Text style={styles.title}>My Proflie</Text>
               <Text style={styles.subtitle}></Text>
-
             </View>
           </LinearGradient>
         </View>
@@ -96,6 +109,12 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <Text style={styles.nickname}>{profile?.nickname || "User"}</Text>
             <Text style={styles.email}>{user?.email ?? "N/A"}</Text>
+            <View style={styles.userTypePill}>
+              <Ionicons name="sparkles-outline" size={16} color="#1D4ED8" />
+              <Text style={styles.userTypeText}>
+                {formatUserType(profile?.userType)}
+              </Text>
+            </View>
           </View>
 
           {/* Menu Items */}
@@ -126,9 +145,11 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.menuText}>Retake Assessment</Text>
             </TouchableOpacity>
 
-
             {/* Logout Button */}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
               <Ionicons
                 name="exit-outline"
                 size={24}
@@ -210,6 +231,24 @@ const styles = StyleSheet.create({
     color: "#777",
     fontStyle: "italic",
   },
+  userTypePill: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    backgroundColor: "#EFF6FF",
+  },
+  userTypeText: {
+    color: "#1D4ED8",
+    fontWeight: "600",
+    fontSize: 12,
+    maxWidth: 240,
+  },
   menuSection: {
     width: "90%",
     marginBottom: 100,
@@ -274,7 +313,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-    marginTop:10,
+    marginTop: 10,
   },
   container1: {
     flex: 1,
