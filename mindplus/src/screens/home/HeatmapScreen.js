@@ -17,6 +17,7 @@ import {
   getDocs,
   doc,
   updateDoc,
+  setDoc,
   deleteDoc,
   getDoc,
   orderBy,
@@ -61,6 +62,136 @@ export default function HeatmapScreen({ navigation }) {
   };
 
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+  const KEYWORD_MAP = {
+    stress_today: [
+      "today-feeling",
+      "feeling",
+      "emotion",
+      "mood",
+      "stress",
+      "anxious",
+      "overwhelmed",
+    ],
+    energy_level: ["energy", "motivation", "focus", "consistency", "discipline"],
+    sleep_hours: ["sleep", "rest", "recovery", "recovered"],
+    workload_intensity: [
+      "academic-load",
+      "school-pressure",
+      "work-pressure",
+      "exam-stress",
+      "workload",
+      "pressure",
+      "deadline",
+      "assignment",
+      "study",
+      "client",
+    ],
+    deadline_pressure: ["deadline", "time pressure", "urgent", "due"],
+    emotional_load: ["emotion", "feeling", "anxiety", "worry", "fear", "sad"],
+  };
+
+  const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+
+  const inferFeatureKey = (featureKey, questionId, questionText = "") => {
+    if (featureKey && KEYWORD_MAP[featureKey]) {
+      return featureKey;
+    }
+
+    const source = `${questionId || ""} ${questionText || ""}`.toLowerCase();
+
+    for (const [feature, keywords] of Object.entries(KEYWORD_MAP)) {
+      if (keywords.some((word) => source.includes(word))) {
+        return feature;
+      }
+    }
+
+    return null;
+  };
+
+  const scoreFromEmotion = (emotion, confidence = 0) => {
+    const e = (emotion || "unknown").toLowerCase();
+    const c = Number(confidence || 0);
+
+    if (["fear", "sadness", "anger", "disgust"].includes(e)) {
+      return clamp(6 + c * 4, 0, 10);
+    }
+    if (["neutral", "unknown"].includes(e)) {
+      return 5;
+    }
+    if (["joy", "happiness", "calm", "relief", "surprise"].includes(e)) {
+      return clamp(4 - c * 2, 0, 10);
+    }
+    return 5;
+  };
+
+  const responseToScore = (featureKey, response, emotion, confidence) => {
+    const text = (response || "").toLowerCase();
+    const emotionBased = scoreFromEmotion(emotion, confidence);
+
+    if (featureKey === "sleep_hours") {
+      const sleepMatch = text.match(/(\d+(?:\.\d+)?)\s*(hour|hr|h)?/i);
+      if (sleepMatch) {
+        return clamp(Number(sleepMatch[1]), 0, 12);
+      }
+      if (text.match(/insomnia|barely slept|no sleep|sleep deprived/)) return 3;
+      if (text.match(/well rested|slept well|good sleep|refreshed/)) return 8;
+      return 6;
+    }
+
+    if (text.match(/very|extremely|severe|intense|overwhelmed|panic|exhausted/)) return 9;
+    if (text.match(/high|stressed|pressure|worried|anxious|difficult|struggle/)) return 7;
+    if (text.match(/moderate|okay|manageable|neutral|average/)) return 5;
+    if (text.match(/calm|good|relaxed|confident|steady|energized/)) return 3;
+
+    return emotionBased;
+  };
+
+  const toCanonicalLog = (answers = []) => {
+    const buckets = {
+      stress_today: [],
+      energy_level: [],
+      sleep_hours: [],
+      workload_intensity: [],
+      emotional_load: [],
+      deadline_pressure: [],
+    };
+
+    answers.forEach((answer) => {
+      const feature = inferFeatureKey(
+        answer?.featureKey,
+        answer?.questionId,
+        answer?.question
+      );
+      const score = responseToScore(
+        feature,
+        answer?.response,
+        answer?.emotion,
+        answer?.confidence
+      );
+
+      if (feature && buckets[feature]) {
+        buckets[feature].push(score);
+      }
+
+      // Always capture emotional load from emotion model output when available.
+      if (answer?.emotion) {
+        buckets.emotional_load.push(scoreFromEmotion(answer?.emotion, answer?.confidence));
+      }
+    });
+
+    const avg = (arr, fallback) =>
+      arr.length ? arr.reduce((sum, v) => sum + v, 0) / arr.length : fallback;
+
+    return {
+      stress_today: clamp(avg(buckets.stress_today, avg(buckets.emotional_load, 5)), 0, 10),
+      energy_level: clamp(avg(buckets.energy_level, 5), 0, 10),
+      sleep_hours: clamp(avg(buckets.sleep_hours, 6), 0, 12),
+      workload_intensity: clamp(avg(buckets.workload_intensity, 5), 0, 10),
+      emotional_load: clamp(avg(buckets.emotional_load, avg(buckets.stress_today, 5)), 0, 10),
+      deadline_pressure: clamp(avg(buckets.deadline_pressure, avg(buckets.workload_intensity, 5)), 0, 10),
+    };
+  };
 
   const fetchEvents = async () => {
     const user = auth.currentUser;
@@ -118,28 +249,8 @@ export default function HeatmapScreen({ navigation }) {
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const key = docSnap.id; // assuming doc id = YYYY-MM-DD
-      // Try to extract stress value from answers array
-      let stressValue = 5; // Default
-      if (data.answers && Array.isArray(data.answers)) {
-        const stressAnswer = data.answers.find(
-          a => a.questionId === "Today-Feeling" || a.question?.toLowerCase().includes("stress")
-        );
-        if (stressAnswer && stressAnswer.response) {
-          const resp = stressAnswer.response.toLowerCase();
-          if (resp.match(/very\s*stressed|extremely\s*stressed|overwhelmed|anxious|panic|tense|worried/)) {
-            stressValue = 9;
-          } else if (resp.match(/stressed|pressure|nervous|uneasy/)) {
-            stressValue = 8;
-          } else if (resp.match(/not\s*stressed|fine|okay|neutral/)) {
-            stressValue = 5;
-          } else if (resp.match(/calm|relaxed|happy|peaceful|good|content/)) {
-            stressValue = 2;
-          } else if (resp.match(/tired|exhausted/)) {
-            stressValue = 4;
-          }
-        }
-      }
-      historical[key] = stressValue;
+      const canonical = toCanonicalLog(data.answers || []);
+      historical[key] = canonical.stress_today;
     });
 
     setPredictions((prev) => ({
@@ -214,41 +325,6 @@ export default function HeatmapScreen({ navigation }) {
     await recalculateStress(date);
     fetchEvents();
   };
-
-  const convertToScore = (questionId, response) => {
-    if (!response) return null;
-
-    const text = response.toLowerCase();
-
-    if (questionId === "Mood-Check") {
-      if (text.includes("very")) return 8;
-      if (text.includes("stressed")) return 7;
-      if (text.includes("okay")) return 5;
-      return 4;
-    }
-
-    if (questionId === "Academic-Stress") {
-      if (text.includes("very")) return 8;
-      if (text.includes("high")) return 7;
-      if (text.includes("moderate")) return 5;
-      return 3;
-    }
-
-    if (questionId === "Motivation") {
-      if (text.includes("high")) return 8;
-      if (text.includes("medium")) return 5;
-      if (text.includes("low")) return 3;
-      return 4;
-    }
-
-    if (questionId === "Sleep") {
-      const match = text.match(/\d+/);
-      return match ? parseInt(match[0]) : 6;
-    }
-
-    return null;
-  };
-
   const recalculateStress = async (dateString) => {
     // console.log("function called");
     const user = auth.currentUser;
@@ -274,25 +350,7 @@ export default function HeatmapScreen({ navigation }) {
 
       const recentLogs = logsSnapshot.docs.map((doc) => {
         const data = doc.data();
-        const answers = data.answers || [];
-
-        const log = {
-          stress_today: null,
-          energy_level: null,
-          sleep_hours: null,
-          workload_intensity: null
-        };
-
-        answers.forEach((a) => {
-          const score = convertToScore(a.questionId, a.response);
-
-          if (a.questionId === "Mood-Check") log.stress_today = score;
-          if (a.questionId === "Motivation") log.energy_level = score;
-          if (a.questionId === "Sleep") log.sleep_hours = score;
-          if (a.questionId === "Academic-Stress") log.workload_intensity = score;
-        });
-
-        return log;
+        return toCanonicalLog(data.answers || []);
       });
 
 
@@ -353,16 +411,21 @@ export default function HeatmapScreen({ navigation }) {
 
       // console.log("Backend response:", data);
 
+      const predictionPayload =
+        data?.data?.prediction ||
+        data?.data?.future_5_days ||
+        null;
+
       if (
         data.status === "success" &&
-        data.data.future_5_days &&
-        data.data.future_5_days.future_5_days
+        predictionPayload &&
+        Array.isArray(predictionPayload.future_5_days)
       ) {
 
         const newPredictions = {};
         const today = new Date();
 
-        data.data.future_5_days.future_5_days.forEach((value, index) => {
+        predictionPayload.future_5_days.forEach((value, index) => {
           const futureDate = new Date();
           futureDate.setDate(today.getDate() + index + 1);
 
@@ -379,6 +442,23 @@ export default function HeatmapScreen({ navigation }) {
           ...prev,
           ...newPredictions,
         }));
+
+        // Store latest fingerprint overlay for dashboard and future evolution context.
+        if (predictionPayload.fingerprint) {
+          await setDoc(
+            doc(db, "users", user.uid, "fingerprint", "current"),
+            {
+              ...predictionPayload.fingerprint,
+              category_scores: predictionPayload.fingerprint.scores || {},
+              dominant_drivers: predictionPayload.fingerprint.dominant_drivers || [],
+              feature_importance: predictionPayload.feature_importance || {},
+              confidence: predictionPayload.confidence ?? null,
+              schema_version: predictionPayload.schema_version || "v2",
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
       }
     } catch (err) {
       console.log("Recalculation failed:", err);

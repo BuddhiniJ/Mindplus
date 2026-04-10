@@ -168,6 +168,7 @@ export default function DailyCheckInScreen() {
             const prediction = await detectEmotion(responseText);
             return {
               questionId: question.id,
+              featureKey: question.featureKey,
               question: question.prompt,
               response: responseText,
               emotion: prediction.emotion,
@@ -178,6 +179,7 @@ export default function DailyCheckInScreen() {
             console.warn("Emotion detection failed, storing as unknown", error);
             return {
               questionId: question.id,
+              featureKey: question.featureKey,
               question: question.prompt,
               response: responseText,
               emotion: "unknown",

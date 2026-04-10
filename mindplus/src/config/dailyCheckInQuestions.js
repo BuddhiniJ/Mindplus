@@ -183,10 +183,45 @@ export const getQuestionBlueprintsForUserType = (userTypeId) => {
   );
 };
 
+const resolveFeatureKeyFromQuestionId = (questionId) => {
+  const id = (questionId || "").toLowerCase();
+
+  if (id.includes("sleep") || id.includes("rest") || id.includes("recovery")) {
+    return "sleep_hours";
+  }
+
+  if (
+    id.includes("pressure") ||
+    id.includes("load") ||
+    id.includes("stressor") ||
+    id.includes("exam-stress") ||
+    id.includes("client-workload")
+  ) {
+    return "workload_intensity";
+  }
+
+  if (
+    id.includes("energy") ||
+    id.includes("motivation") ||
+    id.includes("focus") ||
+    id.includes("discipline") ||
+    id.includes("consistency")
+  ) {
+    return "energy_level";
+  }
+
+  if (id.includes("feeling") || id.includes("emotion")) {
+    return "stress_today";
+  }
+
+  return "stress_today";
+};
+
 export const getDailyQuestionsForUserType = (userTypeId, friendlyName) => {
   return getQuestionBlueprintsForUserType(userTypeId).map((item) => ({
     id: item.id,
     prompt: item.text(friendlyName),
     placeholder: item.placeholder,
+    featureKey: resolveFeatureKeyFromQuestionId(item.id),
   }));
 };
