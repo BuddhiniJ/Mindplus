@@ -7,15 +7,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
-import numpy as np
-from utils.cluster_labels import LABELS
 from routes.voice_routes import router as voice_routes
 from services.emotion_service import (
     PredictRequest, PredictResponse, CopingStrategyRequest, CopingStrategyResponse,
     predict, coping_strategy, health, MODEL_NAME
 )
-from routes.fingerprint_routes import router as fingerprint_router
 from services.advanced_stress_model import predict_future_stress
+from services.model_metrics_service import get_fingerprint_model_metrics
 
 
 # =====  Chatbot Imports =====
@@ -44,7 +42,10 @@ app.add_middleware(
 )
 
 # Load model at startup
-model = joblib.load("models/model.pkl")
+try:
+    model = joblib.load("models/model.pkl")
+except Exception:
+    model = None
 
 class UserScores(BaseModel):
     stress: float
@@ -113,12 +114,18 @@ def evolve_fingerprint(payload: dict):
 
     try:
 
-        predictions = predict_future_stress(payload)
+        prediction = predict_future_stress(payload)
 
         return {
             "status": "success",
             "data": {
-                "future_5_days": predictions
+                # Backward-compatible key expected by current frontend.
+                "future_5_days": prediction,
+                # Flat fields for robust future consumers.
+                "prediction": prediction,
+                "confidence": prediction.get("confidence"),
+                "feature_importance": prediction.get("feature_importance", {}),
+                "fingerprint": prediction.get("fingerprint", {}),
             }
         }
 
@@ -128,6 +135,11 @@ def evolve_fingerprint(payload: dict):
             "status": "error",
             "message": str(e)
         }
+
+
+@app.get("/api/fingerprint/model-metrics")
+def fingerprint_model_metrics():
+    return get_fingerprint_model_metrics()
 
 # Startup event
 @app.on_event("startup")
