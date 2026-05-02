@@ -34,15 +34,6 @@ export default {
     },
     plugins: [
       "expo-font",
-      [
-        "@react-native-voice/voice",
-        {
-          microphonePermission:
-            "Allow Mindplus to access the microphone for voice messages",
-          speechRecognitionPermission:
-            "Allow Mindplus to convert your speech to text for the chatbot",
-        },
-      ],
     ],
     extra: {
       API_BASE_URL: process.env.API_BASE_URL,
