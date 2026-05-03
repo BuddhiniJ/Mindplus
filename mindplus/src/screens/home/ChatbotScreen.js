@@ -291,6 +291,7 @@ export default function ChatbotScreen({ navigation }) {
   const [simplifiedMode, setSimplifiedMode] = useState(false);
   const [slowInteractionMode, setSlowInteractionMode] = useState(false);
   const [soundFeedbackEnabled, setSoundFeedbackEnabled] = useState(false);
+  const [showPromptChips, setShowPromptChips] = useState(true);
   const uiSoundRef = useRef({});
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
@@ -337,6 +338,9 @@ export default function ChatbotScreen({ navigation }) {
       if (typeof data.soundFeedbackEnabled === "boolean") {
         setSoundFeedbackEnabled(data.soundFeedbackEnabled);
       }
+      if (typeof data.showPromptChips === "boolean") {
+        setShowPromptChips(data.showPromptChips);
+      }
     } catch (e) {
       console.log("Failed to load chatbot settings", e);
     }
@@ -356,6 +360,7 @@ export default function ChatbotScreen({ navigation }) {
         simplifiedMode,
         slowInteractionMode,
         soundFeedbackEnabled,
+        showPromptChips,
       };
       const payload = { ...current, ...overrides };
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
@@ -1287,6 +1292,7 @@ export default function ChatbotScreen({ navigation }) {
               setAnonymousMode(false);
               setSimplifiedMode(false);
               setSlowInteractionMode(false);
+              setShowPromptChips(true);
 
               Alert.alert("Done", "All local chatbot data has been deleted.");
             } catch (e) {
@@ -1320,6 +1326,7 @@ export default function ChatbotScreen({ navigation }) {
                 anonymousMode: false,
                 simplifiedMode: false,
                 slowInteractionMode: false,
+                showPromptChips: true,
               };
 
               setAutoVoiceEnabled(defaults.autoVoiceEnabled);
@@ -1332,6 +1339,7 @@ export default function ChatbotScreen({ navigation }) {
               setAnonymousMode(defaults.anonymousMode);
               setSimplifiedMode(defaults.simplifiedMode);
               setSlowInteractionMode(defaults.slowInteractionMode);
+              setShowPromptChips(defaults.showPromptChips);
 
               await AsyncStorage.removeItem(SETTINGS_KEY);
               await persistSettings(defaults);
@@ -1620,6 +1628,24 @@ export default function ChatbotScreen({ navigation }) {
                       trackColor={SETTINGS_SWITCH_TRACK}
                       thumbColor={
                         soundFeedbackEnabled
+                          ? SETTINGS_SWITCH_THUMB_ON
+                          : SETTINGS_SWITCH_THUMB_OFF
+                      }
+                      ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
+                    />
+                  </View>
+
+                  <View style={styles.autoVoiceRow}>
+                    <Text style={styles.autoVoiceLabel}>Show prompt chips</Text>
+                    <Switch
+                      value={showPromptChips}
+                      onValueChange={(value) => {
+                        setShowPromptChips(value);
+                        persistSettings({ showPromptChips: value });
+                      }}
+                      trackColor={SETTINGS_SWITCH_TRACK}
+                      thumbColor={
+                        showPromptChips
                           ? SETTINGS_SWITCH_THUMB_ON
                           : SETTINGS_SWITCH_THUMB_OFF
                       }
@@ -2060,7 +2086,7 @@ export default function ChatbotScreen({ navigation }) {
             />
           </View>
 
-          <PromptChips onSelectPrompt={setInput} />
+          {showPromptChips && <PromptChips onSelectPrompt={setInput} />}
 
           <TechniqueDetailCard
             technique={selectedTechnique}
