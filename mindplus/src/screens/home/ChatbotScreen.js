@@ -12,6 +12,7 @@ import {
   Modal,
   ScrollView,
   Share,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
@@ -79,6 +80,17 @@ const CHAT_THEMES = [
   { id: "forest", label: "Forest" },
   { id: "dark", label: "Dark" },
 ];
+
+const DEFAULT_PROMPT_CHIPS = [
+  "I'm overwhelmed with exams",
+  "I can't focus on studying",
+  "I'm scared I'll fail my exams",
+  "I feel burnt out",
+  "I need help calming down",
+  "I want to get back on track",
+];
+
+const MAX_PROMPT_CHIPS = 20;
 
 const SETTINGS_SWITCH_TRACK = { false: "#CBD5F5", true: "#4F46E5" };
 const SETTINGS_SWITCH_THUMB_ON = "#EEF2FF";
@@ -255,6 +267,17 @@ function getStressPercent({ overallStatus, stressLevel } = {}) {
   return byStress[key] ?? 0;
 }
 
+function normalizePromptChips(prompts) {
+  if (!Array.isArray(prompts)) return DEFAULT_PROMPT_CHIPS;
+
+  const normalized = prompts
+    .map((prompt) => (typeof prompt === "string" ? prompt.trim() : ""))
+    .filter(Boolean)
+    .slice(0, MAX_PROMPT_CHIPS);
+
+  return normalized.length ? normalized : DEFAULT_PROMPT_CHIPS;
+}
+
 export default function ChatbotScreen({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -292,6 +315,8 @@ export default function ChatbotScreen({ navigation }) {
   const [slowInteractionMode, setSlowInteractionMode] = useState(false);
   const [soundFeedbackEnabled, setSoundFeedbackEnabled] = useState(false);
   const [showPromptChips, setShowPromptChips] = useState(true);
+  const [promptChips, setPromptChips] = useState(DEFAULT_PROMPT_CHIPS);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
   const uiSoundRef = useRef({});
 
   const { selectTrack, togglePlay, closeMiniPlayer, isPlaying } =
@@ -341,6 +366,9 @@ export default function ChatbotScreen({ navigation }) {
       if (typeof data.showPromptChips === "boolean") {
         setShowPromptChips(data.showPromptChips);
       }
+      if (Array.isArray(data.promptChips)) {
+        setPromptChips(normalizePromptChips(data.promptChips));
+      }
     } catch (e) {
       console.log("Failed to load chatbot settings", e);
     }
@@ -361,6 +389,7 @@ export default function ChatbotScreen({ navigation }) {
         slowInteractionMode,
         soundFeedbackEnabled,
         showPromptChips,
+        promptChips,
       };
       const payload = { ...current, ...overrides };
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
@@ -486,6 +515,33 @@ export default function ChatbotScreen({ navigation }) {
     } catch (e) {
       console.log("Failed to handle app action", e);
     }
+  };
+
+  const updatePromptChipAt = (index, value) => {
+    const next = [...promptChips];
+    next[index] = value;
+    const normalized = normalizePromptChips(next);
+    setPromptChips(normalized);
+    persistSettings({ promptChips: normalized });
+  };
+
+  const addPromptChip = () => {
+    if (promptChips.length >= MAX_PROMPT_CHIPS) return;
+    const next = [...promptChips, "New prompt"];
+    setPromptChips(next);
+    persistSettings({ promptChips: next });
+  };
+
+  const removePromptChipAt = (index) => {
+    const next = promptChips.filter((_, i) => i !== index);
+    const normalized = normalizePromptChips(next);
+    setPromptChips(normalized);
+    persistSettings({ promptChips: normalized });
+  };
+
+  const resetPromptChips = () => {
+    setPromptChips(DEFAULT_PROMPT_CHIPS);
+    persistSettings({ promptChips: DEFAULT_PROMPT_CHIPS });
   };
 
   const playUiSound = async (event) => {
@@ -1293,6 +1349,7 @@ export default function ChatbotScreen({ navigation }) {
               setSimplifiedMode(false);
               setSlowInteractionMode(false);
               setShowPromptChips(true);
+              setPromptChips(DEFAULT_PROMPT_CHIPS);
 
               Alert.alert("Done", "All local chatbot data has been deleted.");
             } catch (e) {
@@ -1327,6 +1384,7 @@ export default function ChatbotScreen({ navigation }) {
                 simplifiedMode: false,
                 slowInteractionMode: false,
                 showPromptChips: true,
+                promptChips: DEFAULT_PROMPT_CHIPS,
               };
 
               setAutoVoiceEnabled(defaults.autoVoiceEnabled);
@@ -1340,6 +1398,7 @@ export default function ChatbotScreen({ navigation }) {
               setSimplifiedMode(defaults.simplifiedMode);
               setSlowInteractionMode(defaults.slowInteractionMode);
               setShowPromptChips(defaults.showPromptChips);
+              setPromptChips(defaults.promptChips);
 
               await AsyncStorage.removeItem(SETTINGS_KEY);
               await persistSettings(defaults);
@@ -1555,6 +1614,72 @@ export default function ChatbotScreen({ navigation }) {
             </View>
           </Modal>
 
+          <Modal
+            visible={showPromptEditor}
+            animationType="fade"
+            transparent
+            onRequestClose={() => setShowPromptEditor(false)}
+          >
+            <View style={styles.commandsModalOverlay}>
+              <View style={styles.settingsModalCard}>
+                <Text style={styles.commandsModalTitle}>Edit prompt chips</Text>
+                <Text style={styles.commandsModalSubtitle}>
+                  Customize up to 20 prompts. Only 6 will be shown on the chat screen.
+                </Text>
+
+                <ScrollView
+                  style={styles.settingsScroll}
+                  contentContainerStyle={styles.settingsScrollContent}
+                  showsVerticalScrollIndicator
+                >
+                  {promptChips.map((prompt, index) => (
+                    <View key={`prompt-editor-${index}`} style={styles.promptEditorRow}>
+                      <Text style={styles.promptEditorIndex}>{index + 1}</Text>
+                      <TextInput
+                        value={prompt}
+                        onChangeText={(value) => updatePromptChipAt(index, value)}
+                        placeholder={`Prompt ${index + 1}`}
+                        placeholderTextColor="#9CA3AF"
+                        style={styles.promptEditorInput}
+                        multiline
+                      />
+                      <TouchableOpacity
+                        style={styles.promptEditorRemoveButton}
+                        onPress={() => removePromptChipAt(index)}
+                      >
+                        <Text style={styles.promptEditorRemoveButtonText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={[styles.settingsActionButton, { marginTop: 8 }]}
+                    onPress={addPromptChip}
+                    disabled={promptChips.length >= MAX_PROMPT_CHIPS}
+                  >
+                    <Text style={styles.settingsActionButtonText}>
+                      Add prompt chip
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.commandsButton, { alignSelf: "flex-start", marginTop: 10 }]}
+                    onPress={resetPromptChips}
+                  >
+                    <Text style={styles.commandsButtonText}>Reset prompts</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={styles.commandsCloseButton}
+                  onPress={() => setShowPromptEditor(false)}
+                >
+                  <Text style={styles.commandsCloseButtonText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
           {/* Chatbot settings panel opened from header */}
           <Modal
             visible={showSettingsPanel}
@@ -1652,6 +1777,15 @@ export default function ChatbotScreen({ navigation }) {
                       ios_backgroundColor={SETTINGS_SWITCH_TRACK.false}
                     />
                   </View>
+
+                  <TouchableOpacity
+                    style={[styles.commandsButton, { alignSelf: "flex-start", marginBottom: 12, marginLeft: 16 }]}
+                    onPress={() => setShowPromptEditor(true)}
+                  >
+                    <Text style={styles.commandsButtonText}>
+                      Edit prompt chips
+                    </Text>
+                  </TouchableOpacity>
 
                   <View
                     style={[styles.settingsSectionHeader, { marginTop: 12 }]}
@@ -2086,7 +2220,9 @@ export default function ChatbotScreen({ navigation }) {
             />
           </View>
 
-          {showPromptChips && <PromptChips onSelectPrompt={setInput} />}
+          {showPromptChips && (
+            <PromptChips onSelectPrompt={setInput} prompts={promptChips} />
+          )}
 
           <TechniqueDetailCard
             technique={selectedTechnique}
