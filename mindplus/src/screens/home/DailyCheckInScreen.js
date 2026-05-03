@@ -12,8 +12,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -25,6 +26,11 @@ const formatDateKey = (date) => date.toISOString().slice(0, 10);
 
 export default function DailyCheckInScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  const { showWarning, missedDays } = route.params || {};
+  const [showAlert, setShowAlert] = useState(showWarning || false);
+
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [responses, setResponses] = useState({});
@@ -400,6 +406,41 @@ export default function DailyCheckInScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Warning Modal */}
+      <Modal transparent visible={showAlert} animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.alertContainer}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.icon}>⚠️</Text>
+            </View>
+            <Text style={styles.title}>Action Required</Text>
+
+            {missedDays === -1 ? (
+              <Text style={styles.message}>
+                You haven't completed any daily check-ins yet!{"\n\n"}
+                Start tracking your emotions today to stay on top of your
+                wellness journey.
+              </Text>
+            ) : (
+              <Text style={styles.message}>
+                You haven't checked in for{" "}
+                <Text style={styles.highlightText}>{missedDays} days</Text>!
+                {"\n\n"}
+                Please log your emotions to ensure your daily pattern stays up
+                to date.
+              </Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.alertButton}
+              onPress={() => setShowAlert(false)}
+            >
+              <Text style={styles.alertButtonText}>Check In Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -768,5 +809,78 @@ const styles = StyleSheet.create({
   bodyText: {
     fontSize: 15,
     color: "#4a4a4a",
+  },
+
+  // Modal styles
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  alertContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 30,
+    width: "100%",
+    maxWidth: 340,
+    alignItems: "center",
+    shadowColor: "#EA580C",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: "#FFEDD5",
+  },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FFEDD5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  icon: {
+    fontSize: 36,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#9A3412",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  message: {
+    fontSize: 15,
+    color: "#4B5563",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 28,
+  },
+  highlightText: {
+    color: "#EA580C",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  alertButton: {
+    backgroundColor: "#EA580C",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+    shadowColor: "#EA580C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  alertButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
