@@ -110,10 +110,7 @@ const DEFAULT_PROMPT_SUFFIX = "___";
 const DEFAULT_PROMPT_CHIPS = PROMPT_TEMPLATES.map(
   (template) => `${template} ${DEFAULT_PROMPT_SUFFIX}`,
 );
-const DEFAULT_SELECTED_PROMPT_INDICES = Array.from(
-  { length: MAX_VISIBLE_PROMPT_CHIPS },
-  (_, index) => index,
-);
+const DEFAULT_SELECTED_PROMPT_INDICES = [];
 
 const SETTINGS_SWITCH_TRACK = { false: "#CBD5F5", true: "#4F46E5" };
 const SETTINGS_SWITCH_THUMB_ON = "#EEF2FF";
