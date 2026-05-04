@@ -4,6 +4,7 @@ os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
 
 from fastapi import HTTPException
 from pydantic import BaseModel
+from datasets import load_dataset
 from typing import List, Dict, Any, Optional
 import uuid
 import random
@@ -11,6 +12,11 @@ from datetime import datetime
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+
+# Load the Dataset
+dataset = load_dataset("go_emotions")
+labels_list = dataset['train'].features['labels'].feature.names
+num_labels = len(labels_list)
 
 # -----------------------------------------------------------
 # MODEL LOAD

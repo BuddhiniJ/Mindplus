@@ -1,5 +1,6 @@
 # Import required libraries for ML model, data validation, and file operations
 from pydantic import BaseModel
+from datasets import load_dataset
 from typing import Optional, List, Dict, Any
 from transformers import pipeline
 import os
@@ -38,6 +39,12 @@ class CopingStrategyResponse(BaseModel):
 STOPWORDS = {
     "the","a","an","and","or","but","if","then","so","to","for","of","on","in","at","is","am","are","was","were","be","been","being","i","you","he","she","it","they","them","we","me","my","your","our","with","this","that","those","these","about","just","very","really","feel","feeling"
 }
+
+# Load the Dataset
+dataset = load_dataset("go_emotions")
+labels_list = dataset['train'].features['labels'].feature.names
+num_labels = len(labels_list)
+
 
 # Load the emotion classification model from Hugging Face
 MODEL_NAME = os.getenv("EMOTION_MODEL_NAME", "j-hartmann/emotion-english-distilroberta-base")
