@@ -14,9 +14,8 @@ const DEFAULT_PROMPTS = [
 const MAX_VISIBLE_PROMPTS = 6;
 
 export default function PromptChips({ onSelectPrompt, prompts }) {
-  const visiblePrompts = (Array.isArray(prompts) && prompts.length
-    ? prompts
-    : DEFAULT_PROMPTS
+  const visiblePrompts = (
+    Array.isArray(prompts) && prompts.length ? prompts : DEFAULT_PROMPTS
   )
     .filter((prompt) => typeof prompt === "string" && prompt.trim())
     .slice(0, MAX_VISIBLE_PROMPTS);

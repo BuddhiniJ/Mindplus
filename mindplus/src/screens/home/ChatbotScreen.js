@@ -550,7 +550,7 @@ export default function ChatbotScreen({ navigation }) {
     setPromptChips(DEFAULT_PROMPT_CHIPS);
     const defaultIndices = DEFAULT_PROMPT_CHIPS.map((_, i) => i);
     setSelectedPromptIndices(defaultIndices);
-    persistSettings({ 
+    persistSettings({
       promptChips: DEFAULT_PROMPT_CHIPS,
       selectedPromptIndices: defaultIndices,
     });
@@ -1689,7 +1689,8 @@ export default function ChatbotScreen({ navigation }) {
               <View style={styles.settingsModalCard}>
                 <Text style={styles.commandsModalTitle}>Edit prompt chips</Text>
                 <Text style={styles.commandsModalSubtitle}>
-                  Customize up to 20 prompts. Only 6 will be shown on the chat screen.
+                  Customize up to 20 prompts. Only 6 will be shown on the chat
+                  screen.
                 </Text>
 
                 <ScrollView
@@ -1701,23 +1702,34 @@ export default function ChatbotScreen({ navigation }) {
                     const isSelected = selectedPromptIndices.includes(index);
                     const selectionIndex = selectedPromptIndices.indexOf(index);
                     return (
-                      <View key={`prompt-editor-${index}`} style={styles.promptEditorRow}>
+                      <View
+                        key={`prompt-editor-${index}`}
+                        style={styles.promptEditorRow}
+                      >
                         <TouchableOpacity
                           style={styles.promptEditorCheckbox}
                           onPress={() => {
                             if (isSelected) {
                               setSelectedPromptIndices(
-                                selectedPromptIndices.filter((i) => i !== index),
-                              );
-                              persistSettings({
-                                selectedPromptIndices: selectedPromptIndices.filter(
+                                selectedPromptIndices.filter(
                                   (i) => i !== index,
                                 ),
+                              );
+                              persistSettings({
+                                selectedPromptIndices:
+                                  selectedPromptIndices.filter(
+                                    (i) => i !== index,
+                                  ),
                               });
                             } else if (selectedPromptIndices.length < 6) {
-                              const newSelected = [...selectedPromptIndices, index];
+                              const newSelected = [
+                                ...selectedPromptIndices,
+                                index,
+                              ];
                               setSelectedPromptIndices(newSelected);
-                              persistSettings({ selectedPromptIndices: newSelected });
+                              persistSettings({
+                                selectedPromptIndices: newSelected,
+                              });
                             } else {
                               Alert.alert(
                                 "Selection Limit",
@@ -1734,29 +1746,42 @@ export default function ChatbotScreen({ navigation }) {
                           <View style={styles.promptEditorOrderButtons}>
                             <TouchableOpacity
                               style={styles.promptEditorOrderButton}
-                              onPress={() => movePromptSelectionUp(selectionIndex)}
+                              onPress={() =>
+                                movePromptSelectionUp(selectionIndex)
+                              }
                               disabled={selectionIndex === 0}
                             >
-                              <Text style={styles.promptEditorOrderButtonText}>▲</Text>
+                              <Text style={styles.promptEditorOrderButtonText}>
+                                ▲
+                              </Text>
                             </TouchableOpacity>
                             <Text style={styles.promptEditorOrderIndex}>
                               {selectionIndex + 1}
                             </Text>
                             <TouchableOpacity
                               style={styles.promptEditorOrderButton}
-                              onPress={() => movePromptSelectionDown(selectionIndex)}
+                              onPress={() =>
+                                movePromptSelectionDown(selectionIndex)
+                              }
                               disabled={
-                                selectionIndex === selectedPromptIndices.length - 1
+                                selectionIndex ===
+                                selectedPromptIndices.length - 1
                               }
                             >
-                              <Text style={styles.promptEditorOrderButtonText}>▼</Text>
+                              <Text style={styles.promptEditorOrderButtonText}>
+                                ▼
+                              </Text>
                             </TouchableOpacity>
                           </View>
                         )}
-                        <Text style={styles.promptEditorIndex}>{index + 1}</Text>
+                        <Text style={styles.promptEditorIndex}>
+                          {index + 1}
+                        </Text>
                         <TextInput
                           value={prompt}
-                          onChangeText={(value) => updatePromptChipAt(index, value)}
+                          onChangeText={(value) =>
+                            updatePromptChipAt(index, value)
+                          }
                           placeholder={`Prompt ${index + 1}`}
                           placeholderTextColor="#9CA3AF"
                           style={styles.promptEditorInput}
@@ -1766,7 +1791,9 @@ export default function ChatbotScreen({ navigation }) {
                           style={styles.promptEditorRemoveButton}
                           onPress={() => removePromptChipAt(index)}
                         >
-                          <Text style={styles.promptEditorRemoveButtonText}>Remove</Text>
+                          <Text style={styles.promptEditorRemoveButtonText}>
+                            Remove
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     );
@@ -1783,7 +1810,10 @@ export default function ChatbotScreen({ navigation }) {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.commandsButton, { alignSelf: "flex-start", marginTop: 10 }]}
+                    style={[
+                      styles.commandsButton,
+                      { alignSelf: "flex-start", marginTop: 10 },
+                    ]}
                     onPress={resetPromptChips}
                   >
                     <Text style={styles.commandsButtonText}>Reset prompts</Text>
@@ -1899,7 +1929,14 @@ export default function ChatbotScreen({ navigation }) {
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.commandsButton, { alignSelf: "flex-start", marginBottom: 12, marginLeft: 16 }]}
+                    style={[
+                      styles.commandsButton,
+                      {
+                        alignSelf: "flex-start",
+                        marginBottom: 12,
+                        marginLeft: 16,
+                      },
+                    ]}
                     onPress={() => setShowPromptEditor(true)}
                   >
                     <Text style={styles.commandsButtonText}>
@@ -2341,7 +2378,10 @@ export default function ChatbotScreen({ navigation }) {
           </View>
 
           {showPromptChips && (
-            <PromptChips onSelectPrompt={setInput} prompts={getDisplayedPrompts()} />
+            <PromptChips
+              onSelectPrompt={setInput}
+              prompts={getDisplayedPrompts()}
+            />
           )}
 
           <TechniqueDetailCard
