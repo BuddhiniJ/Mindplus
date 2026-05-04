@@ -11,6 +11,7 @@ import {
   Animated,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -27,47 +28,51 @@ import {
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { blockUser } from '../../services/blockService';
 
 export default function ChatScreen({ route, navigation }) {
   const { user } = route.params;
 
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [myUserId, setMyUserId] = useState(null);         // ← renamed to avoid confusion
+  const [myUserId, setMyUserId] = useState(null);
   const [myNickname, setMyNickname] = useState('');
   const [theirNickname, setTheirNickname] = useState(user.name || '');
   const [sending, setSending] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(true);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [chatRating, setChatRating] = useState(0);
 
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const unsubscribeRef = useRef(null);
   const prevLastMsgIdRef = useRef(null);
-
-  // Keep a ref of myUserId so handleSend can always read the latest value
-  // without depending on state timing
   const myUserIdRef = useRef(null);
   const chatIdRef = useRef(null);
+  const pendingNavActionRef = useRef(null);
+  const messagesRef = useRef([]);
 
   const db = getFirestore();
   const auth = getAuth();
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // Keep messagesRef in sync so the beforeRemove listener always sees latest count
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Main init
   useEffect(() => {
     let mounted = true;
 
     const init = async () => {
-      // 1. Resolve MY uid
       const authUid = auth.currentUser?.uid || null;
       const storedUid = await AsyncStorage.getItem('userId');
       let myId = authUid || storedUid || null;
 
-      // If we have both an auth UID and a different stored UID, prefer auth and sync storage.
       if (authUid && storedUid && authUid !== storedUid) {
-        console.warn('[ChatScreen] Detected UID mismatch — using Firebase auth UID and updating AsyncStorage.', { authUid, storedUid });
+        console.warn('[ChatScreen] UID mismatch — using Firebase auth UID.');
         try {
           await AsyncStorage.setItem('userId', authUid);
-          console.log('[ChatScreen] AsyncStorage userId updated to auth UID');
         } catch (e) {
           console.warn('[ChatScreen] Failed to update AsyncStorage userId', e);
         }
@@ -80,7 +85,6 @@ export default function ChatScreen({ route, navigation }) {
         return;
       }
 
-      // 2. Validate the OTHER user's id
       const theirId = user?.id;
       if (!theirId || theirId === myId) {
         Alert.alert('Error', 'Invalid chat target.');
@@ -88,28 +92,20 @@ export default function ChatScreen({ route, navigation }) {
         return;
       }
 
-      // 3. Build chatId — SORTED so both sides always get the same string
-      //    e.g. ["zzz","aaa"].sort() → "aaa_zzz" on BOTH devices
       const chatId = [myId, theirId].sort().join('_');
 
-      // ── Critical debug log ─────────────────────────────────────────────
       console.log('╔══════════════════════════════════');
       console.log('║ MY  uid :', myId);
       console.log('║ THEIR id:', theirId);
       console.log('║ chatId  :', chatId);
       console.log('╚══════════════════════════════════');
-      // ── If the chatId differs between the two devices, that is the bug ──
 
       if (!mounted) return;
 
-      // Store in refs so async callbacks always have the current value
       myUserIdRef.current = myId;
       chatIdRef.current = chatId;
-
-      // Update state for renders
       setMyUserId(myId);
 
-      // 4. Fetch display names
       const me = await fetchNickname(myId);
       const them = await fetchNickname(theirId);
       if (!mounted) return;
@@ -117,7 +113,6 @@ export default function ChatScreen({ route, navigation }) {
       setTheirNickname(them);
       navigation.setOptions({ title: them });
 
-      // 5. Subscribe — pass everything as arguments, never read state inside
       subscribeMessages(myId, chatId);
 
       Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
@@ -130,7 +125,20 @@ export default function ChatScreen({ route, navigation }) {
     };
   }, []);
 
-  // ── Fetch nickname ────────────────────────────────────────────────────────
+  // Intercept back navigation to show rating modal
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Skip modal if no messages were exchanged
+      if (messagesRef.current.length === 0) return;
+
+      e.preventDefault();
+      pendingNavActionRef.current = e.data.action;
+      setChatRating(0);
+      setShowRatingModal(true);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const fetchNickname = async (uid) => {
     try {
       const snap = await getDoc(doc(db, 'users', uid, 'profile', 'basic'));
@@ -141,12 +149,8 @@ export default function ChatScreen({ route, navigation }) {
     return `User_${uid.slice(-4)}`;
   };
 
-  // ── Subscribe to ALL messages in the shared chat ──────────────────────────
   const subscribeMessages = (myId, chatId) => {
     const messagesCol = collection(db, 'chats', chatId, 'messages');
-
-    // ORDER BY timestamp only — NO where() filter.
-    // Both users read ALL messages; the UI decides left vs right alignment.
     const q = query(messagesCol, orderBy('timestamp', 'asc'));
 
     console.log('[ChatScreen] Subscribing to:', `chats/${chatId}/messages`);
@@ -161,25 +165,23 @@ export default function ChatScreen({ route, navigation }) {
         }));
 
         console.log(`[ChatScreen] snapshot: ${msgs.length} messages`);
-        msgs.forEach((m) =>
-          console.log(`  ↳ [${m.senderId?.slice(-4)}] "${m.text?.slice(0, 30)}"`)
-        );
 
         setMessages(msgs);
         setLoadingMessages(false);
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
 
-        // Notify user on new incoming message (simple alert for demo/viva)
         try {
           const last = msgs[msgs.length - 1];
           if (last && last.id && last.senderId && last.senderId !== myId) {
-            // Only alert once per message id
             if (prevLastMsgIdRef.current !== last.id) {
               prevLastMsgIdRef.current = last.id;
-              const fromName = last.senderName || (theirNickname || user.name);
+              const fromName = last.senderName || theirNickname || user.name;
               const preview = last.text?.length > 120 ? `${last.text.slice(0, 120)}...` : last.text;
-              // Lightweight notification — suitable for demo. Replace with push notifications in production.
-              Alert.alert(`New message from ${fromName}`, preview, [{ text: 'Open', onPress: () => {} }, { text: 'Dismiss' }]);
+              Alert.alert(
+                `New message from ${fromName}`,
+                preview,
+                [{ text: 'Open', onPress: () => {} }, { text: 'Dismiss' }]
+              );
             }
           }
         } catch (e) {
@@ -196,10 +198,8 @@ export default function ChatScreen({ route, navigation }) {
     unsubscribeRef.current = unsub;
   };
 
-  // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     const text = inputText.trim();
-    // Use refs — guaranteed to have the value even if state hasn't updated
     const myId = myUserIdRef.current;
     const chatId = chatIdRef.current;
 
@@ -209,7 +209,6 @@ export default function ChatScreen({ route, navigation }) {
     setSending(true);
 
     try {
-      // Write the message — NO senderId filter on reads, so both users will see it
       await addDoc(collection(db, 'chats', chatId, 'messages'), {
         text,
         senderId: myId,
@@ -219,7 +218,6 @@ export default function ChatScreen({ route, navigation }) {
         read: false,
       });
 
-      // Keep the chat list preview up to date
       await setDoc(
         doc(db, 'chats', chatId),
         {
@@ -239,7 +237,29 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  const handleRatingSubmit = async () => {
+    if (chatRating === 0) return;
+
+    if (chatRating <= 2) {
+      const myId = myUserIdRef.current;
+      if (myId && user?.id) {
+        await blockUser(myId, user.id);
+      }
+    }
+
+    setShowRatingModal(false);
+    if (pendingNavActionRef.current) {
+      navigation.dispatch(pendingNavActionRef.current);
+    }
+  };
+
+  const handleRatingSkip = () => {
+    setShowRatingModal(false);
+    if (pendingNavActionRef.current) {
+      navigation.dispatch(pendingNavActionRef.current);
+    }
+  };
+
   const getStressIcon = (type) =>
     ({ Academic: '👽', Financial: '👽', Social: '👽', Emotional: '👽' }[type] || '👽');
 
@@ -255,7 +275,8 @@ export default function ChatScreen({ route, navigation }) {
     } catch { return ''; }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  const ratingLabels = ['', 'Poor experience', 'Not helpful', 'It was okay', 'Good chat', 'Great experience!'];
+
   return (
     <LinearGradient colors={['#E9EAEB', '#D4E4F7', '#FFFFFF', '#E1F5FE']} style={styles.container}>
       <KeyboardAvoidingView
@@ -271,9 +292,6 @@ export default function ChatScreen({ route, navigation }) {
             </View>
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>🟢 {theirNickname || user.name}</Text>
-              {/* <Text style={styles.headerStatus}>
-                🟢 {messages.length} message{messages.length !== 1 ? 's' : ''}
-              </Text> */}
             </View>
           </LinearGradient>
         </Animated.View>
@@ -296,8 +314,6 @@ export default function ChatScreen({ route, navigation }) {
             </View>
           ) : (
             messages.map((message) => {
-              // ✅ Compare against myUserId STATE (set before first render of messages)
-              // If myUserId is somehow null, fall back to ref
               const effectiveMyId = myUserId || myUserIdRef.current;
               const isMe = message.senderId === effectiveMyId;
 
@@ -371,6 +387,76 @@ export default function ChatScreen({ route, navigation }) {
           </LinearGradient>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Rating Modal */}
+      <Modal transparent animationType="fade" visible={showRatingModal} onRequestClose={handleRatingSkip}>
+        <View style={ratingStyles.overlay}>
+          <View style={ratingStyles.modal}>
+
+            <View style={ratingStyles.avatar}>
+              <Text style={{ fontSize: 28 }}>{getStressIcon(user.stressType)}</Text>
+            </View>
+
+            <Text style={ratingStyles.title}>How was your chat?</Text>
+            <Text style={ratingStyles.subtitle}>
+              Rate your conversation with {theirNickname || user.name}
+            </Text>
+
+            <View style={ratingStyles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setChatRating(star)} activeOpacity={0.7}>
+                  <Text style={[
+                    ratingStyles.star,
+                    chatRating >= star && {
+                      color: chatRating <= 2 ? '#E24B4A' : '#EF9F27',
+                    },
+                  ]}>★</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {chatRating > 0 && (
+              <Text style={[
+                ratingStyles.ratingLabel,
+                chatRating <= 2 && { color: '#E24B4A' },
+              ]}>
+                {ratingLabels[chatRating]}
+              </Text>
+            )}
+
+            {chatRating > 0 && chatRating <= 2 && (
+              <View style={ratingStyles.warningBox}>
+                <Text style={ratingStyles.warningText}>
+                  This person will be removed from your community list.
+                </Text>
+              </View>
+            )}
+
+            <View style={ratingStyles.btnRow}>
+              <TouchableOpacity style={ratingStyles.btnSkip} onPress={handleRatingSkip}>
+                <Text style={ratingStyles.btnSkipText}>Skip</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  ratingStyles.btnSubmit,
+                  chatRating > 0 && chatRating <= 2
+                    ? ratingStyles.btnDanger
+                    : ratingStyles.btnPrimary,
+                  chatRating === 0 && { opacity: 0.4 },
+                ]}
+                onPress={handleRatingSubmit}
+                disabled={chatRating === 0}
+              >
+                <Text style={ratingStyles.btnSubmitText}>
+                  {chatRating > 0 && chatRating <= 2 ? 'Remove & Submit' : 'Submit'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -393,7 +479,6 @@ const styles = StyleSheet.create({
   headerAvatarEmoji: { fontSize: 24 },
   headerInfo: { flex: 1 },
   headerName: { fontSize: 18, fontWeight: '700', color: '#5777AD', marginBottom: 2 },
-  headerStatus: { fontSize: 14, color: '#7CB9E8', fontWeight: '500' },
   messagesContainer: { padding: 20, paddingBottom: 10, flexGrow: 1 },
   messageRow: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },
   messageRowLeft: { justifyContent: 'flex-start' },
@@ -434,4 +519,113 @@ const styles = StyleSheet.create({
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonGradient: { paddingHorizontal: 24, paddingVertical: 12, justifyContent: 'center', alignItems: 'center' },
   sendButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+});
+
+const ratingStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#5777AD18',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#5777AD',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#7CB9E8',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  star: {
+    fontSize: 36,
+    color: '#D3D1C7',
+  },
+  ratingLabel: {
+    fontSize: 13,
+    color: '#7CB9E8',
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  warningBox: {
+    backgroundColor: '#FCEBEB',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    width: '100%',
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#A32D2D',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 4,
+  },
+  btnSkip: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#D3D1C7',
+    alignItems: 'center',
+  },
+  btnSkipText: {
+    fontSize: 15,
+    color: '#888780',
+    fontWeight: '500',
+  },
+  btnSubmit: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  btnPrimary: {
+    backgroundColor: '#5777AD',
+  },
+  btnDanger: {
+    backgroundColor: '#E24B4A',
+  },
+  btnSubmitText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
 });

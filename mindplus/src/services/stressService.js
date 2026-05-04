@@ -66,25 +66,78 @@ function analyzeStressLocally(text) {
     Emotional: 0.0,
   };
 
-  // Academic keywords
-  const academicKeywords = ['exam', 'test', 'study', 'studies', 'homework', 'grade', 'school', 'college', 'university', 'assignment', 'deadline', 'project', 'academic', 'class', 'course', 'learning'];
+  // Academic keywords - Education, learning, performance, exams, assignments
+  const academicKeywords = [
+    'exam', 'exams', 'test', 'tests', 'quiz', 'quizzes', 'study', 'studying',
+    'homework', 'assignment', 'assignments', 'essay', 'essays', 'project', 'projects',
+    'presentation', 'presentations', 'research', 'thesis', 'dissertation',
+    'school', 'college', 'university', 'uni', 'academic', 'education',
+    'class', 'classes', 'course', 'courses', 'lecture', 'lectures',
+    'seminar', 'tutorial', 'workshop', 'certification', 'degree',
+    'learning', 'midterm', 'final', 'grade', 'grades', 'gpa', 'mark',
+    'performance', 'coursework', 'qualification', 'student', 'pupils'
+  ];
   const academicCount = academicKeywords.filter(word => textLower.includes(word)).length;
-  scores.Academic = Math.min(1.0, academicCount * 0.20);
+  scores.Academic = Math.min(1.0, academicCount * 0.15);
 
-  // Financial keywords
-  const financialKeywords = ['money', 'debt', 'bill', 'pay', 'payment', 'payments', 'cost', 'expensive', 'afford', 'budget', 'financial', 'financially', 'income', 'rent', 'loan', 'credit', 'broke', 'poor'];
+  // Financial keywords - Money, bills, expenses, income, debt, spending
+  const financialKeywords = [
+    'money', 'dollar', 'dollars', 'cash', 'fund', 'funds',
+    'bill', 'bills', 'pay', 'payment', 'payments', 'paying', 'paid',
+    'fee', 'fees', 'charge', 'charges', 'rate', 'rates',
+    'cost', 'costs', 'costly', 'expensive', 'expense', 'expenses',
+    'spending', 'spent', 'price', 'prices', 'afford', 'budget',
+    'income', 'salary', 'wage', 'wages', 'earning', 'earn',
+    'unemployment', 'unemployed', 'jobless',
+    'debt', 'debts', 'loan', 'loans', 'credit', 'overdraft',
+    'mortgage', 'liability', 'broke', 'bankrupt', 'bankruptcy',
+    'poor', 'poverty', 'shortage', 'struggling', 'struggle',
+    'savings', 'save', 'invest', 'investment', 'financial'
+  ];
   const financialCount = financialKeywords.filter(word => textLower.includes(word)).length;
-  scores.Financial = Math.min(1.0, financialCount * 0.20);
+  scores.Financial = Math.min(1.0, financialCount * 0.15);
 
-  // Social keywords
-  const socialKeywords = ['lonely', 'alone', 'friend', 'friends', 'relationship', 'relationships', 'social', 'isolated', 'isolation', 'people', 'family', 'talk', 'connect', 'rejected'];
+  // Social keywords - Relationships, family, friends, connections, loneliness
+  const socialKeywords = [
+    'lonely', 'loneliness', 'alone', 'solitude', 'isolated', 'isolation',
+    'friend', 'friends', 'friendship', 'relationship', 'relationships',
+    'partner', 'girlfriend', 'boyfriend', 'spouse', 'companion',
+    'family', 'families', 'parent', 'parents', 'sibling', 'siblings',
+    'mother', 'father', 'brother', 'sister', 'relative',
+    'social', 'connect', 'connected', 'connection', 'community',
+    'talk', 'talking', 'conversation', 'communicate', 'communication',
+    'rejection', 'rejected', 'bullying', 'bullied', 'bully',
+    'gossip', 'betrayal', 'betrayed', 'conflict', 'argument',
+    'dispute', 'misunderstanding', 'divorce', 'breakup', 'separation',
+    'abandoned', 'abandonment', 'neglected', 'neglect', 'ostracize',
+    'people', 'person', 'someone', 'crowd'
+  ];
   const socialCount = socialKeywords.filter(word => textLower.includes(word)).length;
-  scores.Social = Math.min(1.0, socialCount * 0.20);
+  scores.Social = Math.min(1.0, socialCount * 0.15);
 
-  // Emotional keywords
-  const emotionalKeywords = ['sad', 'anxious', 'anxiety', 'worried', 'worry', 'depressed', 'depression', 'overwhelm', 'overwhelmed', 'cry', 'crying', 'feel', 'feeling', 'emotion', 'emotional', 'upset', 'hurt', 'pain', 'stress', 'stressed'];
+  // Emotional keywords - Feelings, moods, mental health, psychological states
+  const emotionalKeywords = [
+    'sad', 'sadness', 'depressed', 'depression', 'gloomy', 'melancholy',
+    'down', 'downhearted', 'disheartened',
+    'anxious', 'anxiety', 'worried', 'worry', 'worrying', 'concerned',
+    'nervous', 'tension', 'tense', 'apprehensive', 'uneasy',
+    'afraid', 'scared', 'panic', 'panicked', 'terror', 'terrified',
+    'fear', 'frightened', 'phobia',
+    'angry', 'anger', 'rage', 'furious', 'mad', 'irritated', 'irritable',
+    'frustrated', 'frustration', 'annoyed', 'resentment', 'resentful',
+    'stress', 'stressed', 'stressful', 'pressure', 'pressured',
+    'overwhelm', 'overwhelmed',
+    'hurt', 'pain', 'ache', 'heartache', 'suffering',
+    'hopeless', 'hopelessness', 'helpless', 'helplessness',
+    'vulnerable', 'insecure', 'doubt', 'uncertain',
+    'confused', 'confusion', 'exhausted', 'exhaustion',
+    'embarrassed', 'embarrassment', 'shame', 'ashamed',
+    'guilt', 'guilty', 'regret',
+    'feel', 'feeling', 'feels', 'emotion', 'emotions', 'emotional',
+    'upset', 'cry', 'crying', 'tears', 'weeping'
+  ];
   const emotionalCount = emotionalKeywords.filter(word => textLower.includes(word)).length;
-  scores.Emotional = Math.min(1.0, emotionalCount * 0.20);
+  scores.Emotional = Math.min(1.0, emotionalCount * 0.15);
 
   // If no keywords found, set default moderate scores
   const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
