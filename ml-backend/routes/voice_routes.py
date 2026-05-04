@@ -48,18 +48,94 @@ def calculate_stress_level(score: float) -> str:
         return "High"
 
 # reusable keyword lists used by several helpers
-ACADEMIC_KEYWORDS = ['exam', 'test', 'study', 'homework', 'grade', 'school', 'college',
-                     'university', 'assignment', 'academic', 'class', 'course', 'learning']
-FINANCIAL_KEYWORDS = ['money', 'debt', 'bill', 'pay', 'payment', 'payments', 'cost',
-                      'expensive', 'afford', 'budget', 'financial', 'financially',
-                      'income', 'rent', 'loan', 'credit', 'broke', 'poor']
-SOCIAL_KEYWORDS = ['lonely', 'alone', 'friend', 'friends', 'relationship',
-                   'relationships', 'social', 'isolated', 'isolation', 'people',
-                   'family', 'talk', 'connect', 'rejected']
-EMOTIONAL_KEYWORDS = ['sad', 'anxious', 'anxiety', 'worried', 'worry',
-                      'depressed', 'depression', 'overwhelm', 'overwhelmed',
-                      'cry', 'crying', 'feel', 'feeling', 'emotion', 'emotional',
-                      'upset', 'hurt', 'pain', 'stress', 'stressed']
+# Academic: Education, learning, performance, exams, assignments
+ACADEMIC_KEYWORDS = [
+    # Core academic terms
+    'exam', 'exams', 'test', 'tests', 'quiz', 'quizzes', 'study', 'studying',
+    'homework', 'assignment', 'assignments', 'essay', 'essays', 'project', 'projects',
+    'presentation', 'presentations', 'research', 'thesis', 'dissertation',
+    # School levels
+    'school', 'college', 'university', 'uni', 'academic', 'education',
+    'class', 'classes', 'course', 'courses', 'lecture', 'lectures',
+    'seminar', 'tutorial', 'workshop', 'certification', 'degree',
+    # Learning & performance
+    'learning', 'midterm', 'final', 'grade', 'grades', 'gpa', 'mark',
+    'performance', 'coursework', 'qualification', 'student', 'pupils'
+]
+
+# Financial: Money, bills, expenses, income, debt, spending
+FINANCIAL_KEYWORDS = [
+    # Money & currency
+    'money', 'dollar', 'dollars', 'cash', 'fund', 'funds',
+    # Bills & payments
+    'bill', 'bills', 'pay', 'payment', 'payments', 'paying', 'paid',
+    'fee', 'fees', 'charge', 'charges', 'rate', 'rates',
+    # Costs & expenses
+    'cost', 'costs', 'costly', 'expensive', 'expense', 'expenses',
+    'spending', 'spent', 'price', 'prices', 'afford', 'budget',
+    # Income
+    'income', 'salary', 'wage', 'wages', 'earning', 'earn',
+    'unemployment', 'unemployed', 'jobless',
+    # Debt & credit
+    'debt', 'debts', 'loan', 'loans', 'credit', 'overdraft',
+    'mortgage', 'liability', 'broke', 'bankrupt', 'bankruptcy',
+    # Poverty
+    'poor', 'poverty', 'poverty', 'shortage', 'struggling', 'struggle',
+    'savings', 'save', 'invest', 'investment', 'financial'
+]
+
+# Social: Relationships, family, friends, connections, loneliness
+SOCIAL_KEYWORDS = [
+    # Loneliness & isolation
+    'lonely', 'loneliness', 'alone', 'solitude', 'isolated', 'isolation',
+    # Friends & relationships
+    'friend', 'friends', 'friendship', 'relationship', 'relationships',
+    'partner', 'girlfriend', 'boyfriend', 'spouse', 'companion',
+    # Family
+    'family', 'families', 'parent', 'parents', 'sibling', 'siblings',
+    'mother', 'father', 'brother', 'sister', 'relative',
+    # Social connection
+    'social', 'connect', 'connected', 'connection', 'community',
+    'talk', 'talking', 'conversation', 'communicate', 'communication',
+    # Social problems
+    'rejection', 'rejected', 'bullying', 'bullied', 'bully',
+    'gossip', 'betrayal', 'betrayed', 'conflict', 'argument',
+    'dispute', 'misunderstanding', 'divorce', 'breakup', 'separation',
+    'abandoned', 'abandonment', 'neglected', 'neglect', 'ostracize',
+    # People
+    'people', 'person', 'someone', 'crowd', 'social'
+]
+
+# Emotional: Feelings, moods, mental health, psychological states
+EMOTIONAL_KEYWORDS = [
+    # Sadness
+    'sad', 'sadness', 'depressed', 'depression', 'gloomy', 'melancholy',
+    'down', 'downhearted', 'disheartened',
+    # Anxiety & worry
+    'anxious', 'anxiety', 'worried', 'worry', 'worrying', 'concerned',
+    'nervous', 'tension', 'tense', 'apprehensive', 'uneasy',
+    # Fear
+    'afraid', 'scared', 'panic', 'panicked', 'terror', 'terrified',
+    'fear', 'frightened', 'phobia',
+    # Anger
+    'angry', 'anger', 'rage', 'furious', 'mad', 'irritated', 'irritable',
+    'frustrated', 'frustration', 'annoyed', 'resentment', 'resentful',
+    # Stress
+    'stress', 'stressed', 'stressful', 'pressure', 'pressured',
+    'overwhelm', 'overwhelmed', 'overwhelmed',
+    # Emotional pain
+    'hurt', 'pain', 'ache', 'heartache', 'suffering',
+    # Mental state
+    'hopeless', 'hopelessness', 'helpless', 'helplessness',
+    'vulnerable', 'insecure', 'doubt', 'uncertain', 'uncertain',
+    'confused', 'confusion', 'exhausted', 'exhaustion',
+    # Shame & guilt
+    'embarrassed', 'embarrassment', 'shame', 'ashamed',
+    'guilt', 'guilty', 'regret',
+    # General emotion terms
+    'feel', 'feeling', 'feels', 'emotion', 'emotions', 'emotional',
+    'upset', 'cry', 'crying', 'tears', 'weeping'
+]
 
 
 def count_keyword_matches(text: str) -> dict:
