@@ -18,31 +18,7 @@ import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 import { detectEmotion } from "../../services/api";
-
-// Default questions for the daily check-in - personalized with user's name
-const QUESTION_BLUEPRINTS = [
-  {
-    id: "Today-Feeling",
-    text: (name) => `Hi ${name}, how are you feeling right now?`,
-    placeholder: "E.g., calm, stressed, happy, overwhelmed...",
-  },
-  {
-    id: "Campus-Day",
-    text: () => "How did your day at university work today?",
-    placeholder: "E.g., good, tiring, stressful, exciting — and why.",
-  },
-  {
-    id: "Main-Emotion",
-    text: () => "How rested did you feel today, and how was your sleep?",
-    placeholder: "E.g., woke up tired, felt well-rested after a nap...",
-  },
-  {
-    id: "Support-Need",
-    text: () => "What would help you feel better or more supported right now?",
-    placeholder:
-      "E.g., rest, talking to someone, planning tasks, taking a break...",
-  },
-];
+import { getDailyQuestionsForUserType } from "../../config/dailyCheckInQuestions";
 
 // Convert date object to YYYY-MM-DD format for database keys
 const formatDateKey = (date) => date.toISOString().slice(0, 10);
@@ -88,13 +64,8 @@ export default function DailyCheckInScreen() {
 
   // Prepare personalized questions with user's name
   const questions = useMemo(
-    () =>
-      QUESTION_BLUEPRINTS.map((item) => ({
-        id: item.id,
-        prompt: item.text(friendlyName),
-        placeholder: item.placeholder,
-      })),
-    [friendlyName]
+    () => getDailyQuestionsForUserType(userData?.userType, friendlyName),
+    [friendlyName, userData?.userType]
   );
 
   // Load existing check-in record if already completed today
@@ -197,6 +168,7 @@ export default function DailyCheckInScreen() {
             const prediction = await detectEmotion(responseText);
             return {
               questionId: question.id,
+              featureKey: question.featureKey,
               question: question.prompt,
               response: responseText,
               emotion: prediction.emotion,
@@ -207,6 +179,7 @@ export default function DailyCheckInScreen() {
             console.warn("Emotion detection failed, storing as unknown", error);
             return {
               questionId: question.id,
+              featureKey: question.featureKey,
               question: question.prompt,
               response: responseText,
               emotion: "unknown",

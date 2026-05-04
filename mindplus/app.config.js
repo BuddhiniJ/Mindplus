@@ -2,8 +2,8 @@ import "dotenv/config";
 
 export default {
   expo: {
-    name: "",
-    slug: "",
+    name: "MindPlus",
+    slug: "mindplus",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/Logo.jpeg",
@@ -21,6 +21,7 @@ export default {
     },
 
     android: {
+      package: "com.mindplus.app",
       adaptiveIcon: {
         foregroundImage: "./assets/Logo.jpeg",
         backgroundColor: "#ffffff",
@@ -32,6 +33,7 @@ export default {
       favicon: "./assets/Logo.jpeg",
     },
     plugins: [
+      "expo-font",
       [
         "@react-native-voice/voice",
         {
@@ -44,6 +46,9 @@ export default {
     ],
     extra: {
       API_BASE_URL: process.env.API_BASE_URL,
+          eas: {
+            projectId: "9cd644d1-b5e2-4d82-ac00-11956fdd1ba9",
+          },
     },
   },
 };

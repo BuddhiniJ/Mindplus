@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 export default function CommunityScreen({ route, navigation }) {
   const { stressType } = route.params || { stressType: 'General' };
@@ -18,11 +20,48 @@ export default function CommunityScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentStressType, setCurrentStressType] = useState('General');
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const db = getFirestore();
+  const auth = getAuth();
+
+  const ensureAuthReady = async (timeout = 3000) => {
+    const start = Date.now();
+    while (!auth.currentUser && Date.now() - start < timeout) {
+      console.log('[CommunityScreen] Waiting for auth to be ready...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (!auth.currentUser) {
+      throw new Error('Authentication not available after timeout');
+    }
+  };
 
   useEffect(() => {
-    loadCurrentUser();
-    loadCommunityUsers();
+    const initialize = async () => {
+      try {
+        // Step 1: Ensure auth is ready (handles anonymous sign-in)
+        if (!auth.currentUser) {
+          console.log('[CommunityScreen] No auth user, attempting anonymous sign-in...');
+          await signInAnonymously(auth);
+        } else {
+          console.log('[CommunityScreen] Already authenticated as:', auth.currentUser.uid);
+        }
+        
+        // Step 2: Wait for auth to be fully ready
+        await ensureAuthReady();
+        
+        // Step 3: Load user and community
+        await loadCurrentUser();
+        await loadCommunityUsers();
+      } catch (error) {
+        console.error('[CommunityScreen] Initialization error:', error.message);
+        // If auth fails, still try to load with whatever userId is available
+        await loadCurrentUser();
+        await loadCommunityUsers();
+      }
+    };
+    
+    initialize();
     
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -32,118 +71,120 @@ export default function CommunityScreen({ route, navigation }) {
   }, []);
 
   const loadCurrentUser = async () => {
-    const userId = await AsyncStorage.getItem('userId');
-    setCurrentUserId(userId);
+    try {
+      // Use Firebase auth UID (guaranteed to exist after ensureAuthReady)
+      const authUid = auth.currentUser?.uid;
+      if (authUid) {
+        setCurrentUserId(authUid);
+        // Sync to AsyncStorage for consistency
+        await AsyncStorage.setItem('userId', authUid);
+        console.log('[CommunityScreen] Current user ID:', authUid);
+        return;
+      }
+      
+      // Fallback to AsyncStorage (should rarely happen)
+      const stored = await AsyncStorage.getItem('userId');
+      if (stored) {
+        setCurrentUserId(stored);
+        console.log('[CommunityScreen] Using AsyncStorage userId:', stored);
+        return;
+      }
+      
+      console.warn('[CommunityScreen] No user ID available');
+      setCurrentUserId(null);
+    } catch (e) {
+      console.error('[CommunityScreen] loadCurrentUser error:', e);
+      setCurrentUserId(null);
+    }
   };
 
   const loadCommunityUsers = async () => {
     try {
-      setLoading(true);
+      // Ensure auth is ready before querying
+      await ensureAuthReady();
+      const authUid = auth.currentUser.uid;
       
-      // Hard-coded community users
-      const communityUsers = [
-        {
-          id: 'user_1',
-          name: 'Sarah Chen',
-          avatar: '🌸',
-          stressType: 'Academic',
-          lastSeen: 'Online',
-          bio: 'Medical student finding balance',
-          color: '#ef4444',
-        },
-        {
-          id: 'user_2',
-          name: 'Alex Kumar',
-          avatar: '🌿',
-          stressType: 'Financial',
-          lastSeen: '5 min ago',
-          bio: 'Learning to manage finances mindfully',
-          color: '#f59e0b',
-        },
-        {
-          id: 'user_3',
-          name: 'Emma Williams',
-          avatar: '🦋',
-          stressType: 'Social',
-          lastSeen: '15 min ago',
-          bio: 'Building meaningful connections',
-          color: '#3b82f6',
-        },
-        {
-          id: 'user_4',
-          name: 'Michael Torres',
-          avatar: '🌊',
-          stressType: 'Emotional',
-          lastSeen: 'Online',
-          bio: 'On a journey of self-discovery',
-          color: '#8b5cf6',
-        },
-        {
-          id: 'user_5',
-          name: 'Priya Patel',
-          avatar: '🌺',
-          stressType: 'Academic',
-          lastSeen: '1 hour ago',
-          bio: 'Graduate student, here to help',
-          color: '#ef4444',
-        },
-        {
-          id: 'user_6',
-          name: 'David Lee',
-          avatar: '🍃',
-          stressType: 'Financial',
-          lastSeen: '2 hours ago',
-          bio: 'Sharing budgeting tips & support',
-          color: '#f59e0b',
-        },
-        {
-          id: 'user_7',
-          name: 'Sofia Rodriguez',
-          avatar: '🌼',
-          stressType: 'Social',
-          lastSeen: 'Online',
-          bio: 'Overcoming social anxiety together',
-          color: '#3b82f6',
-        },
-        {
-          id: 'user_8',
-          name: 'James Anderson',
-          avatar: '🌳',
-          stressType: 'Emotional',
-          lastSeen: '30 min ago',
-          bio: 'Finding peace through mindfulness',
-          color: '#8b5cf6',
-        },
-        {
-          id: 'user_9',
-          name: 'Lily Zhang',
-          avatar: '🌹',
-          stressType: 'Academic',
-          lastSeen: 'Online',
-          bio: 'PhD candidate, stress warrior',
-          color: '#ef4444',
-        },
-        {
-          id: 'user_10',
-          name: 'Ryan Martinez',
-          avatar: '🌻',
-          stressType: 'Financial',
-          lastSeen: '10 min ago',
-          bio: 'Financial freedom seeker',
-          color: '#f59e0b',
-        },
-      ];
+      setLoading(true);
 
-      // Filter by stress type if provided
-      const filteredUsers = stressType && stressType !== 'General' 
-        ? communityUsers.filter(u => u.stressType === stressType)
-        : communityUsers;
+      let stressTypeToUse = stressType;
 
-      setUsers(filteredUsers);
+      // If no stressType from params, get from current user's latest analysis
+      if (!stressType || stressType === 'General') {
+        if (authUid) {
+          const userDoc = await getDoc(doc(db, 'users', authUid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            stressTypeToUse = userData.dominantType || 'General';
+          }
+        }
+      }
+
+      setCurrentStressType(stressTypeToUse);
+
+      // Query users with the same dominant stress type, excluding current user
+      const q = query(
+        collection(db, 'users'),
+        where('dominantType', '==', stressTypeToUse)
+      );
+      const querySnapshot = await getDocs(q);
+
+      const fetchedUsers = [];
+      for (const userDoc of querySnapshot.docs) {
+        const userId = userDoc.id;
+        if (userId === authUid) continue; // Skip current user
+
+        const data = userDoc.data();
+
+        try {
+          // Fetch the user's profile to get their real nickname
+          const profileRef = doc(db, 'users', userId, 'profile', 'basic');
+          const profileSnap = await getDoc(profileRef);
+          const profileData = profileSnap.exists() ? profileSnap.data() : {};
+
+          const lastAnalysis = data.lastAnalysis?.toDate?.() || new Date();
+          const timeDiff = Date.now() - lastAnalysis.getTime();
+          const minutesAgo = Math.floor(timeDiff / (1000 * 60));
+
+          let lastSeen;
+          if (minutesAgo < 5) lastSeen = 'Online';
+          else if (minutesAgo < 60) lastSeen = `${minutesAgo} min ago`;
+          else if (minutesAgo < 1440) lastSeen = `${Math.floor(minutesAgo / 60)} hours ago`;
+          else lastSeen = `${Math.floor(minutesAgo / 1440)} days ago`;
+
+          fetchedUsers.push({
+            id: userId,
+            name: profileData.nickname || `User_${userId.slice(-4)}`,
+            avatar: getStressIcon(stressTypeToUse),
+            stressType: stressTypeToUse,
+            overallScore: data.overallScore || 0,
+            lastSeen: lastSeen,
+            bio: `Sharing experiences with ${stressTypeToUse.toLowerCase()} stress`,
+            color: getStressColor(stressTypeToUse),
+            lastAnalysis: lastAnalysis,
+          });
+        } catch (profileError) {
+          console.log('Error fetching profile for user:', userId, profileError);
+          // Fallback to basic info if profile fetch fails
+          fetchedUsers.push({
+            id: userId,
+            name: `User_${userId.slice(-4)}`,
+            avatar: getStressIcon(stressTypeToUse),
+            stressType: stressTypeToUse,
+            overallScore: data.overallScore || 0,
+            lastSeen: 'Unknown',
+            bio: `Sharing experiences with ${stressTypeToUse.toLowerCase()} stress`,
+            color: getStressColor(stressTypeToUse),
+            lastAnalysis: data.lastAnalysis?.toDate?.() || new Date(),
+          });
+        }
+      }
+
+      setUsers(fetchedUsers);
       setLoading(false);
     } catch (error) {
-      console.error('Error loading community:', error);
+      console.error('[CommunityScreen] Error loading community users:', error);
       setLoading(false);
+      setUsers([]);
     }
   };
 
@@ -154,9 +195,11 @@ export default function CommunityScreen({ route, navigation }) {
   };
 
   const handleUserPress = (user) => {
+    // Use auth.currentUser.uid as source-of-truth
+    const authUid = auth.currentUser?.uid || currentUserId;
     navigation.navigate('ChatScreen', { 
       user: user,
-      currentUserId: currentUserId 
+      currentUserId: authUid 
     });
   };
 
@@ -168,6 +211,16 @@ export default function CommunityScreen({ route, navigation }) {
       'Emotional': '💭'
     };
     return icons[type] || '🌟';
+  };
+
+  const getStressColor = (type) => {
+    const colors = {
+      'Academic': '#ef4444',
+      'Financial': '#f59e0b',
+      'Social': '#3b82f6',
+      'Emotional': '#8b5cf6'
+    };
+    return colors[type] || '#5777AD';
   };
 
   if (loading) {
@@ -200,8 +253,8 @@ export default function CommunityScreen({ route, navigation }) {
               <View style={styles.headerLeft}>
                 <Text style={styles.headerTitle}>Support Community</Text>
                 <Text style={styles.headerSubtitle}>
-                  {stressType && stressType !== 'General' 
-                    ? `${getStressIcon(stressType)} ${stressType} Support`
+                  {currentStressType && currentStressType !== 'General' 
+                    ? `${getStressIcon(currentStressType)} ${currentStressType} Support`
                     : '🌍 All Communities'}
                 </Text>
               </View>
@@ -214,10 +267,10 @@ export default function CommunityScreen({ route, navigation }) {
           {/* Info Card */}
           <View style={styles.infoCard}>
             <LinearGradient
-              colors={['#91cbf5ff', '#afc9f7ff']}
+              colors={['rgb(79, 96, 255)', 'rgb(68, 136, 253)']}
               style={styles.infoGradient}
             >
-              <Text style={styles.infoEmoji}>🤝</Text>
+              <Text style={styles.infoEmoji}>🤝😌</Text>
               <Text style={styles.infoTitle}>Connect & Heal Together</Text>
               <Text style={styles.infoText}>
                 Share your journey with others who understand. Every conversation is a step toward wellness.
@@ -227,7 +280,7 @@ export default function CommunityScreen({ route, navigation }) {
 
           {/* Community Members */}
           <Text style={styles.sectionTitle}>
-            {users.length} Member{users.length !== 1 ? 's' : ''} Online
+            {users.length} Member{users.length !== 1 ? 's' : ''} To Talk
           </Text>
 
           {users.map((user) => (
@@ -254,11 +307,11 @@ export default function CommunityScreen({ route, navigation }) {
                   <View style={styles.userInfo}>
                     <View style={styles.userInfoTop}>
                       <Text style={styles.userName}>{user.name}</Text>
-                      <View style={[styles.stressTypeBadge, { borderColor: user.color }]}>
+                      {/* <View style={[styles.stressTypeBadge, { borderColor: user.color }]}>
                         <Text style={styles.stressTypeBadgeText}>
                           {getStressIcon(user.stressType)}
                         </Text>
-                      </View>
+                      </View> */}
                     </View>
                     <Text style={styles.userBio}>{user.bio}</Text>
                     <View style={styles.userFooter}>

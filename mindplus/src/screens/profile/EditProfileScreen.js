@@ -1,52 +1,98 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNavigation from "../../components/BottomNavigation.js";
+import { DEFAULT_USER_TYPE, USER_TYPES } from "../../utils/userTypes";
 
 // Custom Alert Component
-const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
+const CustomAlert = ({
+  visible,
+  title,
+  message,
+  type = "info",
+  onClose,
+  onConfirm,
+}) => {
   const getIconColor = () => {
     switch (type) {
-      case "success": return "#10B981";
-      case "error": return "#EF4444";
-      case "warning": return "#F59E0B";
-      default: return "#3B82F6";
+      case "success":
+        return "#10B981";
+      case "error":
+        return "#EF4444";
+      case "warning":
+        return "#F59E0B";
+      default:
+        return "#3B82F6";
     }
   };
 
   const getIcon = () => {
     switch (type) {
-      case "success": return "✓";
-      case "error": return "✕";
-      case "warning": return "!";
-      default: return "i";
+      case "success":
+        return "✓";
+      case "error":
+        return "✕";
+      case "warning":
+        return "!";
+      default:
+        return "i";
     }
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={alertStyles.overlay}>
         <View style={alertStyles.container}>
-          <View style={[alertStyles.iconContainer, { backgroundColor: getIconColor() + "20" }]}>
-            <Text style={[alertStyles.icon, { color: getIconColor() }]}>{getIcon()}</Text>
+          <View
+            style={[
+              alertStyles.iconContainer,
+              { backgroundColor: getIconColor() + "20" },
+            ]}
+          >
+            <Text style={[alertStyles.icon, { color: getIconColor() }]}>
+              {getIcon()}
+            </Text>
           </View>
           <Text style={alertStyles.title}>{title}</Text>
           <Text style={alertStyles.message}>{message}</Text>
           <View style={alertStyles.buttonContainer}>
             {onConfirm ? (
               <TouchableOpacity
-                style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
+                style={[
+                  alertStyles.button,
+                  alertStyles.confirmButton,
+                  { backgroundColor: getIconColor() },
+                ]}
                 onPress={onConfirm}
               >
                 <Text style={alertStyles.confirmButtonText}>Continue</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]}
+                style={[
+                  alertStyles.button,
+                  alertStyles.singleButton,
+                  { backgroundColor: getIconColor() },
+                ]}
                 onPress={onClose}
               >
                 <Text style={alertStyles.confirmButtonText}>OK</Text>
@@ -68,6 +114,7 @@ export default function EditProfileScreen({ navigation }) {
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [emergencyRelation, setEmergencyRelation] = useState("");
+  const [userType, setUserType] = useState(DEFAULT_USER_TYPE);
 
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
@@ -83,7 +130,9 @@ export default function EditProfileScreen({ navigation }) {
 
   const hideAlert = () => setAlertConfig({ ...alertConfig, visible: false });
 
-  useEffect(() => { loadExistingProfile(); }, []);
+  useEffect(() => {
+    loadExistingProfile();
+  }, []);
 
   const loadExistingProfile = async () => {
     try {
@@ -99,6 +148,19 @@ export default function EditProfileScreen({ navigation }) {
         setEmergencyName(data.emergencyName || "");
         setEmergencyContact(data.emergencyContact || "");
         setEmergencyRelation(data.emergencyRelation || "");
+        const resolvedUserType = data.userType || DEFAULT_USER_TYPE;
+        setUserType(resolvedUserType);
+
+        if (!data.userType) {
+          await setDoc(
+            ref,
+            {
+              userType: DEFAULT_USER_TYPE,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
       }
       setLoading(false);
     } catch (error) {
@@ -119,22 +181,38 @@ export default function EditProfileScreen({ navigation }) {
       showAlert("Error", "Contact must be 10 digits.", "error");
       return;
     }
+    if (!userType) {
+      showAlert("Required", "Please select your user type.", "warning");
+      return;
+    }
 
     setSaving(true);
     try {
       const user = auth.currentUser;
-      await setDoc(doc(db, "users", user.uid, "profile", "basic"), {
-        nickname, fullName, avatar, emergencyName, emergencyContact, emergencyRelation,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      await setDoc(
+        doc(db, "users", user.uid, "profile", "basic"),
+        {
+          nickname,
+          fullName,
+          userType,
+          avatar,
+          emergencyName,
+          emergencyContact,
+          emergencyRelation,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
       showAlert("Success", "Profile updated!", "success", () => {
         hideAlert();
-        navigation.navigate("UserProfileScreen")
+        navigation.navigate("UserProfileScreen");
       });
     } catch (error) {
       showAlert("Error", "Update failed.", "error");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -155,11 +233,10 @@ export default function EditProfileScreen({ navigation }) {
       >
         {/* ── This inner View is a flex column that fills the gradient ── */}
         <View style={styles.innerLayout}>
-
           {/* Header */}
           <View style={styles.headerContainer}>
             <LinearGradient
-              colors={['#b3c6dd', '#4895D0']}
+              colors={["#b3c6dd", "#4895D0"]}
               style={styles.hheader}
             >
               <View style={styles.headerContent}>
@@ -180,11 +257,18 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={styles.sectionLabel}>PREVIEW</Text>
               <View style={styles.previewContent}>
                 <View style={styles.previewAvatarContainer}>
-                  <Image source={avatars[avatar]} style={styles.previewAvatar} />
+                  <Image
+                    source={avatars[avatar]}
+                    style={styles.previewAvatar}
+                  />
                 </View>
                 <View style={styles.previewInfo}>
-                  <Text style={styles.previewNickname}>{nickname || "John D"}</Text>
-                  <Text style={styles.previewEmail}>{auth.currentUser?.email}</Text>
+                  <Text style={styles.previewNickname}>
+                    {nickname || "John D"}
+                  </Text>
+                  <Text style={styles.previewEmail}>
+                    {auth.currentUser?.email}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -194,15 +278,28 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={styles.floatingLabel}>Personal Details</Text>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Name</Text>
-                <TextInput value={fullName} onChangeText={setFullName} style={styles.input} />
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  style={styles.input}
+                />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Nickname</Text>
-                <TextInput value={nickname} onChangeText={setNickname} style={styles.input} maxLength={20} />
+                <TextInput
+                  value={nickname}
+                  onChangeText={setNickname}
+                  style={styles.input}
+                  maxLength={20}
+                />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Email</Text>
-                <TextInput value={auth.currentUser?.email} editable={false} style={[styles.input, styles.disabledInput]} />
+                <TextInput
+                  value={auth.currentUser?.email}
+                  editable={false}
+                  style={[styles.input, styles.disabledInput]}
+                />
               </View>
             </View>
 
@@ -211,15 +308,29 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={styles.floatingLabel}>Emergency Contact</Text>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Name</Text>
-                <TextInput value={emergencyName} onChangeText={setEmergencyName} style={styles.input} />
+                <TextInput
+                  value={emergencyName}
+                  onChangeText={setEmergencyName}
+                  style={styles.input}
+                />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Contact No</Text>
-                <TextInput value={emergencyContact} onChangeText={setEmergencyContact} keyboardType="numeric" maxLength={10} style={styles.input} />
+                <TextInput
+                  value={emergencyContact}
+                  onChangeText={setEmergencyContact}
+                  keyboardType="numeric"
+                  maxLength={10}
+                  style={styles.input}
+                />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Relationship</Text>
-                <TextInput value={emergencyRelation} onChangeText={setEmergencyRelation} style={styles.input} />
+                <TextInput
+                  value={emergencyRelation}
+                  onChangeText={setEmergencyRelation}
+                  style={styles.input}
+                />
               </View>
             </View>
 
@@ -228,17 +339,73 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={styles.floatingLabel}>Avatar</Text>
               <View style={styles.avatarGrid}>
                 {Object.keys(avatars).map((key) => (
-                  <TouchableOpacity key={key} onPress={() => setAvatar(key)} style={[styles.avatarOption, avatar === key && styles.avatarSelected]}>
-                    <Image source={avatars[key]} style={styles.avatarGridImage} />
-                    {avatar === key && <View style={styles.checkCircle}><Ionicons name="checkmark" size={12} color="white" /></View>}
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setAvatar(key)}
+                    style={[
+                      styles.avatarOption,
+                      avatar === key && styles.avatarSelected,
+                    ]}
+                  >
+                    <Image
+                      source={avatars[key]}
+                      style={styles.avatarGridImage}
+                    />
+                    {avatar === key && (
+                      <View style={styles.checkCircle}>
+                        <Ionicons name="checkmark" size={12} color="white" />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
+            <View style={styles.sectionOutline}>
+              <Text style={styles.floatingLabel}>Your User Type</Text>
+              <View style={styles.userTypeGrid}>
+                {USER_TYPES.map((item) => {
+                  const isSelected = item.id === userType;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.userTypeCard,
+                        isSelected && styles.userTypeCardSelected,
+                      ]}
+                      onPress={() => setUserType(item.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.userTypeTitle,
+                          isSelected && styles.userTypeTitleSelected,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.userTypeMeta,
+                          isSelected && styles.userTypeMetaSelected,
+                        ]}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {/* Save Button */}
-            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.7 }]} onPress={saveProfile} disabled={saving}>
-              <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save"}</Text>
+            <TouchableOpacity
+              style={[styles.saveButton, saving && { opacity: 0.7 }]}
+              onPress={saveProfile}
+              disabled={saving}
+            >
+              <Text style={styles.saveButtonText}>
+                {saving ? "Saving..." : "Save"}
+              </Text>
             </TouchableOpacity>
 
             <View style={{ height: 40 }} />
@@ -246,11 +413,17 @@ export default function EditProfileScreen({ navigation }) {
 
           {/* BottomNavigation is OUTSIDE the ScrollView but INSIDE the flex column */}
           <BottomNavigation navigation={navigation} />
-
         </View>
       </LinearGradient>
 
-      <CustomAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} onClose={hideAlert} onConfirm={alertConfig.onConfirm} />
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={hideAlert}
+        onConfirm={alertConfig.onConfirm}
+      />
     </View>
   );
 }
@@ -274,7 +447,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scrollView: {
-    flex: 1,           // takes all space between header and bottom nav
+    flex: 1, // takes all space between header and bottom nav
   },
   scrollContent: {
     padding: 20,
@@ -413,6 +586,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 2,
     borderColor: "white",
+  },
+  userTypeGrid: {
+    gap: 10,
+  },
+  userTypeCard: {
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#F8FBFF",
+  },
+  userTypeCardSelected: {
+    backgroundColor: "#EAF3FF",
+    borderColor: "#3B82F6",
+  },
+  userTypeTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  userTypeTitleSelected: {
+    color: "#1D4ED8",
+  },
+  userTypeMeta: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  userTypeMetaSelected: {
+    color: "#2563EB",
   },
   saveButton: {
     backgroundColor: "#5FA1D5",

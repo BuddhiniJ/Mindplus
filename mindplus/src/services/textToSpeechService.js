@@ -5,8 +5,13 @@ import * as Speech from "expo-speech";
 
 // Default voice configuration
 const DEFAULT_LANGUAGE = "en-US"; // Ensure English voice by default
-let defaultRate = 0.5; // 0.0 – 1.0 (Expo's range)
+let defaultRate = 0.9; // 0.0 – 1.0 (Expo's range), 0.9 feels close to natural speed
 let defaultPitch = 1.0;
+
+function clampRate(rate) {
+  if (typeof rate !== "number" || Number.isNaN(rate)) return defaultRate;
+  return Math.max(0.6, Math.min(1.2, rate));
+}
 
 /**
  * Speaks a chatbot message out loud.
@@ -23,7 +28,9 @@ export async function playBotMessageVoice(text, options = {}) {
     // Ensure we don't overlap multiple TTS sessions
     Speech.stop();
 
-    const effectiveRate = typeof rate === "number" ? rate : defaultRate;
+    const effectiveRate = clampRate(
+      typeof rate === "number" ? rate : defaultRate,
+    );
 
     Speech.speak(text, {
       language: DEFAULT_LANGUAGE,
@@ -65,9 +72,9 @@ export async function stopBotMessageVoice() {
  * @param {number} rate - Typically between 0.3 and 0.8 for comfortable speed.
  */
 export function setBotVoiceRate(rate) {
-  if (typeof rate !== "number") return;
+  if (typeof rate !== "number" || Number.isNaN(rate)) return;
   // Store for future calls; applied in playBotMessageVoice
-  defaultRate = rate;
+  defaultRate = Math.max(0.6, Math.min(1.2, rate));
 }
 
 /**

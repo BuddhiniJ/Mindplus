@@ -28,7 +28,11 @@ export default function HistoryScreen({ navigation }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    loadHistory();
+    // Initial load with slight delay to ensure Firebase is ready
+    console.log('📱 HistoryScreen mounted - scheduling initial load');
+    const timer = setTimeout(() => {
+      loadHistory();
+    }, 300);
     
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -37,6 +41,7 @@ export default function HistoryScreen({ navigation }) {
     }).start();
     
     return () => {
+      clearTimeout(timer);
       if (sound) {
         sound.unloadAsync();
       }
@@ -45,7 +50,16 @@ export default function HistoryScreen({ navigation }) {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadHistory();
+      // Force reset state before reloading to ensure UI updates
+      console.log('🔄 HistoryScreen focused - refreshing data');
+      setHistory([]);
+      setStats(null);
+      setLoading(true);
+      
+      // Small delay to ensure state updates are rendered, then load fresh data
+      setTimeout(() => {
+        loadHistory();
+      }, 150);
     });
     return unsubscribe;
   }, [navigation]);
@@ -53,31 +67,59 @@ export default function HistoryScreen({ navigation }) {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      // prefer authenticated UID if available
-      let userId = auth.currentUser?.uid || (await AsyncStorage.getItem('userId'));
+      
+      // Get userId with priority: Firebase auth > AsyncStorage
+      let userId = auth.currentUser?.uid;
+      console.log('🔍 [1] Firebase auth user:', userId);
       
       if (!userId) {
-        console.log('No userId found');
+        userId = await AsyncStorage.getItem('userId');
+        console.log('🔍 [2] AsyncStorage userId:', userId);
+      }
+      
+      if (!userId) {
+        console.log('❌ No userId found in HistoryScreen - both auth and storage are empty');
+        setHistory([]);
+        setStats(null);
         setLoading(false);
         return;
       }
 
-      // persist for future use
+      console.log('📖 [3] Loading history for user:', userId);
+      
+      // Ensure the userId is stored for consistency
       await AsyncStorage.setItem('userId', userId);
-
-      console.log('📖 Loading history for user:', userId);
       
+      console.log('📖 [3.5] Loading ONLY recordings for current user (strict user isolation)');
+      
+      // Get the history data - this will only return records for the current user
       const data = await getLocalHistory(userId);
-      console.log('✅ History loaded:', data.length, 'records');
-      setHistory(data);
+      console.log('📖 [4] History retrieved:', data.length, 'records');
       
+      if (data && data.length > 0) {
+        console.log('📋 [5] First record:', JSON.stringify(data[0]).substring(0, 100));
+        setHistory(data);
+      } else {
+        console.log('⚠️  [5] No history records found for user:', userId);
+        console.log('💾 Checking all AsyncStorage keys...');
+        // Debug: Check all keys to see what's stored
+        const allKeys = await AsyncStorage.getAllKeys();
+        const historyKeys = allKeys.filter(key => key.includes('stress_analysis_history'));
+        console.log('History keys in storage:', historyKeys);
+        setHistory([]);
+      }
+      
+      // Get statistics
       const statistics = await getHistoryStats(userId);
       setStats(statistics);
       
+      console.log('✅ [6] History screen refresh complete');
       setLoading(false);
     } catch (error) {
-      console.error('Error loading history:', error);
+      console.error('❌ Error loading history:', error);
+      console.error('Stack trace:', error.stack);
       setHistory([]);
+      setStats(null);
       setLoading(false);
     }
   };
@@ -302,7 +344,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#a0bef3ff', '#7CB9E8']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.totalRecordings}</Text>
@@ -312,7 +354,7 @@ export default function HistoryScreen({ navigation }) {
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#f5acacff', '#fcc0c0ff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Academic}</Text>
@@ -324,7 +366,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#f5c978ff', '#f1d386ff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Financial}</Text>
@@ -334,7 +376,7 @@ export default function HistoryScreen({ navigation }) {
                   
                   <View style={styles.statBox}>
                     <LinearGradient
-                      colors={['#9fc1f7ff', '#60a5fa']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Social}</Text>
@@ -346,7 +388,7 @@ export default function HistoryScreen({ navigation }) {
                 <View style={[styles.statsGrid, { marginBottom: 0 }]}>
                   <View style={[styles.statBox, { flex: 1 }]}>
                     <LinearGradient
-                      colors={['#c4b0f3ff', '#b29febff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.statBoxGradient}
                     >
                       <Text style={styles.statBoxValue}>{stats.stressTypes.Emotional}</Text>
@@ -445,7 +487,7 @@ export default function HistoryScreen({ navigation }) {
                     onPress={() => handleViewAnalysis(item)}
                   >
                     <LinearGradient
-                      colors={['#b4cbf3ff', '#99c9eeff']}
+                      colors={['rgb(138, 166, 255)', 'rgb(143, 194, 252)']}
                       style={styles.actionButtonGradient}
                     >
                       {/* <Text style={styles.actionButtonIcon}>✨</Text> */}
@@ -777,7 +819,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   deleteButtonInner: {
-    backgroundColor: '#d3e9f0ff',
+    backgroundColor: 'rgb(255, 9, 9)',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',

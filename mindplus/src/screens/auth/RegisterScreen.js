@@ -1,52 +1,99 @@
 import { db } from "../../firebase/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { avatars } from "../../utils/avatars";
+import { DEFAULT_USER_TYPE, USER_TYPES } from "../../utils/userTypes";
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image, ScrollView, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
+  Image,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebaseConfig";
-import { LinearGradient } from 'expo-linear-gradient'; // Ensure you have this installed
+import { LinearGradient } from "expo-linear-gradient"; // Ensure you have this installed
 
 // Custom Alert Component (Kept as provided)
-const CustomAlert = ({ visible, title, message, type = "info", onClose, onConfirm }) => {
+const CustomAlert = ({
+  visible,
+  title,
+  message,
+  type = "info",
+  onClose,
+  onConfirm,
+}) => {
   const getIconColor = () => {
     switch (type) {
-      case "success": return "#10B981";
-      case "error": return "#EF4444";
-      case "warning": return "#F59E0B";
-      default: return "#3B82F6";
+      case "success":
+        return "#10B981";
+      case "error":
+        return "#EF4444";
+      case "warning":
+        return "#F59E0B";
+      default:
+        return "#3B82F6";
     }
   };
 
   const getIcon = () => {
     switch (type) {
-      case "success": return "✓";
-      case "error": return "✕";
-      case "warning": return "!";
-      default: return "i";
+      case "success":
+        return "✓";
+      case "error":
+        return "✕";
+      case "warning":
+        return "!";
+      default:
+        return "i";
     }
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={alertStyles.overlay}>
         <View style={alertStyles.container}>
-          <View style={[alertStyles.iconContainer, { backgroundColor: getIconColor() + "20" }]}>
-            <Text style={[alertStyles.icon, { color: getIconColor() }]}>{getIcon()}</Text>
+          <View
+            style={[
+              alertStyles.iconContainer,
+              { backgroundColor: getIconColor() + "20" },
+            ]}
+          >
+            <Text style={[alertStyles.icon, { color: getIconColor() }]}>
+              {getIcon()}
+            </Text>
           </View>
           <Text style={alertStyles.title}>{title}</Text>
           <Text style={alertStyles.message}>{message}</Text>
           <View style={alertStyles.buttonContainer}>
             {onConfirm ? (
               <TouchableOpacity
-                style={[alertStyles.button, alertStyles.confirmButton, { backgroundColor: getIconColor() }]}
+                style={[
+                  alertStyles.button,
+                  alertStyles.confirmButton,
+                  { backgroundColor: getIconColor() },
+                ]}
                 onPress={onConfirm}
               >
                 <Text style={alertStyles.confirmButtonText}>Continue</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                style={[alertStyles.button, alertStyles.singleButton, { backgroundColor: getIconColor() }]}
+                style={[
+                  alertStyles.button,
+                  alertStyles.singleButton,
+                  { backgroundColor: getIconColor() },
+                ]}
                 onPress={onClose}
               >
                 <Text style={alertStyles.confirmButtonText}>OK</Text>
@@ -70,6 +117,7 @@ export default function RegisterScreen({ navigation }) {
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [emergencyRelation, setEmergencyRelation] = useState("");
+  const [userType, setUserType] = useState(DEFAULT_USER_TYPE);
 
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
@@ -88,7 +136,11 @@ export default function RegisterScreen({ navigation }) {
   const registerUser = async () => {
     // ... logic stays exactly the same as your provided code ...
     if (!email.trim()) {
-      showAlert("Email Required", "Please enter your email address.", "warning");
+      showAlert(
+        "Email Required",
+        "Please enter your email address.",
+        "warning"
+      );
       return;
     }
     if (!password) {
@@ -103,42 +155,83 @@ export default function RegisterScreen({ navigation }) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
-      showAlert("Invalid Email", "Please enter a valid email address.", "error");
+      showAlert(
+        "Invalid Email",
+        "Please enter a valid email address.",
+        "error"
+      );
       return;
     }
 
     if (password.length < 6) {
-      showAlert("Weak Password", "Password must be at least 6 characters long.", "warning");
+      showAlert(
+        "Weak Password",
+        "Password must be at least 6 characters long.",
+        "warning"
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      showAlert("Passwords Don't Match", "Please make sure both passwords are identical.", "error");
+      showAlert(
+        "Passwords Don't Match",
+        "Please make sure both passwords are identical.",
+        "error"
+      );
       return;
     }
 
     if (!fullName.trim()) {
-      showAlert("Full Name Required", "Please enter your full name.", "warning");
+      showAlert(
+        "Full Name Required",
+        "Please enter your full name.",
+        "warning"
+      );
       return;
     }
 
     if (!emergencyName.trim()) {
-      showAlert("Emergency Contact Name Required", "Please enter the emergency contact's name.", "warning");
+      showAlert(
+        "Emergency Contact Name Required",
+        "Please enter the emergency contact's name.",
+        "warning"
+      );
       return;
     }
 
     if (!emergencyContact.trim()) {
-      showAlert("Emergency Contact Number Required", "Please enter the emergency contact number.", "warning");
+      showAlert(
+        "Emergency Contact Number Required",
+        "Please enter the emergency contact number.",
+        "warning"
+      );
       return;
     }
 
     if (!/^\d{10}$/.test(emergencyContact)) {
-      showAlert("Invalid Contact Number", "Emergency number must be 10 digits.", "error");
+      showAlert(
+        "Invalid Contact Number",
+        "Emergency number must be 10 digits.",
+        "error"
+      );
       return;
     }
 
     if (!emergencyRelation.trim()) {
-      showAlert("Relationship Required", "Please enter the relationship.", "warning");
+      showAlert(
+        "Relationship Required",
+        "Please enter the relationship.",
+        "warning"
+      );
+      return;
+    }
+
+    if (!userType) {
+      showAlert(
+        "User Type Required",
+        "Please select your user type.",
+        "warning"
+      );
       return;
     }
 
@@ -147,25 +240,48 @@ export default function RegisterScreen({ navigation }) {
       await createUserWithEmailAndPassword(auth, email, password);
       const user = auth.currentUser;
       await setDoc(doc(db, "users", user.uid, "profile", "basic"), {
-        fullName, nickname, avatar: selectedAvatar, emergencyName, emergencyContact, emergencyRelation,
-        createdAt: Date.now(), updatedAt: Date.now(),
+        fullName,
+        nickname,
+        userType,
+        avatar: selectedAvatar,
+        emergencyName,
+        emergencyContact,
+        emergencyRelation,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
       showAlert("Success", "Account created successfully!", "success", () => {
-        hideAlert(); navigation.navigate("Login");
+        hideAlert();
+        navigation.navigate("Login");
       });
     } catch (error) {
       showAlert("Registration Failed", error.message, "error");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" bounces={false}>
-
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         {/* Header Section */}
-        <LinearGradient colors={['#b3c6ddff', '#4895D0']} style={styles.topSection}>
+        <LinearGradient
+          colors={["#b3c6ddff", "#4895D0"]}
+          style={styles.topSection}
+        >
           <View style={styles.logoCircle}>
-            <Image source={require('../../../assets/Logo2.png')} style={styles.logoImage} resizeMode="contain" />
+            <Image
+              source={require("../../../assets/Logo2.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
         </LinearGradient>
 
@@ -181,27 +297,87 @@ export default function RegisterScreen({ navigation }) {
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Name</Text>
-              <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+              <TextInput
+                style={styles.input}
+                value={fullName}
+                onChangeText={setFullName}
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Nickname</Text>
-              <TextInput style={styles.input} value={nickname} onChangeText={setNickname} />
+              <TextInput
+                style={styles.input}
+                value={nickname}
+                onChangeText={setNickname}
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Email</Text>
-              <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Password</Text>
-              <TextInput style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Confirm Password</Text>
-              <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>User Type</Text>
+              <View style={styles.userTypeGrid}>
+                {USER_TYPES.map((item) => {
+                  const isActive = userType === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => setUserType(item.id)}
+                      style={[
+                        styles.userTypeChip,
+                        isActive && styles.userTypeChipActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.userTypeLabel,
+                          isActive && styles.userTypeLabelActive,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.userTypeSubtitle,
+                          isActive && styles.userTypeSubtitleActive,
+                        ]}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           </View>
 
@@ -213,17 +389,31 @@ export default function RegisterScreen({ navigation }) {
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Name</Text>
-              <TextInput style={styles.input} value={emergencyName} onChangeText={setEmergencyName} />
+              <TextInput
+                style={styles.input}
+                value={emergencyName}
+                onChangeText={setEmergencyName}
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Contact No</Text>
-              <TextInput style={styles.input} value={emergencyContact} onChangeText={setEmergencyContact} keyboardType="numeric" maxLength={10} />
+              <TextInput
+                style={styles.input}
+                value={emergencyContact}
+                onChangeText={setEmergencyContact}
+                keyboardType="numeric"
+                maxLength={10}
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.fieldLabel}>Relationship</Text>
-              <TextInput style={styles.input} value={emergencyRelation} onChangeText={setEmergencyRelation} />
+              <TextInput
+                style={styles.input}
+                value={emergencyRelation}
+                onChangeText={setEmergencyRelation}
+              />
             </View>
           </View>
 
@@ -237,7 +427,10 @@ export default function RegisterScreen({ navigation }) {
                 <TouchableOpacity
                   key={key}
                   onPress={() => setSelectedAvatar(key)}
-                  style={[styles.avatarWrapper, selectedAvatar === key && styles.selectedAvatar]}
+                  style={[
+                    styles.avatarWrapper,
+                    selectedAvatar === key && styles.selectedAvatar,
+                  ]}
                 >
                   <Image source={avatars[key]} style={styles.avatarImg} />
                 </TouchableOpacity>
@@ -246,8 +439,14 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           {/* Footer Buttons */}
-          <TouchableOpacity style={[styles.submitBtn, loading && { opacity: 0.7 }]} onPress={registerUser} disabled={loading}>
-            <Text style={styles.submitBtnText}>{loading ? "Signing Up..." : "Sign Up"}</Text>
+          <TouchableOpacity
+            style={[styles.submitBtn, loading && { opacity: 0.7 }]}
+            onPress={registerUser}
+            disabled={loading}
+          >
+            <Text style={styles.submitBtnText}>
+              {loading ? "Signing Up..." : "Sign Up"}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.footerLinkContainer}>
@@ -256,11 +455,17 @@ export default function RegisterScreen({ navigation }) {
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </ScrollView>
 
-      <CustomAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} onClose={hideAlert} onConfirm={alertConfig.onConfirm} />
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={hideAlert}
+        onConfirm={alertConfig.onConfirm}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -268,29 +473,29 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF"
+    backgroundColor: "#FFF",
   },
   scrollContainer: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   topSection: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoCircle: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 5,
   },
   logoImage: {
     width: 125,
     height: 125,
-    marginTop: -5
+    marginTop: -5,
   },
   formCard: {
     flex: 1,
@@ -305,36 +510,36 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    textAlign: 'center',
+    textAlign: "center",
     color: "#000",
-    marginBottom: 25
+    marginBottom: 25,
   },
   sectionOutline: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: "#D1D5DB",
     borderRadius: 15,
     padding: 15,
     marginBottom: 25,
   },
   sectionLabelContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: -10,
     left: 15,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     paddingHorizontal: 5,
   },
   sectionLabelText: {
     fontSize: 12,
-    color: '#000000ff'
+    color: "#000000ff",
   },
   inputGroup: {
-    marginBottom: 15
+    marginBottom: 15,
   },
   fieldLabel: {
     fontSize: 12,
-    color: '#000000ff',
+    color: "#000000ff",
     marginBottom: 5,
-    marginLeft: 5
+    marginLeft: 5,
   },
   input: {
     backgroundColor: "#FFF",
@@ -346,51 +551,82 @@ const styles = StyleSheet.create({
     color: "#111827",
     elevation: 1,
   },
+  userTypeGrid: {
+    gap: 10,
+  },
+  userTypeChip: {
+    borderWidth: 1,
+    borderColor: "#D8E4F2",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#F8FBFF",
+  },
+  userTypeChipActive: {
+    borderColor: "#3B82F6",
+    backgroundColor: "#EAF3FF",
+  },
+  userTypeLabel: {
+    color: "#1F2937",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  userTypeLabelActive: {
+    color: "#1D4ED8",
+  },
+  userTypeSubtitle: {
+    marginTop: 3,
+    color: "#6B7280",
+    fontSize: 12,
+  },
+  userTypeSubtitleActive: {
+    color: "#2563EB",
+  },
   avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 10
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
   },
   avatarWrapper: {
     padding: 5,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: 'transparent'
+    borderColor: "transparent",
   },
   selectedAvatar: {
-    borderColor: '#3B82F6'
+    borderColor: "#3B82F6",
   },
   avatarImg: {
     width: 55,
     height: 55,
-    borderRadius: 27.5
+    borderRadius: 27.5,
   },
   submitBtn: {
     backgroundColor: "#63A1D6",
     borderRadius: 12,
     paddingVertical: 15,
     marginTop: 10,
-    alignItems: 'center'
+    alignItems: "center",
   },
   submitBtnText: {
     color: "#FFF",
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   footerLinkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 15
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 15,
   },
   footerText: {
     color: "#9CA3AF",
-    fontSize: 13
+    fontSize: 13,
   },
   loginLink: {
     color: "#9CA3AF",
     fontWeight: "600",
-    fontSize: 13
+    fontSize: 13,
   },
 });
 
@@ -400,14 +636,14 @@ const alertStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
   container: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 24,
     width: "80%",
-    alignItems: "center"
+    alignItems: "center",
   },
   iconContainer: {
     width: 60,
@@ -415,37 +651,37 @@ const alertStyles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 15
+    marginBottom: 15,
   },
   icon: {
     fontSize: 28,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   title: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#111827",
-    marginBottom: 8
+    marginBottom: 8,
   },
   message: {
     fontSize: 14,
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 20
+    marginBottom: 20,
   },
   buttonContainer: {
-    width: '100%'
+    width: "100%",
   },
   button: {
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: "center"
+    alignItems: "center",
   },
   confirmButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600"
+    fontWeight: "600",
   },
   singleButton: {
-    width: '100%'
+    width: "100%",
   },
 });

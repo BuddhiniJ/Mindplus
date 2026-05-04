@@ -1,31 +1,8 @@
 # Soundscape Tracks
 
-Add your custom audio tracks in this folder and map them in:
+Mindplus uses reliable ambient audio tracks from SoundHelix for soundscape playback. 
 
-- `src/config/soundscapeTracks.js`
+To use your own audio tracks, update the URLs in `src/config/soundscapeTracks.js` with links to publicly accessible MP3 files. 
 
-## Recommended filenames
+For future Pixabay integration, ensure URLs don't require authentication headers and support CORS. Direct download links may need to be served through a proxy or configured with proper headers.
 
-- `rain.mp3`
-- `forest.mp3`
-- `ocean.mp3`
-- `fire.mp3`
-- `white.mp3`
-
-## How to use local files
-
-Replace URL sources in `soundscapeTracks.js` with local `require` values.
-
-Example:
-
-```js
-export const SOUNDSCAPE_TRACKS = {
-  rain: require("../../assets/soundscapes/rain.mp3"),
-  forest: require("../../assets/soundscapes/forest.mp3"),
-  ocean: require("../../assets/soundscapes/ocean.mp3"),
-  fire: require("../../assets/soundscapes/fire.mp3"),
-  white: require("../../assets/soundscapes/white.mp3"),
-};
-```
-
-After adding files, restart Expo for the asset changes to load.
