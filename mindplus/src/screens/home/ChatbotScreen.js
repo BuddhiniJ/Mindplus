@@ -81,16 +81,39 @@ const CHAT_THEMES = [
   { id: "dark", label: "Dark" },
 ];
 
-const DEFAULT_PROMPT_CHIPS = [
-  "I'm overwhelmed with exams",
-  "I can't focus on studying",
-  "I'm scared I'll fail my exams",
-  "I feel burnt out",
-  "I need help calming down",
-  "I want to get back on track",
+const PROMPT_TEMPLATES = [
+  "I feel overwhelmed about",
+  "I feel anxious about",
+  "I can't focus on",
+  "I keep overthinking about",
+  "I feel stressed about",
+  "I feel unmotivated about",
+  "I feel nervous about",
+  "I feel frustrated about",
+  "I feel stuck with",
+  "I feel confused about",
+  "I feel pressure about",
+  "I feel afraid of",
+  "I feel upset about",
+  "I feel discouraged about",
+  "I feel mentally exhausted about",
+  "I feel uncertain about",
+  "I feel tense about",
+  "I feel disappointed about",
+  "I feel low about",
+  "I feel irritated about",
 ];
 
-const MAX_PROMPT_CHIPS = 20;
+const MAX_PROMPT_CHIPS = PROMPT_TEMPLATES.length;
+const MAX_VISIBLE_PROMPT_CHIPS = 6;
+const DEFAULT_PROMPT_SUFFIX = "___";
+const DEFAULT_PROMPT_CHIPS = PROMPT_TEMPLATES.map(
+  (template) => `${template} ${DEFAULT_PROMPT_SUFFIX}`,
+);
+const DEFAULT_SELECTED_PROMPT_INDICES = Array.from(
+  { length: MAX_VISIBLE_PROMPT_CHIPS },
+  (_, index) => index,
+);
 
 const SETTINGS_SWITCH_TRACK = { false: "#CBD5F5", true: "#4F46E5" };
 const SETTINGS_SWITCH_THUMB_ON = "#EEF2FF";
@@ -267,15 +290,41 @@ function getStressPercent({ overallStatus, stressLevel } = {}) {
   return byStress[key] ?? 0;
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractPromptSuffix(prompt, template) {
+  if (typeof prompt !== "string") return DEFAULT_PROMPT_SUFFIX;
+  const trimmed = prompt.trim();
+  if (!trimmed) return DEFAULT_PROMPT_SUFFIX;
+
+  const exactPattern = new RegExp(`^${escapeRegExp(template)}\\s*(.*)$`, "i");
+  const exactMatch = trimmed.match(exactPattern);
+  if (exactMatch) {
+    return (exactMatch[1] || "").trim() || DEFAULT_PROMPT_SUFFIX;
+  }
+
+  const fallbackMatch = trimmed.match(/(?:about|of|with)\s+(.+)$/i);
+  if (fallbackMatch) {
+    return (fallbackMatch[1] || "").trim() || DEFAULT_PROMPT_SUFFIX;
+  }
+
+  return DEFAULT_PROMPT_SUFFIX;
+}
+
+function buildPromptChip(template, suffix) {
+  const normalizedSuffix =
+    typeof suffix === "string" ? suffix.trim() : DEFAULT_PROMPT_SUFFIX;
+  return `${template} ${normalizedSuffix || DEFAULT_PROMPT_SUFFIX}`;
+}
+
 function normalizePromptChips(prompts) {
-  if (!Array.isArray(prompts)) return DEFAULT_PROMPT_CHIPS;
-
-  const normalized = prompts
-    .map((prompt) => (typeof prompt === "string" ? prompt.trim() : ""))
-    .filter(Boolean)
-    .slice(0, MAX_PROMPT_CHIPS);
-
-  return normalized.length ? normalized : DEFAULT_PROMPT_CHIPS;
+  const source = Array.isArray(prompts) ? prompts : [];
+  return PROMPT_TEMPLATES.map((template, index) => {
+    const suffix = extractPromptSuffix(source[index], template);
+    return buildPromptChip(template, suffix);
+  });
 }
 
 export default function ChatbotScreen({ navigation }) {
@@ -316,9 +365,9 @@ export default function ChatbotScreen({ navigation }) {
   const [soundFeedbackEnabled, setSoundFeedbackEnabled] = useState(false);
   const [showPromptChips, setShowPromptChips] = useState(true);
   const [promptChips, setPromptChips] = useState(DEFAULT_PROMPT_CHIPS);
-  const [selectedPromptIndices, setSelectedPromptIndices] = useState(
-    DEFAULT_PROMPT_CHIPS.map((_, i) => i),
-  );
+  const [selectedPromptIndices, setSelectedPromptIndices] = useState([
+    ...DEFAULT_SELECTED_PROMPT_INDICES,
+  ]);
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const uiSoundRef = useRef({});
 
@@ -373,7 +422,25 @@ export default function ChatbotScreen({ navigation }) {
         setPromptChips(normalizePromptChips(data.promptChips));
       }
       if (Array.isArray(data.selectedPromptIndices)) {
-        setSelectedPromptIndices(data.selectedPromptIndices);
+        const deduped = [];
+        data.selectedPromptIndices.forEach((index) => {
+          if (
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < MAX_PROMPT_CHIPS &&
+            !deduped.includes(index)
+          ) {
+            deduped.push(index);
+          }
+        });
+
+        const validSelected = deduped.slice(0, MAX_VISIBLE_PROMPT_CHIPS);
+
+        setSelectedPromptIndices(
+          validSelected.length
+            ? validSelected
+            : [...DEFAULT_SELECTED_PROMPT_INDICES],
+        );
       }
     } catch (e) {
       console.log("Failed to load chatbot settings", e);
@@ -526,21 +593,7 @@ export default function ChatbotScreen({ navigation }) {
 
   const updatePromptChipAt = (index, value) => {
     const next = [...promptChips];
-    next[index] = value;
-    const normalized = normalizePromptChips(next);
-    setPromptChips(normalized);
-    persistSettings({ promptChips: normalized });
-  };
-
-  const addPromptChip = () => {
-    if (promptChips.length >= MAX_PROMPT_CHIPS) return;
-    const next = [...promptChips, "New prompt"];
-    setPromptChips(next);
-    persistSettings({ promptChips: next });
-  };
-
-  const removePromptChipAt = (index) => {
-    const next = promptChips.filter((_, i) => i !== index);
+    next[index] = buildPromptChip(PROMPT_TEMPLATES[index], value);
     const normalized = normalizePromptChips(next);
     setPromptChips(normalized);
     persistSettings({ promptChips: normalized });
@@ -548,7 +601,7 @@ export default function ChatbotScreen({ navigation }) {
 
   const resetPromptChips = () => {
     setPromptChips(DEFAULT_PROMPT_CHIPS);
-    const defaultIndices = DEFAULT_PROMPT_CHIPS.map((_, i) => i);
+    const defaultIndices = [...DEFAULT_SELECTED_PROMPT_INDICES];
     setSelectedPromptIndices(defaultIndices);
     persistSettings({
       promptChips: DEFAULT_PROMPT_CHIPS,
@@ -562,7 +615,7 @@ export default function ChatbotScreen({ navigation }) {
       if (isSelected) {
         return prev.filter((i) => i !== index);
       } else {
-        if (prev.length >= 6) {
+        if (prev.length >= MAX_VISIBLE_PROMPT_CHIPS) {
           Alert.alert(
             "Selection Limit",
             "You can select a maximum of 6 prompts to display on the chat screen.",
@@ -1412,7 +1465,7 @@ export default function ChatbotScreen({ navigation }) {
               setSlowInteractionMode(false);
               setShowPromptChips(true);
               setPromptChips(DEFAULT_PROMPT_CHIPS);
-              setSelectedPromptIndices(DEFAULT_PROMPT_CHIPS.map((_, i) => i));
+              setSelectedPromptIndices([...DEFAULT_SELECTED_PROMPT_INDICES]);
 
               Alert.alert("Done", "All local chatbot data has been deleted.");
             } catch (e) {
@@ -1448,7 +1501,7 @@ export default function ChatbotScreen({ navigation }) {
                 slowInteractionMode: false,
                 showPromptChips: true,
                 promptChips: DEFAULT_PROMPT_CHIPS,
-                selectedPromptIndices: DEFAULT_PROMPT_CHIPS.map((_, i) => i),
+                selectedPromptIndices: [...DEFAULT_SELECTED_PROMPT_INDICES],
               };
 
               setAutoVoiceEnabled(defaults.autoVoiceEnabled);
@@ -1689,8 +1742,8 @@ export default function ChatbotScreen({ navigation }) {
               <View style={styles.settingsModalCard}>
                 <Text style={styles.commandsModalTitle}>Edit prompt chips</Text>
                 <Text style={styles.commandsModalSubtitle}>
-                  Customize up to 20 prompts. Only 6 will be shown on the chat
-                  screen.
+                  20 prompts are predefined. Edit only the ending text for each.
+                  Only 6 will be shown on the chat screen.
                 </Text>
 
                 <ScrollView
@@ -1701,6 +1754,10 @@ export default function ChatbotScreen({ navigation }) {
                   {promptChips.map((prompt, index) => {
                     const isSelected = selectedPromptIndices.includes(index);
                     const selectionIndex = selectedPromptIndices.indexOf(index);
+                    const suffix = extractPromptSuffix(
+                      prompt,
+                      PROMPT_TEMPLATES[index],
+                    );
                     return (
                       <View
                         key={`prompt-editor-${index}`}
@@ -1777,37 +1834,26 @@ export default function ChatbotScreen({ navigation }) {
                         <Text style={styles.promptEditorIndex}>
                           {index + 1}
                         </Text>
-                        <TextInput
-                          value={prompt}
-                          onChangeText={(value) =>
-                            updatePromptChipAt(index, value)
-                          }
-                          placeholder={`Prompt ${index + 1}`}
-                          placeholderTextColor="#9CA3AF"
-                          style={styles.promptEditorInput}
-                          multiline
-                        />
-                        <TouchableOpacity
-                          style={styles.promptEditorRemoveButton}
-                          onPress={() => removePromptChipAt(index)}
-                        >
-                          <Text style={styles.promptEditorRemoveButtonText}>
-                            Remove
+                        <View style={styles.promptEditorTextBlock}>
+                          <Text style={styles.promptEditorPrefixText}>
+                            {PROMPT_TEMPLATES[index]}
                           </Text>
-                        </TouchableOpacity>
+                          <TextInput
+                            value={
+                              suffix === DEFAULT_PROMPT_SUFFIX ? "" : suffix
+                            }
+                            onChangeText={(value) =>
+                              updatePromptChipAt(index, value)
+                            }
+                            placeholder="e.g., my exams , my job"
+                            placeholderTextColor="#9CA3AF"
+                            style={styles.promptEditorInput}
+                            multiline
+                          />
+                        </View>
                       </View>
                     );
                   })}
-
-                  <TouchableOpacity
-                    style={[styles.settingsActionButton, { marginTop: 8 }]}
-                    onPress={addPromptChip}
-                    disabled={promptChips.length >= MAX_PROMPT_CHIPS}
-                  >
-                    <Text style={styles.settingsActionButtonText}>
-                      Add prompt chip
-                    </Text>
-                  </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[
