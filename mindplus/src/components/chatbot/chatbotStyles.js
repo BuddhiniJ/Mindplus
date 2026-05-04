@@ -1198,6 +1198,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginTop: 6,
   },
+  promptEditorTextBlock: {
+    flex: 1,
+    gap: 6,
+  },
+  promptEditorPrefixText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#374151",
+  },
   promptEditorInput: {
     flex: 1,
     minHeight: 42,
